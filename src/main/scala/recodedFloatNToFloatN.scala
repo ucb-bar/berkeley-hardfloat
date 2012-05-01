@@ -1,0 +1,28 @@
+package hardfloat
+
+import Chisel._
+import Node._
+
+object recodedFloatNToFloatN
+{
+  def apply(in: Bits, sigWidth: Int, expWidth: Int) = {
+    val sign = in(sigWidth+expWidth)
+    val expIn = in(sigWidth+expWidth-1, sigWidth)
+    val fractIn = in(sigWidth-1, 0)
+
+    val isHighSubnormalIn = expIn(expWidth-3, 0) < UFix(2)
+    val isSubnormal = expIn(expWidth-1, expWidth-3) === UFix(1) || expIn(expWidth-1, expWidth-2) === UFix(1) && isHighSubnormalIn
+    val isNormal = expIn(expWidth-1, expWidth-2) === UFix(1) && !isHighSubnormalIn || expIn(expWidth-1, expWidth-2) === UFix(2)
+    val isSpecial = expIn(expWidth-1, expWidth-2) === UFix(3)
+    val isNaN = isSpecial && expIn(expWidth-3)
+
+    val denormShiftDist = UFix(2) - expIn(log2up(sigWidth)-1, 0)
+    val subnormal_fractOut = (Cat(Bool(true), fractIn) >> denormShiftDist)(sigWidth-1, 0)
+    val normal_expOut = expIn(expWidth-2, 0) - Bits((1 << (expWidth-2))+1)
+
+    val expOut = Mux(isNormal, normal_expOut, Fill(expWidth-1, isSpecial))
+    val fractOut = Mux(isNormal || isNaN, fractIn, Mux(isSubnormal, subnormal_fractOut, Bits(0)))
+
+    Cat(sign, expOut, fractOut)
+  }
+}

@@ -1,52 +1,33 @@
 package hardfloat
 
 import Chisel._
-import Node._;
-import scala.math.{log, ceil}
+import Node._
 
-class floatNToRecodedFloatN_io(size: Int) extends Bundle() {
-  val in  = Bits(size, INPUT);
-  val out = Bits(size+1, OUTPUT);
-}
-
-class floatNToRecodedFloatN(expSize : Int = 8, sigSize : Int = 24) extends Component
+object floatNToRecodedFloatN
 {
-  def ceilLog2(x : Int) = ceil(log(x)/log(2.0)).toInt;
+  def apply(in: Bits, sigWidth: Int, expWidth: Int) = {
+    val sign = in(sigWidth+expWidth-1)
+    val expIn = in(sigWidth+expWidth-2, sigWidth)
+    val fractIn = in(sigWidth-1, 0)
+    val normWidth = 1 << log2up(sigWidth)
 
-  val size = expSize + sigSize;
-  val logNormSize = ceilLog2( sigSize );
-  val normSize = 1 << logNormSize;
+    val isZeroExpIn = expIn === UFix(0)
+    val isZeroFractIn = fractIn === UFix(0)
+    val isZero = isZeroExpIn && isZeroFractIn
+    val isSubnormal = isZeroExpIn && !isZeroFractIn
 
-  override val io = new floatNToRecodedFloatN_io(size);
+    val (norm, normCount) = Normalize(fractIn << UFix(normWidth-sigWidth))
+    val subnormal_expOut = Cat(Fill(expWidth-log2up(sigWidth), Bool(true)), ~normCount)
 
-  val sign    = io.in(size-1);
-  val expIn   = io.in(size-2, sigSize-1).toUFix;
-  val fractIn = io.in(sigSize-2, 0).toUFix;
-  val isZeroExpIn = ( expIn === Bits("b0", expSize) );
-  val isZeroFractIn = ( fractIn === Bits("b0", sigSize-1) );
-  val isZeroOrSubnormal = isZeroExpIn;
-  val isZero = isZeroOrSubnormal && isZeroFractIn;
-  val isSubnormal = isZeroOrSubnormal && ~isZeroFractIn;
-  val isNormalOrSpecial = ~isZeroExpIn;
+    val normalizedFract = norm(normWidth-2, normWidth-sigWidth-1)
+    val commonExp = Mux(isZeroExpIn, Mux(isZeroFractIn, Bits(0), subnormal_expOut), expIn)
+    val expAdjust = Mux(isZero, Bits(0), Bits(1 << expWidth-2) | Mux(isSubnormal, UFix(2), UFix(1)))
+    val adjustedCommonExp = commonExp + expAdjust
+    val isNaN = adjustedCommonExp(expWidth-1,expWidth-2).andR && !isZeroFractIn
 
-  val norm_in = Cat(fractIn, Bits("b0",normSize-sigSize+1));
+    val expOut = adjustedCommonExp | (isNaN << UFix(expWidth-3))
+    val fractOut = Mux(isZeroExpIn, normalizedFract, fractIn)
 
-  val normalizeFract = new normalizeN(expSize, sigSize);
-  normalizeFract.io.in := norm_in;
-  val norm_count = normalizeFract.io.distance;
-  val norm_out   = normalizeFract.io.out;
-
-  val normalizedFract = norm_out(normSize-2,normSize-sigSize);
-  val commonExp =
-    Mux(isSubnormal, Cat(Fill(expSize-logNormSize+1, Bits("b1", 1)), ~norm_count), Bits("b0", expSize+1)) |
-    Mux(isNormalOrSpecial, expIn, Bits("b0", expSize+1));
-  val expAdjust = Mux(isZero, Bits("b0",expSize+1), Cat(Bits("b1", 1), Bits(0, expSize-1), Bits("b1", 1)));
-  val adjustedCommonExp = commonExp.toUFix + expAdjust.toUFix + isSubnormal.toUFix;
-  val isNaN = (adjustedCommonExp(expSize,expSize-1) === Bits("b11",2)) & ~ isZeroFractIn;
-
-  //val expOut = adjustedCommonExp | (isNaN(6, 0)<<6);
-  val expOut = adjustedCommonExp | (isNaN << UFix(expSize-2));
-  val fractOut = Mux(isZeroOrSubnormal, normalizedFract, fractIn);
-
-  io.out := Cat(sign, expOut, fractOut);
+    Cat(sign, expOut, fractOut)
+  }
 }
