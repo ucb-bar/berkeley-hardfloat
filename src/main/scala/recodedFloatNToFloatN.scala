@@ -16,7 +16,7 @@ object recodedFloatNToFloatN
     val isSpecial = expIn(expWidth-1, expWidth-2) === UFix(3)
     val isNaN = isSpecial && expIn(expWidth-3)
 
-    val denormShiftDist = UFix(2) - expIn(log2up(sigWidth)-1, 0)
+    val denormShiftDist = UFix(2) - expIn(log2Up(sigWidth)-1, 0)
     val subnormal_fractOut = (Cat(Bool(true), fractIn) >> denormShiftDist)(sigWidth-1, 0)
     val normal_expOut = expIn(expWidth-2, 0) - Bits((1 << (expWidth-2))+1)
 

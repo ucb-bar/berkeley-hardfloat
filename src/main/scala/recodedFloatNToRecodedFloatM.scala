@@ -51,7 +51,7 @@ object recodedFloatNToRecodedFloatM
       val isUnderflow = expIn < minExp && !isSpecial
       val isOverflow = expIn > maxExp && !isSpecial
 
-      val round_position = Mux(isSubnormal, maxSubnormalExp + UFix(1) - expIn, UFix(0))(log2up(outSigWidth+1)-1,0)
+      val round_position = Mux(isSubnormal, maxSubnormalExp + UFix(1) - expIn, UFix(0))(log2Up(outSigWidth+1)-1,0)
       val sigMSBsShifted = Cat(Bits(1), sigIn(inSigWidth-1,inSigWidth-outSigWidth-1), Bits(0, outSigWidth+1)) >> round_position
       val subNormStickyBit = sigMSBsShifted(outSigWidth,0) != UFix(0) || sigIn(inSigWidth-outSigWidth-2,0) != UFix(0)
       val roundBits = Cat(sigMSBsShifted(outSigWidth+2,outSigWidth+1), subNormStickyBit)

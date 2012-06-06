@@ -9,9 +9,9 @@ import fpu_recoded._
 
 object MaskOnes
 {
-  def genMask(in: Bits, length: Int): Bits = ~(Fill(length, Bits(1)) << in(log2up(length)-1,0))
+  def genMask(in: Bits, length: Int): Bits = ~(Fill(length, Bits(1)) << in(log2Up(length)-1,0))
   def apply(in: Bits, start: Int, length: Int): Bits = {
-    var block = 1 << log2up(length)
+    var block = 1 << log2Up(length)
     if (start % block + length > block)
       Cat(apply(in, start + block - start % block, length - (block - start % block)), apply(in, start, block - start % block))
     else {
@@ -53,7 +53,7 @@ class mulAddSubRecodedFloatN(sigWidth: Int, expWidth: Int) extends Component {
 
   val sigSumSize = (sigWidth+2)*3
   val normSize = (sigWidth+2)*2
-  val logNormSize = log2up(normSize)
+  val logNormSize = log2Up(normSize)
   val firstNormUnit = 1 << logNormSize-2
   val minNormExp = (1 << expWidth-2) + 2
   val minExp = minNormExp - sigWidth
@@ -112,7 +112,7 @@ class mulAddSubRecodedFloatN(sigWidth: Int, expWidth: Int) extends Component {
   val CAlignDist =
         Mux(CAlignDist_floor, UFix(0),
         Mux(sNatCAlignDist(expWidth, 0) < UFix(sigSumSize-1), sNatCAlignDist,
-        UFix(sigSumSize-1)))(log2up(sigSumSize)-1, 0)
+        UFix(sigSumSize-1)))(log2Up(sigSumSize)-1, 0)
   val sExpSum = Mux(CAlignDist_floor, expC, sExpAlignedProd)
 
 // *** USE `sNatCAlignDist'?
@@ -138,7 +138,7 @@ class mulAddSubRecodedFloatN(sigWidth: Int, expWidth: Int) extends Component {
   val firstReduceNotSigSum = Cat(( notSigSum(normSize-firstNormUnit-1, normSize-firstNormUnit*2) != Bits(0) ), ( notSigSum(normSize-firstNormUnit*2-1, 0) != Bits(0) ))
 //*** USE RESULT OF `CAlignDest - 1' TO TEST FOR ZERO?
   val CDom_estNormDist =
-      Mux(CAlignDist_0 | doSubMags, CAlignDist, (CAlignDist - UFix(1))(log2up(sigWidth+1)-1, 0))
+      Mux(CAlignDist_0 | doSubMags, CAlignDist, (CAlignDist - UFix(1))(log2Up(sigWidth+1)-1, 0))
   val CDom_firstNormAbsSigSum =
         ( Mux(~ doSubMags & ~ CDom_estNormDist(logNormSize-2), 
           Cat(sigSum(sigSumSize-1, normSize-firstNormUnit), firstReduceSigSum != Bits(0)),

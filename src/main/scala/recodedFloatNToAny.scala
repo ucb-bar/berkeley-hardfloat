@@ -23,7 +23,7 @@ object recodedFloatNToAny {
     val isZero      = exponent(expWidth-1,expWidth-3) === UFix(0)
     val isSpecial   = exponent(expWidth-1,expWidth-2).andR
   
-    val roundDist = Mux(isZeroOrOne, UFix(0), exponent(min(expWidth-1, log2up(intWidth))-1,0))
+    val roundDist = Mux(isZeroOrOne, UFix(0), exponent(min(expWidth-1, log2Up(intWidth))-1,0))
     val shiftedSig = Cat(!isZeroOrOne, sig) << roundDist
     val unrounded = shiftedSig(min(1 << expWidth-1, intWidth)+sigWidth-1, sigWidth)
     val roundBits = Cat(shiftedSig(sigWidth, sigWidth-1), shiftedSig(sigWidth-2, 0).orR)

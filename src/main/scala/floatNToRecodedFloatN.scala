@@ -9,7 +9,7 @@ object floatNToRecodedFloatN
     val sign = in(sigWidth+expWidth-1)
     val expIn = in(sigWidth+expWidth-2, sigWidth)
     val fractIn = in(sigWidth-1, 0)
-    val normWidth = 1 << log2up(sigWidth)
+    val normWidth = 1 << log2Up(sigWidth)
 
     val isZeroExpIn = expIn === UFix(0)
     val isZeroFractIn = fractIn === UFix(0)
@@ -17,7 +17,7 @@ object floatNToRecodedFloatN
     val isSubnormal = isZeroExpIn && !isZeroFractIn
 
     val (norm, normCount) = Normalize(fractIn << UFix(normWidth-sigWidth))
-    val subnormal_expOut = Cat(Fill(expWidth-log2up(sigWidth), Bool(true)), ~normCount)
+    val subnormal_expOut = Cat(Fill(expWidth-log2Up(sigWidth), Bool(true)), ~normCount)
 
     val normalizedFract = norm(normWidth-2, normWidth-sigWidth-1)
     val commonExp = Mux(isZeroExpIn, Mux(isZeroFractIn, Bits(0), subnormal_expOut), expIn)

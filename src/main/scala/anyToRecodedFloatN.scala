@@ -45,11 +45,11 @@ object anyToRecodedFloatN
     var overflow_unrounded = Bool(false)
     var overflow_rounded = Bool(false)
     var exp_unrounded = ~norm_count
-    if (log2up(intWidth) > expWidth-2) {
+    if (log2Up(intWidth) > expWidth-2) {
       overflow_unrounded = exp_unrounded >= UFix(1 << (expWidth-2))
       exp_unrounded = exp_unrounded(expWidth-3,0)
-    } else if (log2up(intWidth) < expWidth-2)
-      exp_unrounded = Cat(Bits(0,expWidth-2-log2up(intWidth)), exp_unrounded)
+    } else if (log2Up(intWidth) < expWidth-2)
+      exp_unrounded = Cat(Bits(0,expWidth-2-log2Up(intWidth)), exp_unrounded)
 
     val exp_rounded = Cat(Bits(0,1), exp_unrounded) + norm_rounded(sigWidth+1)
     if (intWidth >= (1 << (expWidth-2)))
