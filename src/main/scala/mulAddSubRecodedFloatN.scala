@@ -39,13 +39,13 @@ object estNormDistPNPosSumS
 }
 
 class mulAddSubRecodedFloatN_io(sigWidth: Int, expWidth: Int) extends Bundle {
-  val op = Bits(2, INPUT)
-  val a = Bits(expWidth+sigWidth+1, INPUT)
-  val b = Bits(expWidth+sigWidth+1, INPUT)
-  val c = Bits(expWidth+sigWidth+1, INPUT)
-  val roundingMode = Bits(2, INPUT)
-  val out = Bits(expWidth+sigWidth+1, OUTPUT)
-  val exceptionFlags = Bits(5, OUTPUT)
+  val op = Bits(INPUT, 2)
+  val a = Bits(INPUT, expWidth+sigWidth+1)
+  val b = Bits(INPUT, expWidth+sigWidth+1)
+  val c = Bits(INPUT, expWidth+sigWidth+1)
+  val roundingMode = Bits(INPUT, 2)
+  val out = Bits(OUTPUT, expWidth+sigWidth+1)
+  val exceptionFlags = Bits(OUTPUT, 5)
 }
 
 class mulAddSubRecodedFloatN(sigWidth: Int, expWidth: Int) extends Component {
