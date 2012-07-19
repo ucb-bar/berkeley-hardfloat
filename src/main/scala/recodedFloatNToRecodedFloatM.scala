@@ -37,7 +37,8 @@ object recodedFloatNToRecodedFloatM
     val expIn = in(inSigWidth + inExpWidth-1, inSigWidth)
     val expCode = in(inSigWidth + inExpWidth-1, inSigWidth+inExpWidth-3)
     val expLSBs = in(inSigWidth + inExpWidth-2, inSigWidth)
-    val isSignalingNaN = expCode.andR && !sigIn(inSigWidth-1)
+    val isNaN = expCode.andR
+    val isSignalingNaN = isNaN && !sigIn(inSigWidth-1)
 
     if (inSigWidth > outSigWidth) {
       require (inExpWidth > outExpWidth)
@@ -82,7 +83,7 @@ object recodedFloatNToRecodedFloatM
             Mux(isUnderflow, expUnderflow,
             expRounded)))
       val sigOut =
-            Mux(isSpecial, isSignalingNaN << UFix(outSigWidth-1) | sigIn(inSigWidth-1,inSigWidth-outSigWidth),
+            Mux(isSpecial, Fill(outSigWidth, isNaN),
             Mux(isOverflow, sigOverflow,
             Mux(isUnderflow, sigUnderflow,
             sigRounded(outSigWidth-1,0))))
@@ -100,7 +101,7 @@ object recodedFloatNToRecodedFloatM
         Mux(expCode < Bits(6), Cat(Bits(1 << (outExpWidth-inExpWidth)), expLSBs),
         Mux(expCode < Bits(7), Bits(3 << (outExpWidth-2)),
                                Bits(7 << (outExpWidth-3))))))
-      val sigOut = isSignalingNaN << UFix(outSigWidth-1) | sigIn << UFix(outSigWidth-inSigWidth)
+      val sigOut = Fill(outSigWidth, isNaN) | sigIn << UFix(outSigWidth-inSigWidth)
       val out = Cat(sign, expOut, sigOut)
       (out, isSignalingNaN << UFix(4))
     }
