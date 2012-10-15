@@ -26,7 +26,7 @@ object estNormDistPNNegSumS
 {
   def apply(a: Bits, b: Bits, n: Int, s: Int) = {
     val key = ((a ^ b) ^ ~((a & b) << UFix(1)))(s-1,0)
-    UFix(n+s-1) - Log2(key, s-1)
+    UFix(n+s-1) - Log2(key, s)
   }
 }
 
@@ -34,7 +34,7 @@ object estNormDistPNPosSumS
 {
   def apply(a: Bits, b: Bits, n: Int, s: Int) = {
     val key = ((a ^ b) ^ ((a | b) << UFix(1)))(s-1,0)
-    UFix(n+s-1) - Log2(key, s-1)
+    UFix(n+s-1) - Log2(key, s)
   }
 }
 
