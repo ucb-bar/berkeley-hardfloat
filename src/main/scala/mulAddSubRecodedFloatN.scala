@@ -10,7 +10,7 @@ import fpu_recoded._
 object MaskOnes
 {
   def genMask(in: Bits, length: Int): Bits = ~(Fill(length, Bits(1)) << in(log2Up(length)-1,0))
-  def apply(in: Bits, start: Int, length: Int): Bits = {
+  def apply(in: UFix, start: Int, length: Int): Bits = {
     var block = 1 << log2Up(length)
     if (start % block + length > block)
       Cat(apply(in, start + block - start % block, length - (block - start % block)), apply(in, start, block - start % block))
@@ -24,7 +24,7 @@ object MaskOnes
 
 object estNormDistPNNegSumS
 {
-  def apply(a: Bits, b: Bits, n: Int, s: Int) = {
+  def apply(a: UFix, b: UFix, n: Int, s: Int) = {
     val key = ((a ^ b) ^ ~((a & b) << UFix(1)))(s-1,0)
     UFix(n+s-1) - Log2(key, s)
   }
@@ -32,7 +32,7 @@ object estNormDistPNNegSumS
 
 object estNormDistPNPosSumS
 {
-  def apply(a: Bits, b: Bits, n: Int, s: Int) = {
+  def apply(a: UFix, b: UFix, n: Int, s: Int) = {
     val key = ((a ^ b) ^ ((a | b) << UFix(1)))(s-1,0)
     UFix(n+s-1) - Log2(key, s)
   }
@@ -299,12 +299,12 @@ class mulAddSubRecodedFloatN(sigWidth: Int, expWidth: Int) extends Component {
   val isNaNOut = isNaNA | isNaNB | isNaNC | notSigNaN_invalid
 
   val signOut =
-        (!doSubMags                                      && opSignC ) ||
-        (isNaNOut                                        && Bits(1) ) ||
-        (mulSpecial && !isSpecialC                       && signProd) ||
-        (!mulSpecial && isSpecialC                       && opSignC ) ||
-        (!mulSpecial && notSpecial_addZeros && doSubMags && Bits(0) ) ||
-        (commonCase                                      && signY   )
+        (!doSubMags                                      && opSignC     ) ||
+        (isNaNOut                                        && Bool(true)  ) ||
+        (mulSpecial && !isSpecialC                       && signProd    ) ||
+        (!mulSpecial && isSpecialC                       && opSignC     ) ||
+        (!mulSpecial && notSpecial_addZeros && doSubMags && Bool(false) ) ||
+        (commonCase                                      && signY       )
   val expOut =
       (   expY &
           ~ Mux(notSpecial_isZeroOut, Bits(7 << expWidth-3), Bits(0, expWidth) ) &
