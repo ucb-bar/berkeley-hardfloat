@@ -4,15 +4,15 @@ import Chisel._
 import Node._
 
 class recodedFloatNCompare_io(SIG_WIDTH: Int, EXP_WIDTH: Int) extends Bundle {
-  val a              = Bits(INPUT, SIG_WIDTH + EXP_WIDTH + 1);
-  val b              = Bits(INPUT, SIG_WIDTH + EXP_WIDTH + 1);
+  val a              = UInt(INPUT, SIG_WIDTH + EXP_WIDTH + 1);
+  val b              = UInt(INPUT, SIG_WIDTH + EXP_WIDTH + 1);
   val a_eq_b         = Bool(OUTPUT);
   val a_lt_b         = Bool(OUTPUT);
   val a_eq_b_invalid = Bool(OUTPUT);
   val a_lt_b_invalid = Bool(OUTPUT);
 }
 
-class recodedFloatNCompare(SIG_WIDTH: Int, EXP_WIDTH: Int) extends Component {
+class recodedFloatNCompare(SIG_WIDTH: Int, EXP_WIDTH: Int) extends Module {
   val io = new recodedFloat32Compare_io(SIG_WIDTH, EXP_WIDTH)
 
   val signA = io.a(SIG_WIDTH+EXP_WIDTH)

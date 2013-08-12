@@ -11,7 +11,7 @@ import scala.math._
 import fpu_recoded._
 
 object recodedFloatNToAny {
-  def apply(in: Bits, roundingMode: Bits, typeOp: Bits, sigWidth: Int, expWidth: Int, intWidth: Int) = {
+  def apply(in: UInt, roundingMode: UInt, typeOp: UInt, sigWidth: Int, expWidth: Int, intWidth: Int) = {
     val io = new recodedFloat64ToAny_io(sigWidth, expWidth, intWidth)
   
     val sign = in(sigWidth+expWidth)
@@ -20,10 +20,10 @@ object recodedFloatNToAny {
   
     val isTiny      = !exponent(expWidth-2,0).andR
     val isZeroOrOne = !exponent(expWidth-1)
-    val isZero      = exponent(expWidth-1,expWidth-3) === UFix(0)
+    val isZero      = exponent(expWidth-1,expWidth-3) === UInt(0)
     val isSpecial   = exponent(expWidth-1,expWidth-2).andR
   
-    val roundDist = Mux(isZeroOrOne, UFix(0), exponent(min(expWidth-1, log2Up(intWidth))-1,0))
+    val roundDist = Mux(isZeroOrOne, UInt(0), exponent(min(expWidth-1, log2Up(intWidth))-1,0))
     val shiftedSig = Cat(!isZeroOrOne, sig) << roundDist
     val unrounded = shiftedSig(min(1 << expWidth-1, intWidth)+sigWidth-1, sigWidth)
     val roundBits = Cat(shiftedSig(sigWidth, sigWidth-1), shiftedSig(sigWidth-2, 0).orR)
@@ -35,7 +35,7 @@ object recodedFloatNToAny {
       Mux(roundingMode === round_max, !sign && nonzeroSig,
        /* roundingMode === round_minMag */ Bool(false))))
     val onescomp = Mux(sign, ~unrounded, unrounded)
-    var rounded = Mux(round ^ sign, onescomp + UFix(1), onescomp)
+    var rounded = Mux(round ^ sign, onescomp + UInt(1), onescomp)
     if (intWidth > rounded.getWidth)
       rounded = Cat(Fill(intWidth-rounded.getWidth, rounded(rounded.getWidth-1)), rounded)
     
@@ -44,11 +44,11 @@ object recodedFloatNToAny {
     val signedOverflow = !sign || round || unrounded.orR
     val posExponent = exponent(expWidth-2,0)
     def signedInvalid(intWidth: Int) = Mux(isZeroOrOne, Bool(false),
-      Mux(posExponent === UFix(intWidth-2), signedOverflowCarry,
-      Mux(posExponent === UFix(intWidth-1), signedOverflow,
-      posExponent >= UFix(intWidth))))
+      Mux(posExponent === UInt(intWidth-2), signedOverflowCarry,
+      Mux(posExponent === UInt(intWidth-1), signedOverflow,
+      posExponent >= UInt(intWidth))))
     def unsignedInvalid(intWidth: Int) = Mux(isZeroOrOne, sign && round,
-      sign || Mux(posExponent === UFix(intWidth-1), roundCarry, posExponent >= UFix(intWidth)))
+      sign || Mux(posExponent === UInt(intWidth-1), roundCarry, posExponent >= UInt(intWidth)))
   
     val invalid = isSpecial ||
       Mux(typeOp === type_uint32, unsignedInvalid(intWidth/2),
@@ -56,8 +56,8 @@ object recodedFloatNToAny {
       Mux(typeOp === type_uint64, unsignedInvalid(intWidth),
        /* typeOp === type_int64 */ signedInvalid(intWidth))))
     
-    val out = Mux(invalid, ~UFix(0, intWidth), rounded)
-    val exc = Cat(invalid, Bits(0,4))
+    val out = Mux(invalid, ~UInt(0, intWidth), rounded)
+    val exc = Cat(invalid, UInt(0,4))
     (out, exc)
   }
 }

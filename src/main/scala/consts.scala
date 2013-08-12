@@ -12,24 +12,24 @@ import Node._;
 object fpu_recoded {
 
 // Rounding modes:
-val round_nearest_even = Bits("b00",2);
-val round_minMag       = Bits("b01",2);
-val round_min          = Bits("b10",2);
-val round_max          = Bits("b11",2);
+val round_nearest_even = UInt("b00",2);
+val round_minMag       = UInt("b01",2);
+val round_min          = UInt("b10",2);
+val round_max          = UInt("b11",2);
 
 // Integer type codes:
-val type_uint32        = Bits("b00",2);
-val type_int32         = Bits("b01",2);
-val type_uint64        = Bits("b10",2);
-val type_int64         = Bits("b11",2);
+val type_uint32        = UInt("b00",2);
+val type_int32         = UInt("b01",2);
+val type_uint64        = UInt("b10",2);
+val type_int64         = UInt("b11",2);
 
 // FPU data type codes:
-val fpu_type_f32       = Bits("b000",3);
-val fpu_type_f64       = Bits("b001",3);
-val fpu_type_uint32    = Bits("b100",3);
-val fpu_type_int32     = Bits("b101",3);
-val fpu_type_uint64    = Bits("b110",3);
-val fpu_type_int64     = Bits("b111",3);
+val fpu_type_f32       = UInt("b000",3);
+val fpu_type_f64       = UInt("b001",3);
+val fpu_type_uint32    = UInt("b100",3);
+val fpu_type_int32     = UInt("b101",3);
+val fpu_type_uint64    = UInt("b110",3);
+val fpu_type_int64     = UInt("b111",3);
 }
 
 
