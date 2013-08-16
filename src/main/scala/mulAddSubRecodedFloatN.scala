@@ -299,12 +299,12 @@ class mulAddSubRecodedFloatN(sigWidth: Int, expWidth: Int) extends Module {
   val isNaNOut = isNaNA | isNaNB | isNaNC | notSigNaN_invalid
 
   val signOut =
-        (!doSubMags                                      && opSignC ) ||
-        (isNaNOut                                        && UInt(1).toBool ) ||
-        (mulSpecial && !isSpecialC                       && signProd) ||
-        (!mulSpecial && isSpecialC                       && opSignC ) ||
-        (!mulSpecial && notSpecial_addZeros && doSubMags && UInt(0).toBool ) ||
-        (commonCase                                      && signY   )
+        (!doSubMags                                      && opSignC     ) ||
+        (isNaNOut                                        && Bool(true)  ) ||
+        (mulSpecial && !isSpecialC                       && signProd    ) ||
+        (!mulSpecial && isSpecialC                       && opSignC     ) ||
+        (!mulSpecial && notSpecial_addZeros && doSubMags && Bool(false) ) ||
+        (commonCase                                      && signY       )
   val expOut =
       (   expY &
           ~ Mux(notSpecial_isZeroOut, UInt(7 << expWidth-3), UInt(0, expWidth) ) &
