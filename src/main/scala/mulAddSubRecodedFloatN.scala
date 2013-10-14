@@ -26,7 +26,10 @@ object estNormDistPNNegSumS
 {
   def apply(a: UInt, b: UInt, n: Int, s: Int) = {
     val key = ((a ^ b) ^ ~((a & b) << UInt(1)))(s-1,0)
-    UInt(n+s-1) - Log2(key, s)
+    var res = UInt(n+s-1)
+    for (i <- 1 until s)
+      res = Mux(key(i), UInt(n+s-1-i, log2Up(n+s-1)), res)
+    res
   }
 }
 
@@ -34,7 +37,10 @@ object estNormDistPNPosSumS
 {
   def apply(a: UInt, b: UInt, n: Int, s: Int) = {
     val key = ((a ^ b) ^ ((a | b) << UInt(1)))(s-1,0)
-    UInt(n+s-1) - Log2(key, s)
+    var res = UInt(n+s-1)
+    for (i <- 1 until s)
+      res = Mux(key(i), UInt(n+s-1-i, log2Up(n+s-1)), res)
+    res
   }
 }
 
