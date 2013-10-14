@@ -54,7 +54,7 @@ class mulAddSubRecodedFloatN_io(sigWidth: Int, expWidth: Int) extends Bundle {
   val exceptionFlags = UInt(OUTPUT, 5)
 }
 
-class mulAddSubRecodedFloatN(sigWidth: Int, expWidth: Int) extends Module {
+class mulAddSubRecodedFloatN(sigWidth: Int, expWidth: Int, speed: Boolean = false) extends Module {
   val io = new mulAddSubRecodedFloatN_io(sigWidth, expWidth)
 
   val sigSumSize = (sigWidth+2)*3
@@ -105,8 +105,6 @@ class mulAddSubRecodedFloatN(sigWidth: Int, expWidth: Int) extends Module {
   val isZeroProd = isZeroA || isZeroB
   val sExpAlignedProd = Cat(Fill(3, !expB(expWidth-1)), expB(expWidth-2, 0)) + expA + UInt(sigWidth+4)
 
-  val sigProd = sigA * sigB
-
   //------------------------------------------------------------------------
   //------------------------------------------------------------------------
   val doSubMags = signProd ^ opSignC
@@ -129,15 +127,23 @@ class mulAddSubRecodedFloatN(sigWidth: Int, expWidth: Int) extends Module {
       Cat(Cat(Fill(sigSumSize-1, doSubMags), negSigC, Fill(normSize, doSubMags))>>CAlignDist,
        ((sigC & CExtraMask) != UInt(0)) ^ doSubMags)(sigSumSize-1, 0)
 
-  val sigSum = (alignedNegSigC + Cat(sigProd, UInt(0,1)))(sigSumSize-1,0)
+  val (sigSum, estNormPos_dist, estNormNeg_dist) =
+    if (speed) {
+      val sigPartialProd = RedundantUInt.fromProduct(sigA, sigB)
+      val sigPartialSum = (sigPartialProd << UInt(1)) + alignedNegSigC
+      val sigSum = (sigPartialSum.toUInt)(sigSumSize-1,0)
 
-  val estNormPos_a = Cat(doSubMags, alignedNegSigC(normSize-1, 1))
-  val estNormPos_b = sigProd
-  val estNormPos_dist = estNormDistPNPosSumS(estNormPos_a, estNormPos_b, sigWidth+1, normSize)
+      val estNorm_a = sigPartialSum.right(normSize, 1)
+      val estNorm_b = sigPartialSum.left(normSize, 1)
 
-  val estNormNeg_a = Cat(UInt("b1", 1), alignedNegSigC(normSize-1, 1))
-  val estNormNeg_b = sigProd
-  val estNormNeg_dist = estNormDistPNNegSumS(estNormNeg_a, estNormNeg_b, sigWidth+1, normSize)
+      (sigSum,
+        estNormDistPNPosSumS(estNorm_a, estNorm_b, sigWidth+1, normSize),
+        estNormDistPNNegSumS(estNorm_a, estNorm_b, sigWidth+1, normSize))
+    } else {
+      val sigSum = ((sigA * sigB) << UInt(1)) + alignedNegSigC
+      val dist = estNormDistPNPosSumS(UInt(0, normSize), sigSum(normSize, 1), sigWidth+1, normSize)
+      (sigSum, dist, dist)
+    }
 
   val firstReduceSigSum = Cat(sigSum(normSize-firstNormUnit-1, normSize-firstNormUnit*2) != UInt(0), sigSum(normSize-firstNormUnit*2-1, 0) != UInt(0))
   val notSigSum = ~ sigSum
@@ -146,22 +152,14 @@ class mulAddSubRecodedFloatN(sigWidth: Int, expWidth: Int) extends Module {
   val CDom_estNormDist =
       Mux(CAlignDist_0 | doSubMags, CAlignDist, (CAlignDist - UInt(1))(log2Up(sigWidth+1)-1, 0))
   val CDom_firstNormAbsSigSum =
-        ( Mux(~ doSubMags & ~ CDom_estNormDist(logNormSize-2), 
-          Cat(sigSum(sigSumSize-1, normSize-firstNormUnit), firstReduceSigSum != UInt(0)),
-          UInt(0))
-        ) |
-        ( Mux(~ doSubMags & CDom_estNormDist(logNormSize-2),
-          Cat(sigSum(sigSumSize-firstNormUnit-1, normSize-firstNormUnit*2), firstReduceSigSum(0)),
-          UInt(0))
-        ) |
-        ( Mux(doSubMags & ~ CDom_estNormDist(logNormSize-2),
-          Cat(notSigSum(sigSumSize-1, normSize-firstNormUnit), firstReduceNotSigSum != UInt(0)),
-          UInt(0))
-        ) |
-        ( Mux(doSubMags & CDom_estNormDist(logNormSize-2),
-          Cat(notSigSum(sigSumSize-firstNormUnit-1, normSize-firstNormUnit*2), firstReduceNotSigSum(0)),
-          UInt(0))
-        )
+      (((~ doSubMags & ~ CDom_estNormDist(logNormSize-2)).toSInt &
+        Cat(sigSum(sigSumSize-1, normSize-firstNormUnit), firstReduceSigSum != UInt(0))) |
+      ((~ doSubMags & CDom_estNormDist(logNormSize-2)).toSInt &
+        Cat(sigSum(sigSumSize-firstNormUnit-1, normSize-firstNormUnit*2), firstReduceSigSum(0))) |
+      ((doSubMags & ~ CDom_estNormDist(logNormSize-2)).toSInt &
+        Cat(notSigSum(sigSumSize-1, normSize-firstNormUnit), firstReduceNotSigSum != UInt(0))) |
+      ((doSubMags & CDom_estNormDist(logNormSize-2)).toSInt &
+        Cat(notSigSum(sigSumSize-firstNormUnit-1, normSize-firstNormUnit*2), firstReduceNotSigSum(0)))).toUInt
   //------------------------------------------------------------------------
   // (For this case, bits above `sigSum(normSize)' are never interesting.  Also,
   // if there is any significant cancellation, then `sigSum(0)' must equal
@@ -209,9 +207,9 @@ class mulAddSubRecodedFloatN(sigWidth: Int, expWidth: Int) extends Module {
   val doNegSignSum =
       Mux(isCDominant, doSubMags & ~ isZeroC, notCDom_signSigSum)
   val estNormDist =
-        Mux(  isCDominant                       , CDom_estNormDist, UInt(0) ) |
-        Mux(~ isCDominant & ~ notCDom_signSigSum, estNormPos_dist , UInt(0) ) |
-        Mux(~ isCDominant &   notCDom_signSigSum, estNormNeg_dist , UInt(0) )
+    Mux(isCDominant, CDom_estNormDist,
+    Mux(notCDom_signSigSum, estNormNeg_dist,
+    estNormPos_dist))
   val cFirstNormAbsSigSum =
         Mux(isCDominant, CDom_firstNormAbsSigSum, UInt(0) ) |
         ( Mux(~ isCDominant & ~ notCDom_signSigSum,
