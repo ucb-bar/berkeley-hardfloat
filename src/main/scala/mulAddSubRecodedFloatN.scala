@@ -11,37 +11,26 @@ object MaskOnes
 {
   def genMask(in: UInt, length: Int): UInt = ~(Fill(length, UInt(1)) << in(log2Up(length)-1,0))
   def apply(in: UInt, start: Int, length: Int): UInt = {
-    var block = 1 << log2Up(length)
-    if (start % block + length > block)
-      Cat(apply(in, start + block - start % block, length - (block - start % block)), apply(in, start, block - start % block))
-    else {
-      var mask = genMask(in, length + start % block)
-      mask = mask & Fill(length + start % block, in >= UInt(start - start % block)) | Fill(length + start % block, in >= UInt(start + block - start % block))
-      mask(length-1 + start % block, start % block)
-    }
+    val sh = SInt(BigInt(-1) << (1 << in.getWidth)) >> in
+    Vec.tabulate(length)(i => sh((1 << in.getWidth)-1-(i+start))).toBits
   }
 }
 
 object estNormDistPNNegSumS
 {
-  def apply(a: UInt, b: UInt, n: Int, s: Int) = {
-    val key = ((a ^ b) ^ ~((a & b) << UInt(1)))(s-1,0)
-    var res = UInt(n+s-1)
-    for (i <- 1 until s)
-      res = Mux(key(i), UInt(n+s-1-i, log2Up(n+s-1)), res)
-    res
+  def priorityEncode(key: UInt, n: Int, s: Int) = {
+    if (Module.backend.isInstanceOf[CppBackend]) UInt(n+s-1) - Log2(key(s-1,0), s)
+    else PriorityMux((0 until s).map(i => (key(s-1-i), UInt(n+i, log2Up(n+s-1)))))
   }
+
+  def apply(a: UInt, b: UInt, n: Int, s: Int) =
+    priorityEncode((a ^ b) ^ ~((a & b) << UInt(1)), n, s)
 }
 
 object estNormDistPNPosSumS
 {
-  def apply(a: UInt, b: UInt, n: Int, s: Int) = {
-    val key = ((a ^ b) ^ ((a | b) << UInt(1)))(s-1,0)
-    var res = UInt(n+s-1)
-    for (i <- 1 until s)
-      res = Mux(key(i), UInt(n+s-1-i, log2Up(n+s-1)), res)
-    res
-  }
+  def apply(a: UInt, b: UInt, n: Int, s: Int) =
+    estNormDistPNNegSumS.priorityEncode((a ^ b) ^ ((a | b) << UInt(1)), n, s)
 }
 
 class mulAddSubRecodedFloatN_io(sigWidth: Int, expWidth: Int) extends Bundle {
@@ -120,8 +109,7 @@ class mulAddSubRecodedFloatN(sigWidth: Int, expWidth: Int, speed: Boolean = fals
   val sExpSum = Mux(CAlignDist_floor, expC, sExpAlignedProd)
 
 // *** USE `sNatCAlignDist'?
-  var CExtraMask_1 = MaskOnes(CAlignDist, normSize, sigWidth+2)
-  val CExtraMask = Cat(!CExtraMask_1(sigWidth+1) && CExtraMask_1(sigWidth), CExtraMask_1(sigWidth-1,0))
+  var CExtraMask = MaskOnes(CAlignDist, normSize, sigWidth+1)
   val negSigC = Mux(doSubMags, ~sigC, sigC)
   val alignedNegSigC =
       Cat(Cat(Fill(sigSumSize-1, doSubMags), negSigC, Fill(normSize, doSubMags))>>CAlignDist,
@@ -165,44 +153,39 @@ class mulAddSubRecodedFloatN(sigWidth: Int, expWidth: Int, speed: Boolean = fals
   // if there is any significant cancellation, then `sigSum(0)' must equal
   // `doSubMags'.)
   //------------------------------------------------------------------------
-  var t0 = estNormPos_dist(logNormSize-1, logNormSize-2) === UInt(1)
-  var t1 = sigSum(sigSumSize-firstNormUnit*2-1,1)
-  var t2 = UInt(0, sigWidth+firstNormUnit+3)
-  if (firstNormUnit*5+1 < sigSumSize) {
-    t0 = estNormPos_dist(logNormSize-1, logNormSize-3) === UInt(3)
-    t2 = Mux(estNormPos_dist(logNormSize-1, logNormSize-3) === UInt(2), Cat(sigSum(sigSumSize-firstNormUnit*5-1,1), Fill(firstNormUnit*6-(sigWidth+1)*2, doSubMags)), t2)
-  }
-  if (2 < (normSize-firstNormUnit*3))
-    t1 = Cat(sigSum(sigSumSize-firstNormUnit*2-1, normSize-firstNormUnit*3), Mux(doSubMags, notSigSum(normSize-firstNormUnit*3-1,1) === UInt(0), sigSum(normSize-firstNormUnit*3-1,1) != UInt(0)))
-  else if (firstNormUnit*3 > (sigWidth+1)*2)
-    t1 = Cat(t1, Fill(firstNormUnit*3-(sigWidth+1)*2, doSubMags))
+  val notCDom_pos_firstNormAbsSigSum = {
+    var t1 = Cat(sigSum(normSize, normSize-firstNormUnit*2), Mux(doSubMags, ~ firstReduceNotSigSum(0), firstReduceSigSum(0)))
+    var t2 = sigSum(sigSumSize-firstNormUnit*2-1,1)
+    if (firstNormUnit*5+1 < sigSumSize)
+      t1 = Mux(estNormPos_dist(logNormSize-3), t1, Cat(sigSum(sigSumSize-firstNormUnit*5-1,1), Fill(firstNormUnit*6-(sigWidth+1)*2, doSubMags)))
+    if (2 < (normSize-firstNormUnit*3))
+      t2 = Cat(sigSum(sigSumSize-firstNormUnit*2-1, normSize-firstNormUnit*3), Mux(doSubMags, notSigSum(normSize-firstNormUnit*3-1,1) === UInt(0), sigSum(normSize-firstNormUnit*3-1,1) != UInt(0)))
+    else if (firstNormUnit*3 > (sigWidth+1)*2)
+      t2 = Cat(t2, Fill(firstNormUnit*3-(sigWidth+1)*2, doSubMags))
 
-  val notCDom_pos_firstNormAbsSigSum =
-    Mux(t0, Cat(sigSum(normSize, normSize-firstNormUnit*2), Mux(doSubMags, ~ firstReduceNotSigSum(0), firstReduceSigSum(0))), UInt(0)) |
-    Mux(estNormPos_dist(logNormSize-1, logNormSize-2) === UInt(2), t1, UInt(0)) |
-    Mux(estNormPos_dist(logNormSize-1, logNormSize-2) === UInt(3), Cat(sigSum(sigSumSize-firstNormUnit*3-1,1), Fill(firstNormUnit*4-(sigWidth+1)*2, doSubMags)), UInt(0)) |
-    Mux(estNormPos_dist(logNormSize-1, logNormSize-2) === UInt(0), Cat(sigSum(sigSumSize-firstNormUnit*4-1,1), Fill(firstNormUnit*5-(sigWidth+1)*2, doSubMags)), UInt(0)) |
-    t2
+    val key = estNormPos_dist(logNormSize-1,logNormSize-2)
+    Mux(estNormPos_dist(logNormSize-1),
+      Mux(estNormPos_dist(logNormSize-2), Cat(sigSum(sigSumSize-firstNormUnit*3-1,1), Fill(firstNormUnit*4-(sigWidth+1)*2, doSubMags)), t2),
+      Mux(estNormPos_dist(logNormSize-2), t1, Cat(sigSum(sigSumSize-firstNormUnit*4-1,1), Fill(firstNormUnit*5-(sigWidth+1)*2, doSubMags))))
+  }
   //------------------------------------------------------------------------
   // (For this case, bits above `notSigSum(normSize-1)' are never interesting.
   // Also, if there is any significant cancellation, then `notSigSum(0)' must
   // be zero.)
   //------------------------------------------------------------------------
-  var t3 = estNormNeg_dist(logNormSize-1,logNormSize-2) === UInt(1)
-  var t4 = notSigSum(sigSumSize-firstNormUnit*2,1) << UInt(firstNormUnit*3-(sigWidth+1)*2)
-  var t5 = UInt(0)
-  if (2 < (normSize-firstNormUnit*3))
-    t4 = Cat(notSigSum(sigSumSize-firstNormUnit*2,normSize-firstNormUnit*3), notSigSum(normSize-firstNormUnit*3-1,1) != UInt(0))
-  if (firstNormUnit*5 < sigSumSize) {
-    t3 = estNormNeg_dist(logNormSize-1,logNormSize-3) === UInt(3)
-    t5 = Mux(estNormNeg_dist(logNormSize-1,logNormSize-3) === UInt(2), notSigSum(sigSumSize-firstNormUnit*5,1) << UInt(firstNormUnit*6-(sigWidth+1)*2), UInt(0))
+  val notCDom_neg_cFirstNormAbsSigSum = {
+    var t1 = Cat(notSigSum(normSize-1,normSize-firstNormUnit*2), firstReduceNotSigSum(0))
+    var t2 = sigSum(sigSumSize-firstNormUnit*2-1,1)
+    if (firstNormUnit*5 < sigSumSize)
+      t1 = Mux(estNormNeg_dist(logNormSize-3), t1, notSigSum(sigSumSize-firstNormUnit*5,1) << UInt(firstNormUnit*6-(sigWidth+1)*2))
+    if (2 < (normSize-firstNormUnit*3))
+      t2 = Cat(notSigSum(sigSumSize-firstNormUnit*2,normSize-firstNormUnit*3), notSigSum(normSize-firstNormUnit*3-1,1) != UInt(0))
+
+    val key = estNormNeg_dist(logNormSize-1,logNormSize-2)
+    Mux(estNormNeg_dist(logNormSize-1),
+      Mux(estNormNeg_dist(logNormSize-2), notSigSum(sigSumSize-firstNormUnit*3,1) << UInt(firstNormUnit*4-(sigWidth+1)*2), t2),
+      Mux(estNormNeg_dist(logNormSize-2), t1, notSigSum(sigSumSize-firstNormUnit*4,1) << UInt(firstNormUnit*5-(sigWidth+1)*2)))
   }
-  val notCDom_neg_cFirstNormAbsSigSum =
-    Mux(t3, Cat(notSigSum(normSize-1,normSize-firstNormUnit*2), firstReduceNotSigSum(0)), UInt(0)) |
-    Mux(estNormNeg_dist(logNormSize-1,logNormSize-2) === UInt(2), t4, UInt(0)) |
-    Mux(estNormNeg_dist(logNormSize-1,logNormSize-2) === UInt(3), notSigSum(sigSumSize-firstNormUnit*3,1) << UInt(firstNormUnit*4-(sigWidth+1)*2), UInt(0)) |
-    Mux(estNormNeg_dist(logNormSize-1,logNormSize-2) === UInt(0), notSigSum(sigSumSize-firstNormUnit*4,1) << UInt(firstNormUnit*5-(sigWidth+1)*2), UInt(0)) |
-    t5
   val notCDom_signSigSum = sigSum(normSize+1)
   val doNegSignSum =
       Mux(isCDominant, doSubMags & ~ isZeroC, notCDom_signSigSum)
@@ -210,20 +193,14 @@ class mulAddSubRecodedFloatN(sigWidth: Int, expWidth: Int, speed: Boolean = fals
     Mux(isCDominant, CDom_estNormDist,
     Mux(notCDom_signSigSum, estNormNeg_dist,
     estNormPos_dist))
-  val cFirstNormAbsSigSum =
-        Mux(isCDominant, CDom_firstNormAbsSigSum, UInt(0) ) |
-        ( Mux(~ isCDominant & ~ notCDom_signSigSum,
-                notCDom_pos_firstNormAbsSigSum,
-                UInt(0))
-        ) |
-        ( Mux(~ isCDominant & notCDom_signSigSum,
-                notCDom_neg_cFirstNormAbsSigSum,
-                UInt(0))
-        )
+  val cFirstNormAbsSigSum = // ??? odd mux gives the best DC synthesis QoR
+    Mux(notCDom_signSigSum,
+      Mux(isCDominant, CDom_firstNormAbsSigSum, notCDom_neg_cFirstNormAbsSigSum),
+      Mux(isCDominant, CDom_firstNormAbsSigSum, notCDom_pos_firstNormAbsSigSum))
   val doIncrSig = ~ isCDominant & ~ notCDom_signSigSum & doSubMags
   val estNormDist_5 = estNormDist(logNormSize-3, 0).toUInt
   val normTo2ShiftDist = ~ estNormDist_5
-  val absSigSumExtraMask = Cat(MaskOnes(~estNormDist_5, 0, firstNormUnit-1), Bool(true))
+  val absSigSumExtraMask = Cat(MaskOnes(normTo2ShiftDist, 0, firstNormUnit-1), Bool(true))
   val sigX3 =
       Cat(cFirstNormAbsSigSum(sigWidth+firstNormUnit+3,1) >> normTo2ShiftDist,
        Mux(doIncrSig, (~cFirstNormAbsSigSum(firstNormUnit-1,0) & absSigSumExtraMask) === UInt(0),
@@ -258,9 +235,9 @@ class mulAddSubRecodedFloatN(sigWidth: Int, expWidth: Int, speed: Boolean = fals
   val roundInexact = Mux(doIncrSig, ~ allRound, anyRound)
   val roundUp_sigY3 = ((sigX3>>UInt(2) | roundMask>>UInt(2)) + UInt(1))(sigWidth+2,0)
   val sigY3 =
-    (Mux(~roundUp & ~roundEven, (sigX3 & ~roundMask)>>UInt(2), UInt(0))
-   | Mux(roundUp, roundUp_sigY3, UInt(0))
-   | Mux(roundEven, roundUp_sigY3 & ~(roundMask>>UInt(1)), UInt(0)))(sigWidth+2, 0)
+    Mux(~roundUp & ~roundEven, (sigX3 & ~roundMask)>>UInt(2), UInt(0)) |
+    Mux(roundUp, roundUp_sigY3, UInt(0)) |
+    Mux(roundEven, roundUp_sigY3 & ~(roundMask>>UInt(1)), UInt(0))
 //*** HANDLE DIFFERENTLY?  (NEED TO ACCOUNT FOR ROUND-EVEN ZEROING MSB.)
   val sExpY =
     Mux(sigY3(sigWidth+2), sExpX3 + UInt(1), UInt(0)) |
