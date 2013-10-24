@@ -9,7 +9,6 @@ import fpu_recoded._
 
 object MaskOnes
 {
-  def genMask(in: UInt, length: Int): UInt = ~(Fill(length, UInt(1)) << in(log2Up(length)-1,0))
   def apply(in: UInt, start: Int, length: Int): UInt = {
     val sh = SInt(BigInt(-1) << (1 << in.getWidth)) >> in
     Vec.tabulate(length)(i => sh((1 << in.getWidth)-1-(i+start))).toBits
@@ -112,7 +111,7 @@ class mulAddSubRecodedFloatN(sigWidth: Int, expWidth: Int, speed: Boolean = fals
   var CExtraMask = MaskOnes(CAlignDist, normSize, sigWidth+1)
   val negSigC = Mux(doSubMags, ~sigC, sigC)
   val alignedNegSigC =
-      Cat(Cat(Fill(sigSumSize-1, doSubMags), negSigC, Fill(normSize, doSubMags))>>CAlignDist,
+      Cat(Cat(doSubMags, negSigC, Fill(normSize, doSubMags)).toSInt >> CAlignDist,
        ((sigC & CExtraMask) != UInt(0)) ^ doSubMags)(sigSumSize-1, 0)
 
   val (sigSum, estNormPos_dist, estNormNeg_dist) =
@@ -163,7 +162,6 @@ class mulAddSubRecodedFloatN(sigWidth: Int, expWidth: Int, speed: Boolean = fals
     else if (firstNormUnit*3 > (sigWidth+1)*2)
       t2 = Cat(t2, Fill(firstNormUnit*3-(sigWidth+1)*2, doSubMags))
 
-    val key = estNormPos_dist(logNormSize-1,logNormSize-2)
     Mux(estNormPos_dist(logNormSize-1),
       Mux(estNormPos_dist(logNormSize-2), Cat(sigSum(sigSumSize-firstNormUnit*3-1,1), Fill(firstNormUnit*4-(sigWidth+1)*2, doSubMags)), t2),
       Mux(estNormPos_dist(logNormSize-2), t1, Cat(sigSum(sigSumSize-firstNormUnit*4-1,1), Fill(firstNormUnit*5-(sigWidth+1)*2, doSubMags))))
@@ -181,7 +179,6 @@ class mulAddSubRecodedFloatN(sigWidth: Int, expWidth: Int, speed: Boolean = fals
     if (2 < (normSize-firstNormUnit*3))
       t2 = Cat(notSigSum(sigSumSize-firstNormUnit*2,normSize-firstNormUnit*3), notSigSum(normSize-firstNormUnit*3-1,1) != UInt(0))
 
-    val key = estNormNeg_dist(logNormSize-1,logNormSize-2)
     Mux(estNormNeg_dist(logNormSize-1),
       Mux(estNormNeg_dist(logNormSize-2), notSigSum(sigSumSize-firstNormUnit*3,1) << UInt(firstNormUnit*4-(sigWidth+1)*2), t2),
       Mux(estNormNeg_dist(logNormSize-2), t1, notSigSum(sigSumSize-firstNormUnit*4,1) << UInt(firstNormUnit*5-(sigWidth+1)*2)))
@@ -214,7 +211,7 @@ class mulAddSubRecodedFloatN(sigWidth: Int, expWidth: Int, speed: Boolean = fals
   val sExpX3_13 = sExpX3(expWidth, 0)
   val roundMask = Fill(sigWidth+4, sExpX3(expWidth+1)) | Cat(MaskOnes(~sExpX3_13, (1 << expWidth+1)-2 - minNormExp, sigWidth+2) | sigX3(sigWidth+3), UInt(3))
 
-  val roundPosMask = ~Cat(UInt(0,1), roundMask >> UInt(1)) & roundMask
+  val roundPosMask = ~(roundMask >> UInt(1)) & roundMask
   val roundPosBit = (sigX3 & roundPosMask) != UInt(0)
   val anyRoundExtra = (sigX3 & roundMask>>UInt(1)) != UInt(0)
   val allRoundExtra = (~sigX3 & roundMask>>UInt(1)) === UInt(0)
@@ -233,7 +230,7 @@ class mulAddSubRecodedFloatN(sigWidth: Int, expWidth: Int, speed: Boolean = fals
           roundingMode_nearest_even & ~ roundPosBit &   allRoundExtra,
           roundingMode_nearest_even &   roundPosBit & ~ anyRoundExtra)
   val roundInexact = Mux(doIncrSig, ~ allRound, anyRound)
-  val roundUp_sigY3 = ((sigX3>>UInt(2) | roundMask>>UInt(2)) + UInt(1))(sigWidth+2,0)
+  val roundUp_sigY3 = (((sigX3 | roundMask) >> UInt(2)) + UInt(1))(sigWidth+2,0)
   val sigY3 =
     Mux(~roundUp & ~roundEven, (sigX3 & ~roundMask)>>UInt(2), UInt(0)) |
     Mux(roundUp, roundUp_sigY3, UInt(0)) |
@@ -297,5 +294,5 @@ class mulAddSubRecodedFloatN(sigWidth: Int, expWidth: Int, speed: Boolean = fals
   val fractOut = fractY | Fill(sigWidth, isNaNOut || isSatOut)
 
   io.out := Cat(signOut, expOut, fractOut)
-  io.exceptionFlags := Cat(invalid, UInt("b0", 1), overflow, underflow, inexact)
+  io.exceptionFlags := Cat(invalid, Bool(false), overflow, underflow, inexact)
 }
