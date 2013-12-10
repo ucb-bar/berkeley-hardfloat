@@ -173,7 +173,7 @@ class mulAddSubRecodedFloatN(sigWidth: Int, expWidth: Int, speed: Boolean = fals
   //------------------------------------------------------------------------
   val notCDom_neg_cFirstNormAbsSigSum = {
     var t1 = Cat(notSigSum(normSize-1,normSize-firstNormUnit*2), firstReduceNotSigSum(0))
-    var t2 = sigSum(sigSumSize-firstNormUnit*2-1,1)
+    var t2 = notSigSum(sigSumSize-firstNormUnit*2-1,1)
     if (firstNormUnit*5 < sigSumSize)
       t1 = Mux(estNormNeg_dist(logNormSize-3), t1, notSigSum(sigSumSize-firstNormUnit*5,1) << UInt(firstNormUnit*6-(sigWidth+1)*2))
     if (2 < (normSize-firstNormUnit*3))
