@@ -61,23 +61,25 @@ class FMARecoded(val sigWidth: Int, val expWidth: Int)  extends Module {
 class SFMARecoded extends FMARecoded(23, 9)
 class DFMARecoded extends FMARecoded(52, 12)
 
-class RAM(val w: Int, val d: Int) extends Module {
+class RAM(val w: Int, val d: Int, val nr: Int) extends Module {
   val io = new Bundle {
     val wa = Bits(INPUT, log2Up(d))
     val we = Bool(INPUT)
     val wd = Bits(INPUT, w)
 
-    val ra = Bits(INPUT, log2Up(d))
-    val re = Bool(INPUT)
-    val rd = Bits(OUTPUT, w)
+    val ra = Vec.fill(nr)(Bits(INPUT, log2Up(d)))
+    val re = Vec.fill(nr)(Bool(INPUT))
+    val rd = Vec.fill(nr)(Bits(OUTPUT, w))
   }
 
   val ram = Mem(Bits(width = w), d)
   when (io.we) { ram(io.wa) := io.wd }
 
-  val ra = RegEnable(io.ra, io.re)
-  val re = Reg(next=io.re, init=Bool(false))
-  io.rd := RegEnable(ram(ra), re)
+  for (i <- 0 until nr) {
+    val ra = RegEnable(io.ra(i), io.re(i))
+    val re = Reg(next=io.re(i), init=Bool(false))
+    io.rd(i) := RegEnable(ram(ra), re)
+  }
 }
 
 class FMATests(c: FMA, s: Int) extends Tester(c, Array(c.io)) {
@@ -209,12 +211,14 @@ class RAMWriteEnergy(comp: RAM) extends Tester(comp, Array(comp.io)) {
   def wd(cycle: Int) = BigInt(Rand.nextLong) % (BigInt(1) << comp.w)
 
   def testOne(cycle: Int) = {
-    vars(comp.io.re) = Bool(re(cycle))
-    vars(comp.io.ra) = Bits(ra(cycle))
+    for (i <- 0 until comp.nr) {
+      vars(comp.io.re(i)) = Bool(re(cycle))
+      vars(comp.io.ra(i)) = Bits(ra(cycle))
+      vars(comp.io.rd(i)) = Bits(0, comp.w)
+    }
     vars(comp.io.we) = Bool(we(cycle))
     vars(comp.io.wa) = Bits(wa(cycle))
     vars(comp.io.wd) = Bits(wd(cycle))
-    vars(comp.io.rd) = Bits(0, comp.w)
     step(vars)
   }
   defTests {
@@ -253,6 +257,6 @@ object FMATest {
     //chiselMainTest(args ++ Array("--v", "--compile", "--test",  "--genHarness"),
     //               () => Module(new SFMARecoded)) { c => new FMAEnergy(c) }
     chiselMainTest(args ++ Array("--v", "--compile", "--test",  "--genHarness"),
-                   () => Module(new RAM(64, 128))) { c => new RAMReadEnergy(c) }
+                   () => Module(new RAM(64, 64, 3))) { c => new RAMReadEnergy(c) }
   }
 }
