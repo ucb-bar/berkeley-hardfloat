@@ -2,6 +2,7 @@ package hardfloat
 
 import Chisel._
 import Node._
+import util.Random
 import scala.sys.process._
 
 class FMA(sigWidth: Int, expWidth: Int)  extends Module {
@@ -40,7 +41,7 @@ class FMAPipeline(sigWidth: Int, expWidth: Int) extends Module {
   io.resp := Reg(next=io.req)
 }
 
-class FMARecoded(sigWidth: Int, expWidth: Int)  extends Module {
+class FMARecoded(val sigWidth: Int, val expWidth: Int)  extends Module {
   val io = new Bundle {
     val a = Bits(INPUT, sigWidth + expWidth + 1)
     val b = Bits(INPUT, sigWidth + expWidth + 1)
@@ -50,18 +51,37 @@ class FMARecoded(sigWidth: Int, expWidth: Int)  extends Module {
 
   val fma = Module(new FMAPipeline(sigWidth, expWidth))
   val en = io.a.orR
-  fma.io.req := Reg(next=en)
+  fma.io.req := Reg(next=en, init=Bool(false))
   fma.io.a := RegEnable(io.a, en)
   fma.io.b := RegEnable(io.b, en)
   fma.io.c := RegEnable(io.c, en)
   io.out := RegEnable(fma.io.out, fma.io.resp)
 }
 
+class RAM(val w: Int, val d: Int) extends Module {
+  val io = new Bundle {
+    val wa = Bits(INPUT, log2Up(d))
+    val we = Bool(INPUT)
+    val wd = Bits(INPUT, w)
+
+    val ra = Bits(INPUT, log2Up(d))
+    val re = Bool(INPUT)
+    val rd = Bits(OUTPUT, w)
+  }
+
+  val ram = Mem(Bits(width = w), d)
+  when (io.we) { ram(io.wa) := io.wd }
+
+  val ra = RegEnable(io.ra, io.re)
+  val re = Reg(next=io.re, init=Bool(false))
+  io.rd := RegEnable(ram(ra), re)
+}
+
 class FMATests(c: FMA, s: Int) extends Tester(c, Array(c.io)) {
   require(s == 32 || s == 64)
   val vars = new collection.mutable.HashMap[Node, Node]()
 
-  def i2d(x: BigInt) =
+  def i2d(x: BigInt): Double =
     if (s == 32) java.lang.Float.intBitsToFloat(x.toInt)
     else java.lang.Double.longBitsToDouble(x.toLong)
 
@@ -90,10 +110,9 @@ class FMATests(c: FMA, s: Int) extends Tester(c, Array(c.io)) {
   }
 }
 
-class FMAEnergy(comp: FMARecoded, s: Int) extends Tester(comp, Array(comp.io)) {
-  require(s == 32 || s == 64)
-  val expWidth = if (s == 32) 9 else 12
-  val sigWidth = s - expWidth
+class FMAEnergy(comp: FMARecoded) extends Tester(comp, Array(comp.io)) {
+  val expWidth = comp.expWidth
+  val sigWidth = comp.sigWidth
   val vars = new collection.mutable.HashMap[Node, Node]()
 
   def x(n: BigInt, hi: Int, lo: Int): BigInt = (n >> lo) & ((1L << (hi-lo+1))-1)
@@ -155,6 +174,13 @@ class FMAEnergy(comp: FMARecoded, s: Int) extends Tester(comp, Array(comp.io)) {
     (sign << (sigWidth+expWidth-1)) | (expOut << sigWidth) | fractOut
   }
 
+  def d2i(x: Double): BigInt =
+    if (sigWidth == 23) java.lang.Float.floatToIntBits(x.toFloat)
+    else if (sigWidth == 52) java.lang.Double.doubleToLongBits(x)
+    else BigInt(-1)
+
+  def randFloat = d2i((Random.nextDouble - 0.5) * 16384)
+
   def testOne(a: BigInt, b: BigInt, c: BigInt, y: BigInt) = {
     vars(comp.io.a) = Bits(a)
     vars(comp.io.b) = Bits(b)
@@ -163,14 +189,35 @@ class FMAEnergy(comp: FMARecoded, s: Int) extends Tester(comp, Array(comp.io)) {
     step(vars)
   }
 
-  def testAll: Boolean = {
+  defTests {
     for (i <- 0 until 10000)
-      testOne(Rand.nextLong, Rand.nextLong, Rand.nextLong, 0)
+      testOne(randFloat, randFloat, randFloat, 0)
     true
   }
-  defTests {
-    testAll
+}
+
+class RAMEnergy(comp: RAM) extends Tester(comp, Array(comp.io)) {
+  val vars = new collection.mutable.HashMap[Node, Node]()
+  def ren = true
+
+  def testOne = {
+    vars(comp.io.re) = Bool(ren)
+    vars(comp.io.ra) = Bits(Rand.nextLong)(log2Up(comp.d)-1,0)
+    vars(comp.io.we) = Bool(true)
+    vars(comp.io.wa) = Bits(Rand.nextLong)(log2Up(comp.d)-1,0)
+    vars(comp.io.wd) = Bits(Rand.nextLong, comp.w)
+    vars(comp.io.rd) = Bits(0, comp.w)
+    step(vars)
   }
+  defTests {
+    for (i <- 0 until 10000)
+      testOne
+    true
+  }
+}
+
+class RAMWriteEnergy(comp: RAM) extends RAMEnergy(comp) {
+  override def ren = false
 }
 
 object Rand {
@@ -187,9 +234,11 @@ object FMATest {
   def main(args: Array[String]): Unit = {
     //chiselMainTest(args ++ Array("--compile", "--test",  "--genHarness"),
     //               () => Module(new FMA(23, 9))) { c => new FMATests(c, 32) }
-    chiselMainTest(args ++ Array("--compile", "--test",  "--genHarness"),
-                   () => Module(new FMA(52, 12))) { c => new FMATests(c, 64) }
     //chiselMainTest(args ++ Array("--compile", "--test",  "--genHarness"),
-    //               () => Module(new FMARecoded(52, 12))) { c => new FMAEnergy(c, 64) }
+    //               () => Module(new FMA(52, 12))) { c => new FMATests(c, 64) }
+    chiselMainTest(args ++ Array("--v", "--compile", "--test",  "--genHarness"),
+                   () => Module(new FMARecoded(52, 12))) { c => new FMAEnergy(c) }
+    //chiselMainTest(args ++ Array("--v", "--compile", "--test",  "--genHarness"),
+    //               () => Module(new RAM(64, 128))) { c => new RAMEnergy(c) }
   }
 }
