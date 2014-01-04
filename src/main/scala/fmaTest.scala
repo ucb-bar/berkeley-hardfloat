@@ -58,6 +58,9 @@ class FMARecoded(val sigWidth: Int, val expWidth: Int)  extends Module {
   io.out := RegEnable(fma.io.out, fma.io.resp)
 }
 
+class SFMARecoded extends FMARecoded(23, 9)
+class DFMARecoded extends FMARecoded(52, 12)
+
 class RAM(val w: Int, val d: Int) extends Module {
   val io = new Bundle {
     val wa = Bits(INPUT, log2Up(d))
@@ -110,7 +113,7 @@ class FMATests(c: FMA, s: Int) extends Tester(c, Array(c.io)) {
   }
 }
 
-class FMAEnergy(comp: FMARecoded) extends Tester(comp, Array(comp.io)) {
+class FMAEnergy[T <: FMARecoded](comp: T) extends Tester(comp, Array(comp.io)) {
   val expWidth = comp.expWidth
   val sigWidth = comp.sigWidth
   val vars = new collection.mutable.HashMap[Node, Node]()
@@ -236,8 +239,10 @@ object FMATest {
     //               () => Module(new FMA(23, 9))) { c => new FMATests(c, 32) }
     //chiselMainTest(args ++ Array("--compile", "--test",  "--genHarness"),
     //               () => Module(new FMA(52, 12))) { c => new FMATests(c, 64) }
+    //chiselMainTest(args ++ Array("--v", "--compile", "--test",  "--genHarness"),
+    //               () => Module(new DFMARecoded)) { c => new FMAEnergy(c) }
     chiselMainTest(args ++ Array("--v", "--compile", "--test",  "--genHarness"),
-                   () => Module(new FMARecoded(52, 12))) { c => new FMAEnergy(c) }
+                   () => Module(new SFMARecoded)) { c => new FMAEnergy(c) }
     //chiselMainTest(args ++ Array("--v", "--compile", "--test",  "--genHarness"),
     //               () => Module(new RAM(64, 128))) { c => new RAMEnergy(c) }
   }
