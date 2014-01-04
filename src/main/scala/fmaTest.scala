@@ -199,28 +199,37 @@ class FMAEnergy[T <: FMARecoded](comp: T) extends Tester(comp, Array(comp.io)) {
   }
 }
 
-class RAMEnergy(comp: RAM) extends Tester(comp, Array(comp.io)) {
+class RAMWriteEnergy(comp: RAM) extends Tester(comp, Array(comp.io)) {
   val vars = new collection.mutable.HashMap[Node, Node]()
-  def ren = true
 
-  def testOne = {
-    vars(comp.io.re) = Bool(ren)
-    vars(comp.io.ra) = Bits(Rand.nextLong)(log2Up(comp.d)-1,0)
-    vars(comp.io.we) = Bool(true)
-    vars(comp.io.wa) = Bits(Rand.nextLong)(log2Up(comp.d)-1,0)
-    vars(comp.io.wd) = Bits(Rand.nextLong, comp.w)
+  def re(cycle: Int) = false
+  def ra(cycle: Int) = 0
+  def we(cycle: Int) = true
+  def wa(cycle: Int) = Rand.nextLong % comp.d
+  def wd(cycle: Int) = BigInt(Rand.nextLong) % (BigInt(1) << comp.w)
+
+  def testOne(cycle: Int) = {
+    vars(comp.io.re) = Bool(re(cycle))
+    vars(comp.io.ra) = Bits(ra(cycle))
+    vars(comp.io.we) = Bool(we(cycle))
+    vars(comp.io.wa) = Bits(wa(cycle))
+    vars(comp.io.wd) = Bits(wd(cycle))
     vars(comp.io.rd) = Bits(0, comp.w)
     step(vars)
   }
   defTests {
     for (i <- 0 until 10000)
-      testOne
+      testOne(i)
     true
   }
 }
 
-class RAMWriteEnergy(comp: RAM) extends RAMEnergy(comp) {
-  override def ren = false
+class RAMReadEnergy(comp: RAM) extends RAMWriteEnergy(comp) {
+  override def re(cycle: Int) = !we(cycle)
+  override def ra(cycle: Int) = if (cycle < comp.d) 0 else Rand.nextLong.toInt % comp.d
+  override def we(cycle: Int) = cycle < comp.d
+  override def wa(cycle: Int) = if (cycle < comp.d) cycle else 0
+  override def wd(cycle: Int) = if (cycle < comp.d) super.wd(cycle) else 0
 }
 
 object Rand {
@@ -241,9 +250,9 @@ object FMATest {
     //               () => Module(new FMA(52, 12))) { c => new FMATests(c, 64) }
     //chiselMainTest(args ++ Array("--v", "--compile", "--test",  "--genHarness"),
     //               () => Module(new DFMARecoded)) { c => new FMAEnergy(c) }
-    chiselMainTest(args ++ Array("--v", "--compile", "--test",  "--genHarness"),
-                   () => Module(new SFMARecoded)) { c => new FMAEnergy(c) }
     //chiselMainTest(args ++ Array("--v", "--compile", "--test",  "--genHarness"),
-    //               () => Module(new RAM(64, 128))) { c => new RAMEnergy(c) }
+    //               () => Module(new SFMARecoded)) { c => new FMAEnergy(c) }
+    chiselMainTest(args ++ Array("--v", "--compile", "--test",  "--genHarness"),
+                   () => Module(new RAM(64, 128))) { c => new RAMReadEnergy(c) }
   }
 }
