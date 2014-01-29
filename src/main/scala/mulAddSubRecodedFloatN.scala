@@ -10,8 +10,9 @@ import fpu_recoded._
 object MaskOnes
 {
   def apply(in: UInt, start: Int, length: Int): UInt = {
-    val sh = SInt(BigInt(-1) << (1 << in.getWidth)) >> in
-    Vec.tabulate(length)(i => sh((1 << in.getWidth)-1-(i+start))).toBits
+    val top = 1 << in.getWidth
+    val shift = SInt(BigInt(-1) << top) >> in
+    Reverse(shift(top-1-start,top-length-start))
   }
 }
 
