@@ -82,7 +82,7 @@ class RAM(val w: Int, val d: Int, val nr: Int) extends Module {
   }
 }
 
-class FMATests(c: FMA, s: Int) extends Tester(c, Array(c.io)) {
+class FMATests(c: FMA, s: Int) extends MapTester(c, Array(c.io)) {
   require(s == 32 || s == 64)
   val vars = new collection.mutable.HashMap[Node, Node]()
 
@@ -94,28 +94,28 @@ class FMATests(c: FMA, s: Int) extends Tester(c, Array(c.io)) {
     if (i2d(x).isNaN) (BigInt(1) << s) - 1
     else x
 
-  var ok: Boolean = true
+  var ok_me: Boolean = true
 
-  def testOne(s: String) = if (ok) {
+  def testOne(s: String) = if (ok_me) {
     val t = s.split(' ')
     vars(c.io.a) = Bits(BigInt(t(0), 16))
     vars(c.io.b) = Bits(BigInt(t(1), 16))
     vars(c.io.c) = Bits(BigInt(t(2), 16))
     vars(c.io.out) = Bits(canonicalize(BigInt(t(3), 16)))
-    ok = step(vars)
+    ok_me = step(vars)
   }
 
   def testAll: Boolean = {
     val logger = ProcessLogger(testOne, _ => ())
     Seq("bash", "-c", "testfloat_gen -rnear_even -n 6133248 f"+s+"_mulAdd | head -n10000") ! logger
-    ok
+    ok_me
   }
   defTests {
     testAll
   }
 }
 
-class FMAEnergy[T <: FMARecoded](comp: T) extends Tester(comp, Array(comp.io)) {
+class FMAEnergy[T <: FMARecoded](comp: T) extends MapTester(comp, Array(comp.io)) {
   val expWidth = comp.expWidth
   val sigWidth = comp.sigWidth
   val vars = new collection.mutable.HashMap[Node, Node]()
@@ -201,7 +201,7 @@ class FMAEnergy[T <: FMARecoded](comp: T) extends Tester(comp, Array(comp.io)) {
   }
 }
 
-class RAMWriteEnergy(comp: RAM) extends Tester(comp, Array(comp.io)) {
+class RAMWriteEnergy(comp: RAM) extends MapTester(comp, Array(comp.io)) {
   val vars = new collection.mutable.HashMap[Node, Node]()
 
   def re(cycle: Int) = false
