@@ -12,8 +12,6 @@ import fpu_recoded._
 
 object recodedFloatNToAny {
   def apply(in: UInt, roundingMode: UInt, typeOp: UInt, sigWidth: Int, expWidth: Int, intWidth: Int) = {
-    val io = new recodedFloat64ToAny_io(sigWidth, expWidth, intWidth)
-  
     val sign = in(sigWidth+expWidth)
     val exponent = in(sigWidth+expWidth-1,sigWidth)
     val sig = in(sigWidth-1,0)
