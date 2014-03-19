@@ -25,17 +25,16 @@ object recodedFloatNToAny {
     val shiftedSig = Cat(!isZeroOrOne, sig) << roundDist
     val unrounded = shiftedSig(min(1 << expWidth-1, intWidth)+sigWidth-1, sigWidth)
     val roundBits = Cat(shiftedSig(sigWidth, sigWidth-1), shiftedSig(sigWidth-2, 0).orR)
-    val roundNearest = Mux(isZeroOrOne, !isTiny && roundBits(1,0).orR, roundBits(2,1).andR || roundBits(1,0).andR)
-    val nonzeroSig = Mux(isZeroOrOne, !isZero, roundBits(1,0).orR)
+    val roundInexact = roundBits(1,0).orR
+    val roundNearest = Mux(isZeroOrOne, !isTiny && roundInexact, roundBits(2,1).andR || roundBits(1,0).andR)
+    val nonzeroSig = Mux(isZeroOrOne, !isZero, roundInexact)
     val round =
       Mux(roundingMode === round_nearest_even, roundNearest,
       Mux(roundingMode === round_min, sign && nonzeroSig,
       Mux(roundingMode === round_max, !sign && nonzeroSig,
        /* roundingMode === round_minMag */ Bool(false))))
     val onescomp = Mux(sign, ~unrounded, unrounded)
-    var rounded = Mux(round ^ sign, onescomp + UInt(1), onescomp)
-    if (intWidth > rounded.getWidth)
-      rounded = Cat(Fill(intWidth-rounded.getWidth, rounded(rounded.getWidth-1)), rounded)
+    val rounded = Mux(round ^ sign, onescomp + UInt(1), onescomp).toSInt
     
     val roundCarry = round && unrounded.andR
     val signedOverflowCarry = !sign && roundCarry
@@ -53,9 +52,16 @@ object recodedFloatNToAny {
       Mux(typeOp === type_int32, signedInvalid(intWidth/2),
       Mux(typeOp === type_uint64, unsignedInvalid(intWidth),
        /* typeOp === type_int64 */ signedInvalid(intWidth))))
+    val invalidValue =
+      Mux(typeOp === type_int64 && sign, SInt(BigInt(-1) << (intWidth-1)),
+      Mux(typeOp === type_int32 && sign, SInt(BigInt(-1) << (intWidth/2-1)),
+      Mux(typeOp === type_int64 && !sign, SInt((BigInt(1) << (intWidth-1))-1),
+      Mux(typeOp === type_int32 && !sign, SInt((BigInt(1) << (intWidth/2-1))-1),
+      /* typeOp == any uint */            SInt(-1)))))
+    val inexact = roundInexact && !invalid
     
-    val out = Mux(invalid, ~UInt(0, intWidth), rounded)
-    val exc = Cat(invalid, UInt(0,4))
+    val out = Mux(invalid, invalidValue, rounded)
+    val exc = Cat(invalid, UInt(0,3), inexact)
     (out, exc)
   }
 }
