@@ -5,7 +5,7 @@ import Node._
 import util.Random
 import scala.sys.process._
 
-class FMA(sigWidth: Int, expWidth: Int)  extends Module {
+class FMA(val sigWidth: Int, val expWidth: Int)  extends Module {
   val io = new Bundle {
     val a = Bits(INPUT, sigWidth + expWidth)
     val b = Bits(INPUT, sigWidth + expWidth)
@@ -82,7 +82,8 @@ class RAM(val w: Int, val d: Int, val nr: Int) extends Module {
   }
 }
 
-class FMATests(c: FMA, s: Int) extends MapTester(c, Array(c.io)) {
+class FMATests(m: FMA) extends MapTester(m, Array(m.io)) {
+  val s = m.sigWidth + m.expWidth
   require(s == 32 || s == 64)
   val vars = new collection.mutable.HashMap[Node, Node]()
 
@@ -115,23 +116,8 @@ class FMATests(c: FMA, s: Int) extends MapTester(c, Array(c.io)) {
   }
 }
 
-class FMAEnergy[T <: FMARecoded](comp: T) extends MapTester(comp, Array(comp.io)) {
-  val expWidth = comp.expWidth
-  val sigWidth = comp.sigWidth
-  val vars = new collection.mutable.HashMap[Node, Node]()
-
-  def x(n: BigInt, hi: Int, lo: Int): BigInt = (n >> lo) & ((1L << (hi-lo+1))-1)
-  def x(n: BigInt, bit: Int): BigInt = x(n, bit, bit)
-
-  def normalize(in: BigInt, width: Int) = {
-    var log = 0
-    for (i <- 1 until width)
-      if (((in >> i) & 1) == 1)
-        log = i
-    val shift = x(~log, log2Up(width)-1, 0).toInt
-    (in << shift, shift)
-  }
-  def recode(in: BigInt) = {
+object Recoding {
+  def recode(in: BigInt, sigWidth: Int, expWidth: Int): BigInt = {
     val sign = x(in, sigWidth+expWidth-1)
     val expIn = x(in, sigWidth+expWidth-2, sigWidth)
     val fractIn = x(in, sigWidth-1, 0)
@@ -154,11 +140,10 @@ class FMAEnergy[T <: FMARecoded](comp: T) extends MapTester(comp, Array(comp.io)
     val expOut = x(adjustedCommonExp | ((if (isNaN) 1L else 0L) << (expWidth-3)), expWidth-1, 0)
     val fractOut = if (isZeroExpIn) normalizedFract else fractIn
 
-    println("recode " + in + " " + ((sign << (expWidth+sigWidth)) | (expOut << sigWidth) | fractOut))
     (sign << (expWidth+sigWidth)) | (expOut << sigWidth) | fractOut
   }
 
-  def decode(in: BigInt) = {
+  def decode(in: BigInt, sigWidth: Int, expWidth: Int): BigInt = {
     val sign = x(in, sigWidth+expWidth)
     val expIn = x(in, sigWidth+expWidth-1, sigWidth)
     val fractIn = x(in, sigWidth-1, 0)
@@ -179,84 +164,31 @@ class FMAEnergy[T <: FMARecoded](comp: T) extends MapTester(comp, Array(comp.io)
     (sign << (sigWidth+expWidth-1)) | (expOut << sigWidth) | fractOut
   }
 
-  def d2i(x: Double): BigInt =
-    if (sigWidth == 23) java.lang.Float.floatToIntBits(x.toFloat)
-    else if (sigWidth == 52) java.lang.Double.doubleToLongBits(x)
-    else BigInt(-1)
+  def isNaN(in: BigInt, sigWidth: Int, expWidth: Int): Boolean =
+    ((in >> (sigWidth + expWidth - 3)) & 7) == 7
 
-  def randFloat = d2i((Random.nextDouble - 0.5) * 16384)
+  def canonicalize(in: BigInt, sigWidth: Int, expWidth: Int): BigInt =
+    if (!isNaN(in, sigWidth, expWidth)) in
+    else in | ((BigInt(1) << sigWidth)-1)
 
-  def testOne(a: BigInt, b: BigInt, c: BigInt, y: BigInt) = {
-    vars(comp.io.a) = Bits(a)
-    vars(comp.io.b) = Bits(b)
-    vars(comp.io.c) = Bits(c)
-    vars(comp.io.out) = Bits(y)
-    step(vars)
-  }
+  private def x(n: BigInt, hi: Int, lo: Int): BigInt = (n >> lo) & ((1L << (hi-lo+1))-1)
+  private def x(n: BigInt, bit: Int): BigInt = x(n, bit, bit)
 
-  defTests {
-    for (i <- 0 until 10000)
-      testOne(randFloat, randFloat, randFloat, 0)
-    true
-  }
-}
-
-class RAMWriteEnergy(comp: RAM) extends MapTester(comp, Array(comp.io)) {
-  val vars = new collection.mutable.HashMap[Node, Node]()
-
-  def re(cycle: Int) = false
-  def ra(cycle: Int) = 0
-  def we(cycle: Int) = true
-  def wa(cycle: Int) = Rand.nextLong % comp.d
-  def wd(cycle: Int) = BigInt(Rand.nextLong) % (BigInt(1) << comp.w)
-
-  def testOne(cycle: Int) = {
-    for (i <- 0 until comp.nr) {
-      vars(comp.io.re(i)) = Bool(re(cycle))
-      vars(comp.io.ra(i)) = Bits(ra(cycle))
-      vars(comp.io.rd(i)) = Bits(0, comp.w)
-    }
-    vars(comp.io.we) = Bool(we(cycle))
-    vars(comp.io.wa) = Bits(wa(cycle))
-    vars(comp.io.wd) = Bits(wd(cycle))
-    step(vars)
-  }
-  defTests {
-    for (i <- 0 until 10000)
-      testOne(i)
-    true
-  }
-}
-
-class RAMReadEnergy(comp: RAM) extends RAMWriteEnergy(comp) {
-  override def re(cycle: Int) = !we(cycle)
-  override def ra(cycle: Int) = if (cycle < comp.d) 0 else Rand.nextLong.toInt % comp.d
-  override def we(cycle: Int) = cycle < comp.d
-  override def wa(cycle: Int) = if (cycle < comp.d) cycle else 0
-  override def wd(cycle: Int) = if (cycle < comp.d) super.wd(cycle) else 0
-}
-
-object Rand {
-  val fractZeros = 0.7
-  def nextLong: Long = {
-    var x = 0L
-    for (i <- 0 until 64)
-      x = (x << 1) | (if (util.Random.nextDouble > fractZeros) 1 else 0)
-    x
+  private def normalize(in: BigInt, width: Int) = {
+    var log = 0
+    for (i <- 1 until width)
+      if (((in >> i) & 1) == 1)
+        log = i
+    val shift = x(~log, log2Up(width)-1, 0).toInt
+    (in << shift, shift)
   }
 }
 
 object FMATest {
   def main(args: Array[String]): Unit = {
     //chiselMainTest(args ++ Array("--compile", "--test",  "--genHarness"),
-    //               () => Module(new FMA(23, 9))) { c => new FMATests(c, 32) }
-    //chiselMainTest(args ++ Array("--compile", "--test",  "--genHarness"),
-    //               () => Module(new FMA(52, 12))) { c => new FMATests(c, 64) }
-    //chiselMainTest(args ++ Array("--v", "--compile", "--test",  "--genHarness"),
-    //               () => Module(new DFMARecoded)) { c => new FMAEnergy(c) }
-    //chiselMainTest(args ++ Array("--v", "--compile", "--test",  "--genHarness"),
-    //               () => Module(new SFMARecoded)) { c => new FMAEnergy(c) }
-    chiselMainTest(args ++ Array("--v", "--compile", "--test",  "--genHarness"),
-                   () => Module(new RAM(64, 64, 3))) { c => new RAMReadEnergy(c) }
+    //               () => Module(new FMA(23, 9))) { c => new FMATests(c) }
+    chiselMainTest(args ++ Array("--compile", "--test",  "--genHarness"),
+                   () => Module(new FMA(52, 12))) { c => new FMATests(c) }
   }
 }
