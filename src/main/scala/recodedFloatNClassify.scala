@@ -8,7 +8,7 @@ package hardfloat
 import Chisel._
 import Node._
 import scala.math._
-import fpu_recoded._
+import consts._
 
 object recodedFloatNClassify {
   def apply(in: UInt, sigWidth: Int, expWidth: Int) = {

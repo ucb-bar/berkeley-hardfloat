@@ -8,7 +8,7 @@ package hardfloat
 import Chisel._
 import Node._
 import scala.math._
-import fpu_recoded._
+import consts._
 
 object recodedFloatNToAny {
   def apply(in: UInt, roundingMode: UInt, typeOp: UInt, sigWidth: Int, expWidth: Int, intWidth: Int) = {

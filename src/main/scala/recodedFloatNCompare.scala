@@ -13,7 +13,7 @@ class recodedFloatNCompare_io(SIG_WIDTH: Int, EXP_WIDTH: Int) extends Bundle {
 }
 
 class recodedFloatNCompare(SIG_WIDTH: Int, EXP_WIDTH: Int) extends Module {
-  val io = new recodedFloat32Compare_io(SIG_WIDTH, EXP_WIDTH)
+  val io = new recodedFloatNCompare_io(SIG_WIDTH, EXP_WIDTH)
 
   val signA = io.a(SIG_WIDTH+EXP_WIDTH)
   val expA = io.a(SIG_WIDTH+EXP_WIDTH-1, SIG_WIDTH)

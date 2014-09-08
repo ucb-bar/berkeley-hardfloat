@@ -5,7 +5,7 @@ package hardfloat
 
 import Chisel._
 import Node._
-import fpu_recoded._
+import consts._
 
 object MaskOnes
 {
