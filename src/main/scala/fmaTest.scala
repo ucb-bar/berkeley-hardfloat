@@ -107,8 +107,14 @@ class FMATests(m: FMA) extends MapTester(m, Array(m.io)) {
   }
 
   def testAll: Boolean = {
-    val logger = ProcessLogger(testOne, _ => ())
-    Seq("bash", "-c", "testfloat_gen -rnear_even -n 6133248 f"+s+"_mulAdd | head -n10000") ! logger
+    val tf_installed = ("which testfloat_gen" ! ProcessLogger(line => ())) == 0
+    if (tf_installed) {
+      val logger = ProcessLogger(testOne, _ => ())
+      Seq("bash", "-c", "testfloat_gen -rnear_even -n 6133248 f"+s+"_mulAdd | head -n10000") ! logger
+    } else {
+      println("*** FAIL *** install testfloat first! Checkout README for directions.")
+      ok_me = false
+    }
     ok_me
   }
   defTests {
@@ -186,9 +192,12 @@ object Recoding {
 
 object FMATest {
   def main(args: Array[String]): Unit = {
-    //chiselMainTest(args ++ Array("--compile", "--test",  "--genHarness"),
-    //               () => Module(new FMA(23, 9))) { c => new FMATests(c) }
-    chiselMainTest(args ++ Array("--compile", "--test",  "--genHarness"),
-                   () => Module(new FMA(52, 12))) { c => new FMATests(c) }
+    val testArgs = args.slice(1, args.length)
+    args(0) match {
+      case "sp-fma" =>
+        chiselMainTest(testArgs ++ Array("--compile", "--test", "--genHarness"), () => Module(new FMA(23, 9))) { c => new FMATests(c) }
+      case "dp-fma" =>
+        chiselMainTest(testArgs ++ Array("--compile", "--test", "--genHarness"), () => Module(new FMA(52, 12))) { c => new FMATests(c) }
+    }
   }
 }
