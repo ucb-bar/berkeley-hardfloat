@@ -15,8 +15,16 @@ $(tests): %: test-%.log
 $(addsuffix -v, $(tests)): %-v: test-%-v.log
 
 all: $(tests)
+	@ if grep FAIL test-*.log; then \
+		echo "Test FAILED!!!"; \
+		exit 1; \
+	fi
 
 verilog: $(addsuffix -v, $(tests))
+	@ if grep FAIL test-*-v.log; then \
+		echo "Test FAILED!!!"; \
+		exit 1; \
+	fi
 
 clean:
 	rm -rf test* csrc ucli.key
