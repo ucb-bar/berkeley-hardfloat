@@ -1,3 +1,5 @@
+// See LICENSE for license details.
+
 //
 // recodedFloat64ToAny( in, out );
 // Author: Brian Richards, 10/21/2010

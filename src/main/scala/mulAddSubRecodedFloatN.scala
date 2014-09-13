@@ -1,3 +1,5 @@
+// See LICENSE for license details.
+
 //*** THIS MODULE HAS NOT BEEN FULLY OPTIMIZED.
 //*** DO THIS ANOTHER WAY?
 

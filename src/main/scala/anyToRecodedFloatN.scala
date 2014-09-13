@@ -1,3 +1,5 @@
+// See LICENSE for license details.
+
 //
 // anyToRecodedFloat32( in, out );
 // Author: Brian Richards, 5/17/2011

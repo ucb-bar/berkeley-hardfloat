@@ -1,3 +1,5 @@
+// See LICENSE for license details.
+
 // consts.vh -- Common definitions for the recoded FPU blocks.
 // Author: Brian Richards, 10/31/2010
 
