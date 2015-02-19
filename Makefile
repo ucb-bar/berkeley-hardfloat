@@ -38,6 +38,6 @@ verilog: $(addsuffix -v, $(tests))
 	fi
 
 clean:
-	rm -rf test* csrc ucli.key
+	rm -rf test* ucli.key
 
 .PHONY: $(tests) clean
