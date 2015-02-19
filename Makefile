@@ -13,13 +13,13 @@ test-sp-fma.log: src/main/scala/*.scala
 	g++ -c -o test-sp-fma/FMA.o  -I../ -Inull/csrc/  test-sp-fma/FMA.cpp
 	g++ -o test-sp-fma/FMA test-sp-fma/FMA.o test-sp-fma/FMA-emulator.o
 	echo "testing near_even" >> $@
-	time /scratch/yunsup/berkeley-testfloat-3/build/Linux-x86_64-GCC/testfloat_gen f32_mulAdd | ./test-sp-fma/FMA 0 >> $@
+	time testfloat_gen f32_mulAdd | ./test-sp-fma/FMA 0 >> $@
 	echo "testing minMag" >> $@
-	time /scratch/yunsup/berkeley-testfloat-3/build/Linux-x86_64-GCC/testfloat_gen -rminMag f32_mulAdd | ./test-sp-fma/FMA 1 >> $@
+	time testfloat_gen -rminMag f32_mulAdd | ./test-sp-fma/FMA 1 >> $@
 	echo "testing min" >> $@
-	time /scratch/yunsup/berkeley-testfloat-3/build/Linux-x86_64-GCC/testfloat_gen -rmin f32_mulAdd | ./test-sp-fma/FMA 2 >> $@
+	time testfloat_gen -rmin f32_mulAdd | ./test-sp-fma/FMA 2 >> $@
 	echo "testing max" >> $@
-	time /scratch/yunsup/berkeley-testfloat-3/build/Linux-x86_64-GCC/testfloat_gen -rmax f32_mulAdd | ./test-sp-fma/FMA 3 >> $@
+	time testfloat_gen -rmax f32_mulAdd | ./test-sp-fma/FMA 3 >> $@
 
 $(tests): %: test-%.log
 
