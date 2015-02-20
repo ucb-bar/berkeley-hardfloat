@@ -18,12 +18,12 @@ static void initialize_dat_pointers(dut_t* m)
   inputs.push_back(SIGNAL(FLEN, a));
   inputs.push_back(SIGNAL(FLEN, b));
   inputs.push_back(SIGNAL(FLEN, c));
-  expected_ieee = SIGNAL(FLEN, correct_out);
-  actual_ieee = SIGNAL(FLEN, ieee_out);
-  expected_recoded = SIGNAL(FLEN, recoded_correct_out);
-  actual_recoded = SIGNAL(FLEN, recoded_out);
-  expected_exception = SIGNAL(FLEN, correct_exception);
-  actual_exception = SIGNAL(FLEN, exception);
+  expected_ieee = SIGNAL(FLEN, expected_ieee);
+  actual_ieee = SIGNAL(FLEN, actual_ieee);
+  expected_recoded = SIGNAL(FLEN, expected_recoded);
+  actual_recoded = SIGNAL(FLEN, actual_recoded);
+  expected_exception = SIGNAL(FLEN, expected_exception);
+  actual_exception = SIGNAL(FLEN, actual_exception);
 }
 
 static int process_inputs(std::vector<dat_t<FLEN>*>& inputs)

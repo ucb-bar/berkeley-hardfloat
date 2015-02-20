@@ -13,13 +13,19 @@ class TestMulAdd(val sigWidth: Int, val expWidth: Int) extends Module {
     val b = Bits(INPUT, sigWidth + expWidth)
     val c = Bits(INPUT, sigWidth + expWidth)
     val rm = Bits(INPUT, 2)
-    val correct_out = Bits(INPUT, sigWidth + expWidth)
-    val correct_exception = Bits(INPUT, 5)
 
-    val recoded_correct_out = Bits(OUTPUT, sigWidth + expWidth + 1)
-    val recoded_out = Bits(OUTPUT, sigWidth + expWidth + 1)
-    val ieee_out = Bits(OUTPUT, sigWidth + expWidth)
-    val exception = Bits(OUTPUT, 5)
+    val expected = new Bundle {
+      val ieee = Bits(INPUT, sigWidth + expWidth)
+      val exception = Bits(INPUT, 5)
+      val recoded = Bits(OUTPUT, sigWidth + expWidth + 1)
+    }
+
+    val actual = new Bundle {
+      val ieee = Bits(OUTPUT, sigWidth + expWidth)
+      val exception = Bits(OUTPUT, 5)
+      val recoded = Bits(OUTPUT, sigWidth + expWidth + 1)
+    }
+
     val pass = Bool(OUTPUT)
   }
 
@@ -30,13 +36,15 @@ class TestMulAdd(val sigWidth: Int, val expWidth: Int) extends Module {
   fma.io.c := floatNToRecodedFloatN(io.c, sigWidth, expWidth)
   fma.io.roundingMode := io.rm
 
-  io.recoded_correct_out := floatNToRecodedFloatN(io.correct_out, sigWidth, expWidth)
-  io.recoded_out := fma.io.out
-  io.ieee_out := recodedFloatNToFloatN(fma.io.out, sigWidth, expWidth)
-  io.exception := fma.io.exceptionFlags
+  io.expected.recoded := floatNToRecodedFloatN(io.expected.ieee, sigWidth, expWidth)
+
+  io.actual.ieee := recodedFloatNToFloatN(fma.io.out, sigWidth, expWidth)
+  io.actual.exception := fma.io.exceptionFlags
+  io.actual.recoded := fma.io.out
+
   io.pass :=
-    io.correct_out === io.ieee_out &&
-    io.correct_exception === io.exception
+    io.expected.ieee === io.actual.ieee &&
+    io.expected.exception === io.actual.exception
 }
 
 class Test_f32_mulAdd extends TestMulAdd(23, 9)
