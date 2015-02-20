@@ -6,14 +6,15 @@ endif
 
 tests = \
 	f32_mulAdd \
+	f64_mulAdd \
 
 define test_template
 
 test-$(1)/Test_$(1).cpp: src/main/scala/*.scala
 	sbt -DchiselVersion=latest.release "run $(1) --targetDir test-$(1)"
 
-test-$(1)/dut: test-$(1)/Test_$(1).cpp csrc/test-$(1).h csrc/emulator.cpp
-	g++ -c -o test-$(1)/emulator.o -Itest-$(1) -include csrc/test-$(1).h csrc/emulator.cpp
+test-$(1)/dut: test-$(1)/Test_$(1).cpp csrc/*.h csrc/*.cpp
+	g++ -c -o test-$(1)/emulator.o -Icsrc -Itest-$(1) -include csrc/emulator-$(1).h csrc/emulator.cpp
 	g++ -c -o test-$(1)/Test_$(1).o test-$(1)/Test_$(1).cpp
 	g++ -o test-$(1)/dut test-$(1)/Test_$(1).o test-$(1)/emulator.o
 
@@ -33,21 +34,9 @@ $(1): test-$(1).log
 
 endef
 
-$(eval $(call test_template,f32_mulAdd))
-
-$(addsuffix -v, $(tests)): %-v: test-%-v.log
+$(foreach test,$(tests),$(eval $(call test_template,$(test))))
 
 all: $(tests)
-	@ if grep FAIL test-*.log; then \
-		echo "Test FAILED!!!"; \
-		exit 1; \
-	fi
-
-verilog: $(addsuffix -v, $(tests))
-	@ if grep FAIL test-*-v.log; then \
-		echo "Test FAILED!!!"; \
-		exit 1; \
-	fi
 
 clean:
 	rm -rf test* ucli.key

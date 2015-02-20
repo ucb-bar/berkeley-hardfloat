@@ -2,3 +2,4 @@ project
 target
 ucli.key
 .*.swp
+test-*
