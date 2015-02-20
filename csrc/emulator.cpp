@@ -11,6 +11,7 @@ int main (int argc, char* argv[])
   module->init();
   initialize_dat_pointers(module);
 
+  size_t error = 0;
   size_t cnt = 0;
 
   while (true) {
@@ -21,6 +22,7 @@ int main (int argc, char* argv[])
     if (cnt % 10000 == 0) printf("ran %ld tests.\n", cnt);
     cnt++;
     if (!pass->to_bool()) {
+      error++;
       printf("[%07ld] ", cnt);
       for (size_t i=0; i<inputs.size(); i++) {
         printf("i%ld=%s ", i, inputs[i]->to_str().c_str());
@@ -29,6 +31,10 @@ int main (int argc, char* argv[])
         expected_ieee->to_str().c_str(), actual_ieee->to_str().c_str(),
         expected_recoded->to_str().c_str(), actual_recoded->to_str().c_str(),
         expected_exception->to_str().c_str(), expected_exception->to_str().c_str());
+      if (error == 20) {
+        printf("reached %ld errors. aborting.\n", error); 
+        break;
+      }
     }
     module->clock_hi(LIT<1>(0));
   }
