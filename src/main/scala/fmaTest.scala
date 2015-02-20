@@ -7,7 +7,7 @@ import Node._
 import util.Random
 import scala.sys.process._
 
-class FMA(val sigWidth: Int, val expWidth: Int) extends Module {
+class TestMulAdd(val sigWidth: Int, val expWidth: Int) extends Module {
   val io = new Bundle {
     val a = Bits(INPUT, sigWidth + expWidth)
     val b = Bits(INPUT, sigWidth + expWidth)
@@ -38,6 +38,9 @@ class FMA(val sigWidth: Int, val expWidth: Int) extends Module {
     io.correct_out === io.ieee_out &&
     io.correct_exception === io.exception
 }
+
+class Test_f32_mulAdd extends TestMulAdd(23, 9)
+class Test_f64_mulAdd extends TestMulAdd(52, 12)
 
 class FMAPipeline(sigWidth: Int, expWidth: Int) extends Module {
   val io = new Bundle {
@@ -103,8 +106,10 @@ object FMATest {
   def main(args: Array[String]): Unit = {
     val testArgs = args.slice(1, args.length)
     args(0) match {
-      case "sp-fma" =>
-        chiselMain(testArgs, () => Module(new FMA(23, 9)))
+      case "f32_mulAdd" =>
+        chiselMain(testArgs, () => Module(new Test_f32_mulAdd))
+      case "f64_mulAdd" =>
+        chiselMain(testArgs, () => Module(new Test_f64_mulAdd))
     }
   }
 }

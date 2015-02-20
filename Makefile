@@ -5,23 +5,35 @@ $(error "No testfloat_gen in $(PATH), install testfloat_gen")
 endif
 
 tests = \
-	sp-fma \
+	f32_mulAdd \
 
-test-sp-fma.log: src/main/scala/*.scala
-	sbt -DchiselVersion=latest.release "run sp-fma --targetDir test-sp-fma" | tee $@
-	g++ -c -o test-sp-fma/FMA-emulator.o  -I../ -Itest-sp-fma -include csrc/test-sp-fma.h csrc/emulator.cpp
-	g++ -c -o test-sp-fma/FMA.o  -I../ -Inull/csrc/  test-sp-fma/FMA.cpp
-	g++ -o test-sp-fma/FMA test-sp-fma/FMA.o test-sp-fma/FMA-emulator.o
-	echo "testing near_even" >> $@
-	time testfloat_gen f32_mulAdd | ./test-sp-fma/FMA 0 >> $@
-	echo "testing minMag" >> $@
-	time testfloat_gen -rminMag f32_mulAdd | ./test-sp-fma/FMA 1 >> $@
-	echo "testing min" >> $@
-	time testfloat_gen -rmin f32_mulAdd | ./test-sp-fma/FMA 2 >> $@
-	echo "testing max" >> $@
-	time testfloat_gen -rmax f32_mulAdd | ./test-sp-fma/FMA 3 >> $@
+define test_template
 
-$(tests): %: test-%.log
+test-$(1)/Test_$(1).cpp: src/main/scala/*.scala
+	sbt -DchiselVersion=latest.release "run $(1) --targetDir test-$(1)"
+
+test-$(1)/dut: test-$(1)/Test_$(1).cpp csrc/test-$(1).h csrc/emulator.cpp
+	g++ -c -o test-$(1)/emulator.o -Itest-$(1) -include csrc/test-$(1).h csrc/emulator.cpp
+	g++ -c -o test-$(1)/Test_$(1).o test-$(1)/Test_$(1).cpp
+	g++ -o test-$(1)/dut test-$(1)/Test_$(1).o test-$(1)/emulator.o
+
+test-$(1).log: test-$(1)/dut
+	echo "testing near_even" > $$@
+	time testfloat_gen -rnear_even $(1) | ./test-$(1)/dut 0 >> $$@
+	echo "testing minMag" >> $$@
+	time testfloat_gen -rminMag $(1) | ./test-$(1)/dut 1 >> $$@
+	echo "testing min" >> $$@
+	time testfloat_gen -rmin $(1) | ./test-$(1)/dut 2 >> $$@
+	echo "testing max" >> $$@
+	time testfloat_gen -rmax $(1) | ./test-$(1)/dut 3 >> $$@
+
+$(1): test-$(1).log
+
+.PHONY: $(1)
+
+endef
+
+$(eval $(call test_template,f32_mulAdd))
 
 $(addsuffix -v, $(tests)): %-v: test-%-v.log
 

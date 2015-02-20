@@ -7,9 +7,10 @@ int main (int argc, char* argv[])
     return -1;
   }
 
-  FMA_t* module = new FMA_t();
+  dut_t* module = new dut_t();
   module->init();
   initialize_dat_pointers(module);
+  dat_from_hex<2>(argv[1], *rm);
 
   size_t error = 0;
   size_t cnt = 0;

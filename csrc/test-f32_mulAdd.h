@@ -1,4 +1,6 @@
-#include "FMA.h"
+#include "Test_f32_mulAdd.h"
+
+#define dut_t Test_f32_mulAdd_t
 
 static dat_t<2>* rm;
 static dat_t<1>* pass;
@@ -10,19 +12,19 @@ static dat_t<33>* actual_recoded;
 static dat_t<5>* expected_exception;
 static dat_t<5>* actual_exception;
 
-static void initialize_dat_pointers(FMA_t* m)
+static void initialize_dat_pointers(dut_t* m)
 {
-  rm = &m->FMA__io_rm;
-  pass = &m->FMA__io_pass;
-  inputs.push_back(&m->FMA__io_a);
-  inputs.push_back(&m->FMA__io_b);
-  inputs.push_back(&m->FMA__io_c);
-  expected_ieee = &m->FMA__io_correct_out;
-  actual_ieee = &m->FMA__io_ieee_out;
-  expected_recoded = &m->FMA__io_recoded_correct_out;
-  actual_recoded = &m->FMA__io_recoded_out;
-  expected_exception = &m->FMA__io_correct_exception;
-  actual_exception = &m->FMA__io_exception;
+  rm = &m->Test_f32_mulAdd__io_rm;
+  pass = &m->Test_f32_mulAdd__io_pass;
+  inputs.push_back(&m->Test_f32_mulAdd__io_a);
+  inputs.push_back(&m->Test_f32_mulAdd__io_b);
+  inputs.push_back(&m->Test_f32_mulAdd__io_c);
+  expected_ieee = &m->Test_f32_mulAdd__io_correct_out;
+  actual_ieee = &m->Test_f32_mulAdd__io_ieee_out;
+  expected_recoded = &m->Test_f32_mulAdd__io_recoded_correct_out;
+  actual_recoded = &m->Test_f32_mulAdd__io_recoded_out;
+  expected_exception = &m->Test_f32_mulAdd__io_correct_exception;
+  actual_exception = &m->Test_f32_mulAdd__io_exception;
 }
 
 static int process_inputs(std::vector<dat_t<32>*>& inputs)
