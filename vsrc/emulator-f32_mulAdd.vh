@@ -9,6 +9,7 @@
   wire [31:0] actual_ieee;
   wire [32:0] actual_recoded;
   wire [4:0] actual_exception;
+  wire check;
   wire pass;
 
   task process_stdin;
@@ -41,6 +42,7 @@
     .io_actual_ieee(actual_ieee),
     .io_actual_exception(actual_exception),
     .io_actual_recoded(actual_recoded),
+    .io_check(check),
     .io_pass(pass)
   );
 

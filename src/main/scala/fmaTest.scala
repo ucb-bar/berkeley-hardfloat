@@ -26,6 +26,7 @@ class TestMulAdd(val sigWidth: Int, val expWidth: Int) extends Module {
       val recoded = Bits(OUTPUT, sigWidth + expWidth + 1)
     }
 
+    val check = Bool(OUTPUT)
     val pass = Bool(OUTPUT)
   }
 
@@ -42,6 +43,7 @@ class TestMulAdd(val sigWidth: Int, val expWidth: Int) extends Module {
   io.actual.exception := fma.io.exceptionFlags
   io.actual.recoded := fma.io.out
 
+  io.check := Bool(true)
   io.pass :=
     io.expected.ieee === io.actual.ieee &&
     io.expected.exception === io.actual.exception

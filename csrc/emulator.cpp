@@ -15,28 +15,39 @@ int main (int argc, char* argv[])
   size_t error = 0;
   size_t cnt = 0;
 
+  // reset
+  for (size_t i=0; i<10; i++) {
+    module->clock_lo(LIT<1>(1));
+    module->clock_hi(LIT<1>(1));
+  }
+
+  // main operation
   while (true) {
-    if (!process_inputs(inputs)) break;
+    if (!process_inputs()) break;
     if (!process_outputs()) break;
 
     module->clock_lo(LIT<1>(0));
-    if (cnt % 10000 == 0) printf("ran %ld tests.\n", cnt);
-    cnt++;
-    if (!pass->to_bool()) {
-      error++;
-      printf("[%07ld] ", cnt);
-      for (size_t i=0; i<inputs.size(); i++) {
-        printf("i%ld=%s ", i, inputs[i]->to_str().c_str());
+
+    if (check->to_bool()) {
+      if (cnt % 10000 == 0) printf("ran %ld tests.\n", cnt);
+      if (!pass->to_bool()) {
+        error++;
+        printf("[%07ld] ", cnt);
+        for (size_t i=0; i<inputs.size(); i++) {
+          printf("i%ld=%s ", i, inputs[i]->to_str().c_str());
+        }
+        printf("expected_ieee=%s actual_ieee=%s expected_recoded=%s actual_recoded=%s expected_exception=%s actual_exception=%s\n",
+          expected_ieee->to_str().c_str(), actual_ieee->to_str().c_str(),
+          expected_recoded->to_str().c_str(), actual_recoded->to_str().c_str(),
+          expected_exception->to_str().c_str(), expected_exception->to_str().c_str());
+        if (error == 20) {
+          printf("reached %ld errors. aborting.\n", error);
+          break;
+        }
       }
-      printf("expected_ieee=%s actual_ieee=%s expected_recoded=%s actual_recoded=%s expected_exception=%s actual_exception=%s\n",
-        expected_ieee->to_str().c_str(), actual_ieee->to_str().c_str(),
-        expected_recoded->to_str().c_str(), actual_recoded->to_str().c_str(),
-        expected_exception->to_str().c_str(), expected_exception->to_str().c_str());
-      if (error == 20) {
-        printf("reached %ld errors. aborting.\n", error); 
-        break;
-      }
+      cnt++;
     }
+
     module->clock_hi(LIT<1>(0));
   }
   

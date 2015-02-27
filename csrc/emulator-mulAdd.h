@@ -1,5 +1,6 @@
 static dat_t<2>* rm;
 static dat_t<1>* pass;
+static dat_t<1>* check;
 static std::vector<dat_t<FLEN>*> inputs;
 static dat_t<FLEN>* expected_ieee;
 static dat_t<FLEN>* actual_ieee;
@@ -15,6 +16,7 @@ static void initialize_dat_pointers(dut_t* m)
 {
   rm = SIGNAL(FLEN, rm);
   pass = SIGNAL(FLEN, pass);
+  check = SIGNAL(FLEN, check);
   inputs.push_back(SIGNAL(FLEN, a));
   inputs.push_back(SIGNAL(FLEN, b));
   inputs.push_back(SIGNAL(FLEN, c));
@@ -26,7 +28,7 @@ static void initialize_dat_pointers(dut_t* m)
   actual_exception = SIGNAL(FLEN, actual_exception);
 }
 
-static int process_inputs(std::vector<dat_t<FLEN>*>& inputs)
+static int process_inputs(void)
 {
   char value[64];
 
