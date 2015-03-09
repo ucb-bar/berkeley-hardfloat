@@ -7,6 +7,8 @@ endif
 tests = \
 	f32_mulAdd \
 	f64_mulAdd \
+	f64_div \
+	f64_sqrt \
 
 define test_template
 
