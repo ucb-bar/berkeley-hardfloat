@@ -848,8 +848,6 @@ class divSqrtRecodedFloat64_mulAddZ31 extends Module
 
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-    val signOut_PC = Mux(sqrtOp_PC, isZeroB_PC & sign_PC, sign_PC)
-
     val notSigNaN_invalid_PC =
         Mux(sqrtOp_PC, ~isNaNB_PC & ~isZeroB_PC & sign_PC,
             (isZeroA_PC & isZeroB_PC) | (isInfA_PC & isInfB_PC))
@@ -877,6 +875,8 @@ class divSqrtRecodedFloat64_mulAddZ31 extends Module
     val isNaNOut_PC =
         (~sqrtOp_PC & isNaNA_PC) | isNaNB_PC | notSigNaN_invalid_PC
 
+    val signOut_PC =
+        isNaNOut_PC | Mux(sqrtOp_PC, isZeroB_PC & sign_PC, sign_PC)
     val expOut_E1 =
         (expY_E1
              & ~Mux(notSpecial_isZeroOut_E1, ~UInt("b000111111111", 12), UInt(0))
