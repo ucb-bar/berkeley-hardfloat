@@ -1,6 +1,6 @@
 default: all
 
-berkeley-softfloat-3/extract.stamp: patches/SoftFloat-3/*
+berkeley-softfloat-3/extract.stamp: patches/berkeley-softfloat-3/*
 	rm -rf berkeley-softfloat-3
 	git clone git://github.com/ucb-bar/berkeley-softfloat-3.git
 	patch -p0 < patches/berkeley-softfloat-3/0001-specialize_riscv.patch
@@ -90,6 +90,22 @@ all: $(tests)
 
 verilog: $(addsuffix -v, $(tests))
 	@ if grep abort test-v-*.*.log; then \
+		echo "some tests FAILED!!!"; \
+		exit 1; \
+	fi
+
+# These targets are used by the buildbot -- they skip tests that are
+# expected to fail.
+.PHONY: autocheck-c
+autocheck-c: $(tests) expected_failures
+	@ if find test-c-*.*.log | grep -v -f expected_failures | xargs grep -l abort; then \
+		echo "some tests FAILED!!!"; \
+		exit 1; \
+	fi
+
+.PHONY: autocheck-v
+autocheck-v: $(addsuffix -v, $(tests)) expected_failures
+	@ if find test-v-*.*.log | grep -v -f expected_failures | xargs grep -l abort; then \
 		echo "some tests FAILED!!!"; \
 		exit 1; \
 	fi

@@ -1,0 +1,8 @@
+test-c-f32_mulAdd.max.log
+test-c-f32_mulAdd.min.log
+test-c-f64_mulAdd.max.log
+test-c-f64_mulAdd.min.log
+test-v-f32_mulAdd.max.log
+test-v-f32_mulAdd.min.log
+test-v-f64_mulAdd.max.log
+test-v-f64_mulAdd.min.log
