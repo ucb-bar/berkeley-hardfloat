@@ -1,0 +1,57 @@
+diff -ur TestFloat-3.orig/build/Linux-x86_64-GCC/Makefile TestFloat-3/build/Linux-x86_64-GCC/Makefile
+--- TestFloat-3.orig/build/Linux-x86_64-GCC/Makefile	2015-03-26 17:10:40.179763514 -0700
++++ TestFloat-3/build/Linux-x86_64-GCC/Makefile	2015-03-26 17:11:49.304157082 -0700
+@@ -55,7 +55,7 @@
+   gcc -c -Werror-implicit-function-declaration $(TESTFLOAT_OPTS) \
+     $(C_INCLUDES) -O3 -o $@
+ MAKELIB = ar crs $@
+-LINK = gcc -lm -o $@
++LINK = gcc -o $@
+ 
+ OBJ = .o
+ LIB = .a
+@@ -241,7 +241,7 @@
+ 	$(COMPILE_C) $(SOURCE_DIR)/testsoftfloat.c
+ 
+ testsoftfloat$(EXE): $(OBJS_TESTSOFTFLOAT) testfloat$(LIB) $(SOFTFLOAT_LIB)
+-	$(LINK) $^
++	$(LINK) $^ -lm
+ 
+ OBJS_TIMESOFTFLOAT = timesoftfloat$(OBJ)
+ 
+@@ -251,7 +251,7 @@
+ 	$(COMPILE_C) $(SOURCE_DIR)/timesoftfloat.c
+ 
+ timesoftfloat$(EXE): $(OBJS_TIMESOFTFLOAT) testfloat$(LIB) $(SOFTFLOAT_LIB)
+-	$(LINK) $^
++	$(LINK) $^ -lm
+ 
+ OBJS_TESTFLOAT_GEN = genLoops$(OBJ) testfloat_gen$(OBJ)
+ 
+@@ -267,7 +267,7 @@
+ 	$(COMPILE_C) $(SOURCE_DIR)/testfloat_gen.c
+ 
+ testfloat_gen$(EXE): $(OBJS_TESTFLOAT_GEN) testfloat$(LIB) $(SOFTFLOAT_LIB)
+-	$(LINK) $^
++	$(LINK) $^ -lm
+ 
+ OBJS_TESTFLOAT_VER = verLoops$(OBJ) testfloat_ver$(OBJ)
+ 
+@@ -284,7 +284,7 @@
+ 	$(COMPILE_C) $(SOURCE_DIR)/testfloat_ver.c
+ 
+ testfloat_ver$(EXE): $(OBJS_TESTFLOAT_VER) testfloat$(LIB) $(SOFTFLOAT_LIB)
+-	$(LINK) $^
++	$(LINK) $^ -lm
+ 
+ OBJS_TESTFLOAT = subjfloat$(OBJ) subjfloat_functions$(OBJ) testfloat$(OBJ)
+ 
+@@ -304,7 +304,7 @@
+ 	$(COMPILE_C) $(SOURCE_DIR)/testfloat.c
+ 
+ testfloat$(EXE): $(OBJS_TESTFLOAT) testfloat$(LIB) $(SOFTFLOAT_LIB)
+-	$(LINK) $^
++	$(LINK) $^ -lm
+ 
+ .PHONY: clean
+ clean:
