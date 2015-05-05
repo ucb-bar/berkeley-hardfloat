@@ -46,47 +46,44 @@ class divSqrtRecodedFloat64 extends Module
   mul.io.c_s2 := ds.io.mulAddC_2
   ds.io.mulAddResult_3 := mul.io.result_s3
 }
-
-class mul54 extends Module
+class mul54(val wmul: Int = 54, wadd: Int = 105 ) extends Module
 {
   val io = new Bundle {
     val val_s0 = Bool(INPUT)
     val latch_a_s0 = Bool(INPUT)
-    val a_s0 = UInt(INPUT, 54)
+    val a_s0 = UInt(INPUT, wmul)
     val latch_b_s0 = Bool(INPUT)
-    val b_s0 = UInt(INPUT, 54)
-    val c_s2 = UInt(INPUT, 105)
-    val result_s3 = UInt(OUTPUT, 105)
+    val b_s0 = UInt(INPUT, wmul)
+    val c_s2 = UInt(INPUT, wadd)
+    val result_s3 = UInt(OUTPUT, wadd)
   }
 
-  val val_s1 = Reg(Bool())
-  val val_s2 = Reg(Bool())
-  val reg_a_s1 = Reg(UInt(width = 54))
-  val reg_b_s1 = Reg(UInt(width = 54))
-  val reg_a_s2 = Reg(UInt(width = 54))
-  val reg_b_s2 = Reg(UInt(width = 54))
-  val reg_result_s3 = Reg(UInt(width = 105))
+    val val_s1 = Reg(Bool())
+    val val_s1_1 = Reg(Bool())  
+    val val_s2 = Reg(Bool())
+    val reg_a_s1 = Reg(UInt(width = wmul))
+    val reg_b_s1 = Reg(UInt(width = wmul))
+    val reg_mul_s2 = Reg(UInt(width = 	wadd))
+    val reg_mul_s3 = Reg(UInt(width = 	wadd))	
+    val reg_c_s3 = Reg(UInt(width = wadd))
 
-  val_s1 := io.val_s0
-  val_s2 := val_s1
+    val_s1_1 := io.val_s0 && (io.latch_a_s0 || io.latch_b_s0)
+    val_s1 := io.val_s0
+    val_s2 := val_s1
 
-  when (io.val_s0) {
-    when (io.latch_a_s0) {
-      reg_a_s1 := io.a_s0
+    when (io.val_s0 && io.latch_a_s0) {reg_a_s1 := io.a_s0}
+    when (io.val_s0 && io.latch_b_s0) {reg_b_s1 := io.b_s0}
+
+    val mul_result = (reg_a_s1 * reg_b_s1)(wadd-1 , 0)
+
+    when (val_s1_1) {
+      reg_mul_s2 := mul_result
     }
-    when (io.latch_b_s0) {
-      reg_b_s1 := io.b_s0
+
+    when (val_s2) {
+      reg_mul_s3 := reg_mul_s2
+      reg_c_s3 := io.c_s2
     }
-  }
 
-  when (val_s1) {
-    reg_a_s2 := reg_a_s1
-    reg_b_s2 := reg_b_s1
-  }
-
-  when (val_s2) {
-    reg_result_s3 := (reg_a_s2 * reg_b_s2)(104,0) + io.c_s2
-  }
-
-  io.result_s3 := reg_result_s3
+    io.result_s3 := reg_mul_s3 + reg_c_s3
 }

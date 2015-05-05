@@ -296,6 +296,14 @@ class mulAddSubRecodedFloatN(sigWidth: Int, expWidth: Int, speed: Boolean = fals
           Mux(isNaNOut       , UInt(7 << expWidth-3), UInt(0, expWidth) )
   val fractOut = fractY | Fill(sigWidth, isNaNOut || isSatOut)
 
-  io.out := Cat(signOut, expOut, fractOut)
-  io.exceptionFlags := Cat(invalid, Bool(false), overflow, underflow, inexact)
+	val minPatchBypass1 = roundingMode_min && ~notSpecial_addZeros && signOut && (expOut(expWidth-1, expWidth-3) === UInt(0)) && totalUnderflowY && ~isZeroY	
+	val maxPatchBypass = roundingMode_max && ~notSpecial_addZeros && ~signOut && (expOut(expWidth-1, expWidth-3) === UInt(0)) && totalUnderflowY && ~isZeroY
+	val minPatchBypass2 = roundingMode_min && isZeroY && (signProd || opSignC) && ~notNaN_isInfOut 
+	val expOutPatched = Mux(maxPatchBypass || minPatchBypass1, UInt(minExp), expOut)
+	val signOutPatched = signOut || minPatchBypass2	
+	val outPatched = Cat(signOutPatched, expOutPatched, fractOut)
+	val exceptionFlags = Cat(invalid, Bool(false), overflow, underflow, inexact)
+
+  	io.out := outPatched
+  	io.exceptionFlags := exceptionFlags
 }
