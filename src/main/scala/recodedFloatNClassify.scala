@@ -8,8 +8,6 @@
 package hardfloat
 
 import Chisel._
-import Node._
-import scala.math._
 import consts._
 
 object recodedFloatNClassify {

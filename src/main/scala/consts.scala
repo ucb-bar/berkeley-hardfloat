@@ -5,8 +5,7 @@
 
 package hardfloat
 
-import Chisel._;
-import Node._;
+import Chisel._
 
 object consts {
   // Rounding modes

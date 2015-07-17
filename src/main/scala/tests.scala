@@ -3,7 +3,6 @@
 package hardfloat
 
 import Chisel._
-import Node._
 import util.Random
 import scala.sys.process._
 

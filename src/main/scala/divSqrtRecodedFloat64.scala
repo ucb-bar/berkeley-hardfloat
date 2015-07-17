@@ -3,7 +3,6 @@
 package hardfloat
 
 import Chisel._
-import Node._
 import consts._
 
 class divSqrtRecodedFloat64 extends Module

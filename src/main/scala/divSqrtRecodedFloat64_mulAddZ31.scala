@@ -3,14 +3,8 @@
 package hardfloat
 
 import Chisel._
-import Node._
+import Chisel.ImplicitConversions._
 import consts._
-
-object Util {
-  implicit def intToUInt(x: Int): UInt = UInt(x)
-}
-
-import Util._
 
 // YUNSUP: Lines with CHISEL are modified from the original Verilog source
 // code to bridge the different language semantics of Chisel and Verilog.
@@ -112,56 +106,56 @@ class divSqrtRecodedFloat64_mulAddZ31 extends Module
 
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-    val ready_PA = Bool()
-    val ready_PB = Bool()
-    val ready_PC = Bool()
-    val leaving_PA = Bool()
-    val leaving_PB = Bool()
-    val leaving_PC = Bool()
+    val ready_PA = Wire(Bool())
+    val ready_PB = Wire(Bool())
+    val ready_PC = Wire(Bool())
+    val leaving_PA = Wire(Bool())
+    val leaving_PB = Wire(Bool())
+    val leaving_PC = Wire(Bool())
 
-    val cyc_B10_sqrt = Bool()
-    val cyc_B9_sqrt = Bool()
-    val cyc_B8_sqrt = Bool()
-    val cyc_B7_sqrt = Bool()
+    val cyc_B10_sqrt = Wire(Bool())
+    val cyc_B9_sqrt = Wire(Bool())
+    val cyc_B8_sqrt = Wire(Bool())
+    val cyc_B7_sqrt = Wire(Bool())
 
-    val cyc_B6 = Bool()
-    val cyc_B5 = Bool()
-    val cyc_B4 = Bool()
-    val cyc_B3 = Bool()
-    val cyc_B2 = Bool()
-    val cyc_B1 = Bool()
+    val cyc_B6 = Wire(Bool())
+    val cyc_B5 = Wire(Bool())
+    val cyc_B4 = Wire(Bool())
+    val cyc_B3 = Wire(Bool())
+    val cyc_B2 = Wire(Bool())
+    val cyc_B1 = Wire(Bool())
 
-    val cyc_B6_div = Bool()
-    val cyc_B5_div = Bool()
-    val cyc_B4_div = Bool()
-    val cyc_B3_div = Bool()
-    val cyc_B2_div = Bool()
+    val cyc_B6_div = Wire(Bool())
+    val cyc_B5_div = Wire(Bool())
+    val cyc_B4_div = Wire(Bool())
+    val cyc_B3_div = Wire(Bool())
+    val cyc_B2_div = Wire(Bool())
 
-    val cyc_B1_div = Bool()
+    val cyc_B1_div = Wire(Bool())
 
-    val cyc_B6_sqrt = Bool()
-    val cyc_B5_sqrt = Bool()
-    val cyc_B4_sqrt = Bool()
-    val cyc_B3_sqrt = Bool()
+    val cyc_B6_sqrt = Wire(Bool())
+    val cyc_B5_sqrt = Wire(Bool())
+    val cyc_B4_sqrt = Wire(Bool())
+    val cyc_B3_sqrt = Wire(Bool())
 
-    val cyc_B2_sqrt = Bool()
-    val cyc_B1_sqrt = Bool()
+    val cyc_B2_sqrt = Wire(Bool())
+    val cyc_B1_sqrt = Wire(Bool())
 
-    val cyc_C5 = Bool()
-    val cyc_C4 = Bool()
-    val cyc_C3 = Bool()
-    val cyc_C2 = Bool()
-    val cyc_C1 = Bool()
+    val cyc_C5 = Wire(Bool())
+    val cyc_C4 = Wire(Bool())
+    val cyc_C3 = Wire(Bool())
+    val cyc_C2 = Wire(Bool())
+    val cyc_C1 = Wire(Bool())
 
-    val cyc_E4 = Bool()
-    val cyc_E3 = Bool()
-    val cyc_E2 = Bool()
-    val cyc_E1 = Bool()
+    val cyc_E4 = Wire(Bool())
+    val cyc_E3 = Wire(Bool())
+    val cyc_E2 = Wire(Bool())
+    val cyc_E1 = Wire(Bool())
 
-    val zSigma1_B4 = Bits()
-    val sigXNU_B3_CX = Bits()
-    val zComplSigT_C1_sqrt = Bits()
-    val zComplSigT_C1 = Bits()
+    val zSigma1_B4 = Wire(Bits())
+    val sigXNU_B3_CX = Wire(Bits())
+    val zComplSigT_C1_sqrt = Wire(Bits())
+    val zComplSigT_C1 = Wire(Bits())
 
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
@@ -378,7 +372,7 @@ class divSqrtRecodedFloat64_mulAddZ31 extends Module
     val cyc_A1_sqrt = cyc_A1 & sqrtOp_PA
 
     when ( cyc_A1 | (cycleNum_B != UInt(0)) ) {
-        cycleNum_B := Mux(cyc_A1, Mux(sqrtOp_PA, 10, 6), cycleNum_B - 1)
+        cycleNum_B := Mux(cyc_A1, Mux[UInt](sqrtOp_PA, 10, 6), cycleNum_B - 1)
     }
 
     cyc_B10_sqrt := (cycleNum_B === 10)
@@ -408,7 +402,7 @@ class divSqrtRecodedFloat64_mulAddZ31 extends Module
     cyc_B1_sqrt := cyc_B1 & sqrtOp_PB
 
     when ( cyc_B1 | (cycleNum_C != UInt(0)) ) {
-        cycleNum_C := Mux(cyc_B1, Mux(sqrtOp_PB, 6, 5), cycleNum_C - 1)
+        cycleNum_C := Mux(cyc_B1, Mux[UInt](sqrtOp_PB, 6, 5), cycleNum_C - 1)
     }
 
     val cyc_C6_sqrt = (cycleNum_C === 6)
@@ -431,8 +425,8 @@ class divSqrtRecodedFloat64_mulAddZ31 extends Module
     val cyc_C2_sqrt = cyc_C2 & sqrtOp_PC
     val cyc_C1_sqrt = cyc_C1 & sqrtOp_PC
 
-    when ( cyc_C1 | (cycleNum_E != 0) ) {
-        cycleNum_E := Mux(cyc_C1, 4, cycleNum_E - 1)
+    when ( cyc_C1 | (cycleNum_E != UInt(0)) ) {
+        cycleNum_E := Mux[UInt](cyc_C1, 4, cycleNum_E - 1)
     }
 
     cyc_E4 := (cycleNum_E === 4)
@@ -518,7 +512,7 @@ class divSqrtRecodedFloat64_mulAddZ31 extends Module
         Cat(cyc_A6_sqrt, zComplFractK0_A6_sqrt, Fill(6, cyc_A6_sqrt))             |
         Cat(cyc_A4_div,  zComplFractK0_A4_div,  Fill(8, cyc_A4_div))              |
         Mux(cyc_A5_sqrt, UInt(1<<18, 20) + (fractR0_A<<10),              UInt(0)) | // CHISEL
-        Mux(cyc_A4_sqrt & ~hiSqrR0_A_sqrt(9), 1<<10,                     UInt(0)) |
+        Mux[UInt](cyc_A4_sqrt & ~hiSqrR0_A_sqrt(9), 1<<10,                     UInt(0)) |
         Mux((cyc_A4_sqrt & hiSqrR0_A_sqrt(9)) | cyc_A3_div,
             sigB_PA(46,26) + (1<<10),
             UInt(0))                                                              |

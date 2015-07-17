@@ -9,7 +9,6 @@
 package hardfloat
 
 import Chisel._
-import Node._
 import consts._
 
 object anyToRecodedFloatN

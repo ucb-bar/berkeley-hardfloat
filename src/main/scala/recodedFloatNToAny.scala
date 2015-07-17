@@ -8,7 +8,6 @@
 package hardfloat
 
 import Chisel._
-import Node._
 import scala.math._
 import consts._
 

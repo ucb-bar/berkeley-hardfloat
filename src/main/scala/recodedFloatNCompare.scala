@@ -3,7 +3,6 @@
 package hardfloat
 
 import Chisel._
-import Node._
 
 class recodedFloatNCompare_io(SIG_WIDTH: Int, EXP_WIDTH: Int) extends Bundle {
   val a              = UInt(INPUT, SIG_WIDTH + EXP_WIDTH + 1);

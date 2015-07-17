@@ -6,7 +6,6 @@
 package hardfloat
 
 import Chisel._
-import Node._
 import consts._
 
 object MaskOnes
@@ -20,10 +19,8 @@ object MaskOnes
 
 object estNormDistPNNegSumS
 {
-  def priorityEncode(key: UInt, n: Int, s: Int) = {
-    if (Module.backend.isInstanceOf[CppBackend]) UInt(n+s-1) - Log2(key(s-1,0), s)
-    else PriorityMux((0 until s).map(i => (key(s-1-i), UInt(n+i, log2Up(n+s-1)))))
-  }
+  def priorityEncode(key: UInt, n: Int, s: Int) =
+    PriorityMux((0 until s).map(i => (key(s-1-i), UInt(n+i, log2Up(n+s-1)))))
 
   def apply(a: UInt, b: UInt, n: Int, s: Int) =
     priorityEncode((a ^ b) ^ ~((a & b) << UInt(1)), n, s)
@@ -227,7 +224,7 @@ class mulAddSubRecodedFloatN(sigWidth: Int, expWidth: Int, speed: Boolean = fals
         ( ~ doIncrSig & roundDirectUp             & anyRound    ) |
         (   doIncrSig                             & allRound    ) |
         (   doIncrSig & roundingMode_nearest_even & roundPosBit ) |
-        (   doIncrSig & roundDirectUp             & UInt(1)  )
+        (   doIncrSig & roundDirectUp )
   val roundEven =
       Mux(doIncrSig,
           roundingMode_nearest_even & ~ roundPosBit &   allRoundExtra,
