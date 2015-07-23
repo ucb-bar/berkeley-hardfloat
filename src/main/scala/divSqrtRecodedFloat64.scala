@@ -84,7 +84,7 @@ class mul54 extends Module
   }
 
   when (val_s2) {
-    reg_result_s3 := (reg_a_s2 * reg_b_s2)(104,0) + io.c_s2
+    reg_result_s3 := reg_a_s2 * reg_b_s2 + io.c_s2
   }
 
   io.result_s3 := reg_result_s3
