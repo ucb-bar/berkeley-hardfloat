@@ -140,13 +140,13 @@ class mulAddSubRecodedFloatN(sigWidth: Int, expWidth: Int, speed: Boolean = fals
       Mux(CAlignDist_0 | doSubMags, CAlignDist, (CAlignDist - UInt(1))(log2Up(sigWidth+1)-1, 0))
   val CDom_firstNormAbsSigSum =
       (((~ doSubMags & ~ CDom_estNormDist(logNormSize-2)).toSInt &
-        Cat(sigSum(sigSumSize-1, normSize-firstNormUnit), firstReduceSigSum != UInt(0))) |
+        Cat(sigSum(sigSumSize-1, normSize-firstNormUnit), firstReduceSigSum != UInt(0)).toSInt) |
       ((~ doSubMags & CDom_estNormDist(logNormSize-2)).toSInt &
-        Cat(sigSum(sigSumSize-firstNormUnit-1, normSize-firstNormUnit*2), firstReduceSigSum(0))) |
+        Cat(sigSum(sigSumSize-firstNormUnit-1, normSize-firstNormUnit*2), firstReduceSigSum(0)).toSInt) |
       ((doSubMags & ~ CDom_estNormDist(logNormSize-2)).toSInt &
-        Cat(notSigSum(sigSumSize-1, normSize-firstNormUnit), firstReduceNotSigSum != UInt(0))) |
+        Cat(notSigSum(sigSumSize-1, normSize-firstNormUnit), firstReduceNotSigSum != UInt(0)).toSInt) |
       ((doSubMags & CDom_estNormDist(logNormSize-2)).toSInt &
-        Cat(notSigSum(sigSumSize-firstNormUnit-1, normSize-firstNormUnit*2), firstReduceNotSigSum(0)))).toUInt
+        Cat(notSigSum(sigSumSize-firstNormUnit-1, normSize-firstNormUnit*2), firstReduceNotSigSum(0)).toSInt)).toUInt
   //------------------------------------------------------------------------
   // (For this case, bits above `sigSum(normSize)' are never interesting.  Also,
   // if there is any significant cancellation, then `sigSum(0)' must equal

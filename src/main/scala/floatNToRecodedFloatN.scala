@@ -3,6 +3,7 @@
 package hardfloat
 
 import Chisel._
+import Chisel.ImplicitConversions._
 
 object floatNToRecodedFloatN
 {
@@ -17,7 +18,7 @@ object floatNToRecodedFloatN
     val isZero = isZeroExpIn && isZeroFractIn
     val isSubnormal = isZeroExpIn && !isZeroFractIn
 
-    val (norm, normCount) = Normalize(fractIn << UInt(normWidth-sigWidth))
+    val (norm, normCount) = Normalize(fractIn << (normWidth-sigWidth))
     val subnormal_expOut = Cat(Fill(expWidth-log2Up(sigWidth), Bool(true)), ~normCount)
 
     val normalizedFract = norm(normWidth-2, normWidth-sigWidth-1)
