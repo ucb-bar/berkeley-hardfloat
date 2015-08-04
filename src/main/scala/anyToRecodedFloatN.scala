@@ -13,7 +13,7 @@ import consts._
 
 object anyToRecodedFloatN
 {
-  def apply(in: UInt, roundingMode: Bits, typeOp: Bits, sigWidth: Int, expWidth: Int, intWidth: Int) = {
+  def apply(in: UInt, roundingMode: UInt, typeOp: UInt, sigWidth: Int, expWidth: Int, intWidth: Int) = {
     val sign =
       Mux(typeOp === type_int32, in(intWidth/2-1),
       Mux(typeOp === type_int64, in(intWidth-1),
