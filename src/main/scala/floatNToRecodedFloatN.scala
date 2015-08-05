@@ -27,7 +27,7 @@ object floatNToRecodedFloatN
     val adjustedCommonExp = commonExp + expAdjust
     val isNaN = adjustedCommonExp(expWidth-1,expWidth-2).andR && !isZeroFractIn
 
-    val expOut = adjustedCommonExp | (isNaN << UInt(expWidth-3))
+    val expOut = adjustedCommonExp | (isNaN << (expWidth-3))
     val fractOut = Mux(isZeroExpIn, normalizedFract, fractIn)
 
     Cat(sign, expOut, fractOut)

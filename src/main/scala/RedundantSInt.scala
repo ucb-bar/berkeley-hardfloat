@@ -19,12 +19,12 @@ class RedundantSInt(val left: SInt, val right: SInt, val width: Int) {
       val (a1, b1, x1) = (left(width-2,0), right(width-2,0), x(width-2,0))
       val sums = left ^ right ^ x
       val carries = a1 & b1 | a1 & x1 | b1 & x1
-      RedundantSInt(sums, carries.toSInt << UInt(1))
+      RedundantSInt(sums, carries.toSInt << 1)
     }
   }
 
-  def << (x: UInt) = RedundantSInt(left << x, right << x)
-  def >> (x: UInt) = RedundantSInt(left >> x, right >> x)
+  def << (x: Int) = RedundantSInt(left << x, right << x)
+  def >> (x: Int) = RedundantSInt(left >> x, right >> x)
 
   def padTo(w: Int) =
     if (width < w) RedundantSInt(RedundantSInt.padTo(left, w),

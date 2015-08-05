@@ -79,7 +79,7 @@ object recodedFloatNToRecodedFloatM
       val expUnderflow = Mux(underflow_to_small, UInt((1 << outExpWidth-2)-outSigWidth+2), UInt(0))
 
       val expOut =
-            Mux(isSpecial, expCode << UInt(outExpWidth-3),
+            Mux(isSpecial, expCode << (outExpWidth-3),
             Mux(isOverflow, expOverflow,
             Mux(isUnderflow, expUnderflow,
             expRounded)))
@@ -102,9 +102,9 @@ object recodedFloatNToRecodedFloatM
         Mux(expCode < UInt(6), Cat(UInt(1 << (outExpWidth-inExpWidth)), expLSBs),
         Mux(expCode < UInt(7), UInt(3 << (outExpWidth-2)),
                                UInt(7 << (outExpWidth-3))))))
-      val sigOut = Fill(outSigWidth, isNaN) | sigIn << UInt(outSigWidth-inSigWidth)
+      val sigOut = Fill(outSigWidth, isNaN) | sigIn << (outSigWidth-inSigWidth)
       val out = Cat(sign, expOut, sigOut)
-      (out, isSignalingNaN << UInt(4))
+      (out, isSignalingNaN << 4)
     }
   }
 }
