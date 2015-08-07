@@ -3,6 +3,7 @@
 package hardfloat
 
 import Chisel._
+import Chisel.ImplicitConversions._
 import consts._
 
 object recodedFloatNToRecodedFloatM_noncompliant

@@ -3,6 +3,7 @@
 package hardfloat
 
 import Chisel._
+import Chisel.ImplicitConversions._
 
 class RedundantSInt(val left: SInt, val right: SInt, val width: Int) {
   def toSInt = left + right
