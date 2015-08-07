@@ -6,11 +6,11 @@ library contains parameterized floating-point units for fused multiply-add
 operations, conversions between integer and floating-point numbers, and
 conversions between floating-point conversions with different precision.
 
-
-Author
-------
-
-John Hauser
+**WARNING**:
+These units are works in progress.  They are not yet completely free of bugs,
+nor are they fully optimized.  In  particular, the fused multiply-adder is
+known not to implement the round-to-max and round-to-min rounding modes
+correctly.
 
 
 Recoded Format
