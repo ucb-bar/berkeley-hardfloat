@@ -3,3 +3,7 @@ target
 ucli.key
 .*.swp
 test-*
+
+# These come from building SoftFloat/TestFloat
+/berkeley-*float-3
+/testfloat_gen

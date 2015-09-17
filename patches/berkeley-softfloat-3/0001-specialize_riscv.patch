@@ -1,0 +1,12 @@
+diff -ur berkeley-softfloat-3.orig/build/Linux-x86_64-GCC/Makefile berkeley-softfloat-3/build/Linux-x86_64-GCC/Makefile
+--- berkeley-softfloat-3.orig/build/Linux-x86_64-GCC/Makefile	2015-03-26 19:30:48.521070658 -0700
++++ berkeley-softfloat-3/build/Linux-x86_64-GCC/Makefile	2015-03-26 19:31:53.891071268 -0700
+@@ -32,7 +32,7 @@
+ #=============================================================================
+ 
+ SOURCE_DIR = ../../source
+-SPECIALIZE_TYPE = 8086-SSE
++SPECIALIZE_TYPE = RISCV
+ 
+ SOFTFLOAT_OPTS = -DINLINE_LEVEL=5 -DSOFTFLOAT_FAST_DIV64TO32
+ 

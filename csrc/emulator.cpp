@@ -22,7 +22,7 @@ int main (int argc, char* argv[])
   }
 
   // main operation
-  while (true) {
+  while (cnt < (1UL << 20)) {
     if (!process_inputs()) break;
     if (!process_outputs()) break;
 
@@ -41,7 +41,7 @@ int main (int argc, char* argv[])
           expected_recoded->to_str().c_str(), actual_recoded->to_str().c_str(),
           expected_exception->to_str().c_str(), expected_exception->to_str().c_str());
         if (error == 20) {
-          printf("reached %ld errors. aborting.\n", error);
+          printf("reached %ld errors in %ld tests. aborting.\n", error, cnt);
           break;
         }
       }
@@ -50,6 +50,9 @@ int main (int argc, char* argv[])
 
     module->clock_hi(LIT<1>(0));
   }
+
+  if (error > 0)
+    printf("reached %ld errors in %ld tests. aborting.\n", error, cnt);
   
   return 0;
 }
