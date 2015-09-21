@@ -67,7 +67,7 @@ object recodedFloatNToRecodedFloatM
          /* roundingMode === round_minMag */ Bool(false))))
       val roundMaskShifted   = (Fill(outSigWidth+2,UInt(1)) << round_position.toUInt)(outSigWidth+1,0)
       val sigUnrounded = Cat(UInt(1, 2), sigIn(inSigWidth-1,inSigWidth-outSigWidth)) | ~roundMaskShifted
-      val sigRounded = Mux(round, sigUnrounded + UInt(1), sigUnrounded)
+      val sigRounded = Mux(round, sigUnrounded + UInt(1), sigUnrounded) & roundMaskShifted
       val expUnrounded = expIn(outExpWidth-1,0) + UInt(1 << outExpWidth-1)
       val expRounded = Mux(sigRounded(outSigWidth+1), expUnrounded + UInt(1), expUnrounded)
 
