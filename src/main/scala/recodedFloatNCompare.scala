@@ -36,9 +36,8 @@ class recodedFloatNCompare(SIG_WIDTH: Int, EXP_WIDTH: Int) extends Module {
 
   val signEqual = signA === signB
   val expEqual = expA === expB
-  val magsInf = isInfA && isInfB
-  val magEqual = (expEqual && sigA === sigB) || magsInf
-  val magLess = (expA < expB || (expEqual && sigA < sigB)) && !magsInf
+  val magEqual = (expEqual && sigA === sigB) || (isInfA && isInfB) || (isZeroA && isZeroB)
+  val magLess = (expA < expB || (expEqual && sigA < sigB)) && !isInfA && !isZeroB
 
   io.a_eq_b_invalid := isSignalingNaNA || isSignalingNaNB
   io.a_lt_b_invalid := isNaNA || isNaNB
