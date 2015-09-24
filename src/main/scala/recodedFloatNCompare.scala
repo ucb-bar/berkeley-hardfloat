@@ -17,31 +17,28 @@ class recodedFloatNCompare(SIG_WIDTH: Int, EXP_WIDTH: Int) extends Module {
   val io = new recodedFloatNCompare_io(SIG_WIDTH, EXP_WIDTH)
 
   val signA = io.a(SIG_WIDTH+EXP_WIDTH)
-  val expA = io.a(SIG_WIDTH+EXP_WIDTH-1, SIG_WIDTH)
-  val sigA = io.a(SIG_WIDTH-1,0)
-  val codeA = expA(EXP_WIDTH-1, EXP_WIDTH-3)
+  val magA = io.a(SIG_WIDTH+EXP_WIDTH-1, 0)
+  val codeA = io.a(SIG_WIDTH+EXP_WIDTH-1, SIG_WIDTH+EXP_WIDTH-3)
   val isZeroA = codeA === UInt(0)
   val isInfA = codeA === UInt(6)
   val isNaNA = codeA === UInt(7)
-  val isSignalingNaNA = isNaNA && !sigA(SIG_WIDTH-1)
+  val isSignalingNaNA = isNaNA && !io.a(SIG_WIDTH-1)
 
   val signB = io.b(SIG_WIDTH+EXP_WIDTH)
-  val expB = io.b(SIG_WIDTH+EXP_WIDTH-1,SIG_WIDTH)
-  val sigB = io.b(SIG_WIDTH-1,0)
-  val codeB = expB(EXP_WIDTH-1, EXP_WIDTH-3)
+  val magB = io.b(SIG_WIDTH+EXP_WIDTH-1, 0)
+  val codeB = io.b(SIG_WIDTH+EXP_WIDTH-1, SIG_WIDTH+EXP_WIDTH-3)
   val isZeroB = codeB === UInt(0)
   val isInfB = codeB === UInt(6)
   val isNaNB = codeB === UInt(7)
-  val isSignalingNaNB = isNaNB && !sigB(SIG_WIDTH-1)
+  val isSignalingNaNB = isNaNB && !io.b(SIG_WIDTH-1)
 
   val signEqual = signA === signB
-  val expEqual = expA === expB
-  val magEqual = (expEqual && sigA === sigB) || (isInfA && isInfB) || (isZeroA && isZeroB)
-  val magLess = (expA < expB || (expEqual && sigA < sigB)) && !isInfA && !isZeroB
+  val magEqual = magA === magB || (isInfA && isInfB) || (isZeroA && isZeroB)
+  val magLess = magA < magB && !isInfA && !isZeroB
 
   io.a_eq_b_invalid := isSignalingNaNA || isSignalingNaNB
   io.a_lt_b_invalid := isNaNA || isNaNB
   io.a_eq_b := !isNaNA && magEqual && (isZeroA || signEqual)
   io.a_lt_b := !io.a_lt_b_invalid &&
-    Mux(signB, signA && !magLess && !magEqual, Mux(signA, !(isZeroA && isZeroB), magLess))
+    Mux(signB, signA && !(magLess || magEqual), Mux(signA, !(isZeroA && isZeroB), magLess))
 }
