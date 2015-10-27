@@ -1,5 +1,8 @@
 default: all
 
+# By default, build with the latest release of Chisel
+chiselVersion ?=latest.release
+
 berkeley-softfloat-3/extract.stamp: patches/berkeley-softfloat-3/*
 	rm -rf berkeley-softfloat-3
 	git clone git://github.com/ucb-bar/berkeley-softfloat-3.git
@@ -32,7 +35,7 @@ SBT = java -Xmx2048M -Xss8M -XX:MaxPermSize=128M -jar sbt-launch.jar
 define test_template
 
 test-$(1)/Test_$(1).cpp: src/main/scala/*.scala
-	$(SBT) -DchiselVersion=latest.release "run $(1) --targetDir test-$(1)"
+	$(SBT) -DchiselVersion=$(chiselVersion) "run $(1) --targetDir test-$(1)"
 
 test-$(1)/dut: test-$(1)/Test_$(1).cpp csrc/*.h csrc/*.cpp
 	g++ -c -o test-$(1)/emulator.o -Icsrc -Itest-$(1) -include csrc/emulator-$(1).h csrc/emulator.cpp
@@ -54,7 +57,7 @@ test-c-$(1).max.log: test-$(1)/dut testfloat_gen
 $(1): $$(addsuffix .log, $$(addprefix test-c-$(1)., near_even minMag min max))
 
 test-$(1)/Test_$(1).v: src/main/scala/*.scala
-	$(SBT) -DchiselVersion=latest.release "run $(1) --targetDir test-$(1) --backend v"
+	$(SBT) -DchiselVersion=$(chiselVersion) "run $(1) --targetDir test-$(1) --backend v"
 
 test-$(1)/simv: test-$(1)/Test_$(1).v
 	cd test-$(1) && vcs -full64 -timescale=1ns/10ps +define+EXPERIMENT=\"emulator-$(1).vh\" +incdir+../vsrc +rad $$(notdir $$<) ../vsrc/emulator.v -o $$(notdir $$@)
