@@ -1,4 +1,6 @@
 
+CHISEL_VERSION = 2.2.29
+
 #default: test-c test-v
 default: test-c
 
@@ -42,7 +44,7 @@ tests = \
 define test_fNFromRecFN_template
 
 test-$(1)/ValExec_$(1).cpp: src/main/scala/*.scala
-	sbt -DchiselVersion=latest.release "run $(1) --targetDir test-$(1)"
+	sbt -DchiselVersion=$(CHISEL_VERSION) "run $(1) --targetDir test-$(1)"
 
 test-$(1)/dut: test-$(1)/ValExec_$(1).cpp csrc/*.h csrc/*.cpp
 	g++ -c -o test-$(1)/test.o -Icsrc -Itest-$(1) -include csrc/test-$(1).h csrc/test-fNFromRecFN.cpp
@@ -64,7 +66,7 @@ endef
 define test_RecFNToUIN_template
 
 test-$(1)/ValExec_$(1).cpp: src/main/scala/*.scala
-	sbt -DchiselVersion=latest.release "run $(1) --targetDir test-$(1)"
+	sbt -DchiselVersion=$(CHISEL_VERSION) "run $(1) --targetDir test-$(1)"
 
 test-$(1)/dut: test-$(1)/ValExec_$(1).cpp csrc/*.h csrc/*.cpp
 	g++ -c -o test-$(1)/test.o -Icsrc -Itest-$(1) -include csrc/test-$(1).h csrc/test-RecFNToUIN.cpp
@@ -99,7 +101,7 @@ endef
 define test_RecFNToIN_template
 
 test-$(1)/ValExec_$(1).cpp: src/main/scala/*.scala
-	sbt -DchiselVersion=latest.release "run $(1) --targetDir test-$(1)"
+	sbt -DchiselVersion=$(CHISEL_VERSION) "run $(1) --targetDir test-$(1)"
 
 test-$(1)/dut: test-$(1)/ValExec_$(1).cpp csrc/*.h csrc/*.cpp
 	g++ -c -o test-$(1)/test.o -Icsrc -Itest-$(1) -include csrc/test-$(1).h csrc/test-RecFNToIN.cpp
@@ -134,7 +136,7 @@ endef
 define otherTest_template
 
 test-$(1)/ValExec_$(1).cpp: src/main/scala/*.scala
-	sbt -DchiselVersion=latest.release "run $(1) --targetDir test-$(1)"
+	sbt -DchiselVersion=$(CHISEL_VERSION) "run $(1) --targetDir test-$(1)"
 
 test-$(1)/dut: test-$(1)/ValExec_$(1).cpp csrc/*.h csrc/*.cpp
 	g++ -c -o test-$(1)/test.o -Icsrc -Itest-$(1) -include csrc/test-$(1).h csrc/test.cpp
@@ -162,7 +164,7 @@ test-c-$(1): \
 
 #*** FOR VERILOG TESTING:
 #test-$(1)/ValExec_$(1).v: src/main/scala/*.scala
-#	sbt -DchiselVersion=latest.release "run $(1) --targetDir test-$(1) --backend v"
+#	sbt -DchiselVersion=$(CHISEL_VERSION) "run $(1) --targetDir test-$(1) --backend v"
 #
 #test-$(1)/simv: test-$(1)/ValExec_$(1).v
 #	cd test-$(1) && vcs -full64 -timescale=1ns/10ps +define+EXPERIMENT=\"emulator-$(1).vh\" +incdir+../vsrc +rad $$(notdir $$<) ../vsrc/emulator.v -o $$(notdir $$@)
