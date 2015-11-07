@@ -37,13 +37,43 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package hardfloat
 
-import Chisel._;
-import Node._;
+import Chisel._
+import Node._
 
-object consts {
-    val round_nearest_even = UInt("b00", 2);
-    val round_minMag       = UInt("b01", 2);
-    val round_min          = UInt("b10", 2);
-    val round_max          = UInt("b11", 2);
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+object resizeRawFN
+{
+    def apply(expWidth: Int, sigWidth: Int, in: RawFloat): RawFloat =
+    {
+        val sNewExp = in.sExp + SInt((1<<expWidth) - (1<<in.expWidth))
+
+        val out = new RawFloat(expWidth, sigWidth)
+        out.sign   := in.sign
+        out.isNaN  := in.isNaN
+        out.isInf  := in.isInf
+        out.isZero := in.isZero
+        out.sExp :=
+            (if(expWidth >= in.expWidth) {
+                 sNewExp
+             } else {
+                 Cat((sNewExp < SInt(0)),
+                     Mux(sNewExp(in.expWidth, expWidth + 1).orR,
+                         Cat(Fill(expWidth - 1, Bits(1, 1)), Bits(0, 2)),
+                         sNewExp(expWidth, 0)
+                     )
+                 )
+             })
+        out.sig :=
+            (if(sigWidth >= in.sigWidth) {
+                 in.sig<<(sigWidth - in.sigWidth)
+             } else {
+                 Cat(in.sig(in.sigWidth + 2, in.sigWidth - sigWidth + 1),
+                     in.sig(in.sigWidth - sigWidth, 0).orR
+                 )
+             })
+        out
+    }
 }
 

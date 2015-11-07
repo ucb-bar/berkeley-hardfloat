@@ -37,13 +37,52 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package hardfloat
 
-import Chisel._;
-import Node._;
+import Chisel._
+import Node._
 
-object consts {
-    val round_nearest_even = UInt("b00", 2);
-    val round_minMag       = UInt("b01", 2);
-    val round_min          = UInt("b10", 2);
-    val round_max          = UInt("b11", 2);
+class
+    ValExec_RecFNToRecFN(
+        inExpWidth: Int, inSigWidth: Int, outExpWidth: Int, outSigWidth: Int)
+    extends Module
+{
+    val io = new Bundle {
+        val in = Bits(INPUT, inExpWidth + inSigWidth)
+        val roundingMode = Bits(INPUT, 2)
+
+        val expected = new Bundle {
+            val out = Bits(INPUT, outExpWidth + outSigWidth)
+            val exceptionFlags = Bits(INPUT, 5)
+            val recOut = Bits(OUTPUT, outExpWidth + outSigWidth + 1)
+        }
+
+        val actual = new Bundle {
+            val out = Bits(OUTPUT, outExpWidth + outSigWidth + 1)
+            val exceptionFlags = Bits(OUTPUT, 5)
+        }
+
+        val check = Bool(OUTPUT)
+        val pass = Bool(OUTPUT)
+    }
+
+    val recFNToRecFN =
+        Module(
+            new RecFNToRecFN(inExpWidth, inSigWidth, outExpWidth, outSigWidth))
+    recFNToRecFN.io.in := recFNFromFN(inExpWidth, inSigWidth, io.in)
+    recFNToRecFN.io.roundingMode := io.roundingMode
+
+    io.expected.recOut :=
+        recFNFromFN(outExpWidth, outSigWidth, io.expected.out)
+
+    io.actual.out := recFNToRecFN.io.out
+    io.actual.exceptionFlags := recFNToRecFN.io.exceptionFlags
+
+    io.check := Bool(true)
+    io.pass :=
+        equivRecFN(
+            outExpWidth, outSigWidth, io.actual.out, io.expected.recOut) &&
+        (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
+
+class ValExec_RecF64ToRecF32 extends ValExec_RecFNToRecFN(11, 53, 8, 24)
+class ValExec_RecF32ToRecF64 extends ValExec_RecFNToRecFN(8, 24, 11, 53)
 

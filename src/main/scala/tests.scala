@@ -1,261 +1,125 @@
-// See LICENSE for license details.
+
+/*============================================================================
+
+This Chisel source file is part of a pre-release version of the HardFloat IEEE
+Floating-Point Arithmetic Package, by John R. Hauser (with contributions from
+Brian Richards, Yunsup Lee, and Andrew Waterman).
+
+Copyright 2010, 2011, 2012, 2013, 2014, 2015 The Regents of the University of
+California.  All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+ 1. Redistributions of source code must retain the above copyright notice,
+    this list of conditions, and the following disclaimer.
+
+ 2. Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions, and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+
+ 3. Neither the name of the University nor the names of its contributors may
+    be used to endorse or promote products derived from this software without
+    specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS "AS IS", AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE, ARE
+DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+=============================================================================*/
 
 package hardfloat
 
 import Chisel._
 import Node._
-import util.Random
-import scala.sys.process._
 
-class TestMulAdd(val sigWidth: Int, val expWidth: Int) extends Module {
-  val io = new Bundle {
-    val a = Bits(INPUT, sigWidth + expWidth)
-    val b = Bits(INPUT, sigWidth + expWidth)
-    val c = Bits(INPUT, sigWidth + expWidth)
-    val rm = Bits(INPUT, 2)
-
-    val expected = new Bundle {
-      val ieee = Bits(INPUT, sigWidth + expWidth)
-      val exception = Bits(INPUT, 5)
-      val recoded = Bits(OUTPUT, sigWidth + expWidth + 1)
+object equivRecFN
+{
+    def apply(expWidth: Int, sigWidth: Int, a: Bits, b: Bits) = {
+        val top4A = a(expWidth + sigWidth, expWidth + sigWidth - 3)
+        val top4B = b(expWidth + sigWidth, expWidth + sigWidth - 3)
+        Mux((top4A(2, 0) === UInt(0)) || (top4A(2, 0) === UInt(7)),
+            (top4A === top4B) && (a(sigWidth - 2, 0) === b(sigWidth - 2, 0)),
+            Mux((top4A(2, 0) === UInt(6)), (top4A === top4B), (a === b))
+        )
     }
-
-    val actual = new Bundle {
-      val ieee = Bits(OUTPUT, sigWidth + expWidth)
-      val exception = Bits(OUTPUT, 5)
-      val recoded = Bits(OUTPUT, sigWidth + expWidth + 1)
-    }
-
-    val check = Bool(OUTPUT)
-    val pass = Bool(OUTPUT)
-  }
-
-  val fma = Module(new mulAddSubRecodedFloatN(sigWidth, expWidth))
-  fma.io.op := UInt(0)
-  fma.io.a := floatNToRecodedFloatN(io.a, sigWidth, expWidth)
-  fma.io.b := floatNToRecodedFloatN(io.b, sigWidth, expWidth)
-  fma.io.c := floatNToRecodedFloatN(io.c, sigWidth, expWidth)
-  fma.io.roundingMode := io.rm
-
-  io.expected.recoded := floatNToRecodedFloatN(io.expected.ieee, sigWidth, expWidth)
-
-  io.actual.ieee := recodedFloatNToFloatN(fma.io.out, sigWidth, expWidth)
-  io.actual.exception := fma.io.exceptionFlags
-  io.actual.recoded := fma.io.out
-
-  io.check := Bool(true)
-  io.pass :=
-    io.expected.ieee === io.actual.ieee &&
-    io.expected.exception === io.actual.exception
 }
 
-class Test_f32_mulAdd extends TestMulAdd(23, 9)
-class Test_f64_mulAdd extends TestMulAdd(52, 12)
-
-class f64_div_io extends Bundle {
-  val a = Bits(width = 64)
-  val b = Bits(width = 64)
-  val rm = Bits(width = 2)
-  val out = Bits(width = 64)
-  val exception = Bits(width = 5)
-}
-
-class Test_f64_div extends Module {
-  val io = new Bundle {
-    val input = Decoupled(new f64_div_io).flip
-
-    val output = new Bundle {
-      val a = Bits(OUTPUT, 64)
-      val b = Bits(OUTPUT, 64)
-      val rm = Bits(OUTPUT, 2)
-    }
-
-    val expected = new Bundle {
-      val ieee = Bits(OUTPUT, 64)
-      val exception = Bits(OUTPUT, 5)
-      val recoded = Bits(OUTPUT, 65)
-    }
-
-    val actual = new Bundle {
-      val ieee = Bits(OUTPUT, 64)
-      val exception = Bits(OUTPUT, 5)
-      val recoded = Bits(OUTPUT, 65)
-    }
-
-    val check = Bool(OUTPUT)
-    val pass = Bool(OUTPUT)
-  }
-
-  val ds = Module(new divSqrtRecodedFloat64)
-  val cq = Module(new Queue(new f64_div_io, 5))
-
-  cq.io.enq.valid := io.input.valid && ds.io.inReady_div
-  cq.io.enq.bits := io.input.bits
-
-  io.input.ready := ds.io.inReady_div && cq.io.enq.ready
-  ds.io.inValid := io.input.valid && cq.io.enq.ready
-  ds.io.sqrtOp := Bool(false)
-  ds.io.a := floatNToRecodedFloatN(io.input.bits.a, 52, 12)
-  ds.io.b := floatNToRecodedFloatN(io.input.bits.b, 52, 12)
-  ds.io.roundingMode := io.input.bits.rm
-
-  io.output.a := cq.io.deq.bits.a
-  io.output.b := cq.io.deq.bits.b
-  io.output.rm := cq.io.deq.bits.rm
-
-  io.expected.ieee := cq.io.deq.bits.out
-  io.expected.exception := cq.io.deq.bits.exception
-  io.expected.recoded := floatNToRecodedFloatN(cq.io.deq.bits.out, 52, 12)
-
-  io.actual.ieee := recodedFloatNToFloatN(ds.io.out, 52, 12)
-  io.actual.exception := ds.io.exceptionFlags
-  io.actual.recoded := ds.io.out
-
-  cq.io.deq.ready := ds.io.outValid_div
-
-  io.check := ds.io.outValid_div
-  io.pass :=
-    cq.io.deq.valid &&
-    io.expected.ieee === io.actual.ieee &&
-    io.expected.exception === io.actual.exception
-}
-
-class f64_sqrt_io extends Bundle {
-  val b = Bits(width = 64)
-  val rm = Bits(width = 2)
-  val out = Bits(width = 64)
-  val exception = Bits(width = 5)
-}
-
-class Test_f64_sqrt extends Module {
-  val io = new Bundle {
-    val input = Decoupled(new f64_sqrt_io).flip
-
-    val output = new Bundle {
-      val b = Bits(OUTPUT, 64)
-      val rm = Bits(OUTPUT, 2)
-    }
-
-    val expected = new Bundle {
-      val ieee = Bits(OUTPUT, 64)
-      val exception = Bits(OUTPUT, 5)
-      val recoded = Bits(OUTPUT, 65)
-    }
-
-    val actual = new Bundle {
-      val ieee = Bits(OUTPUT, 64)
-      val exception = Bits(OUTPUT, 5)
-      val recoded = Bits(OUTPUT, 65)
-    }
-
-    val check = Bool(OUTPUT)
-    val pass = Bool(OUTPUT)
-  }
-
-  val ds = Module(new divSqrtRecodedFloat64)
-  val cq = Module(new Queue(new f64_sqrt_io, 5))
-
-  cq.io.enq.valid := io.input.valid && ds.io.inReady_sqrt
-  cq.io.enq.bits := io.input.bits
-
-  io.input.ready := ds.io.inReady_sqrt && cq.io.enq.ready
-  ds.io.inValid := io.input.valid && cq.io.enq.ready
-  ds.io.sqrtOp := Bool(true)
-  ds.io.b := floatNToRecodedFloatN(io.input.bits.b, 52, 12)
-  ds.io.roundingMode := io.input.bits.rm
-
-  io.output.b := cq.io.deq.bits.b
-  io.output.rm := cq.io.deq.bits.rm
-
-  io.expected.ieee := cq.io.deq.bits.out
-  io.expected.exception := cq.io.deq.bits.exception
-  io.expected.recoded := floatNToRecodedFloatN(cq.io.deq.bits.out, 52, 12)
-
-  io.actual.ieee := recodedFloatNToFloatN(ds.io.out, 52, 12)
-  io.actual.exception := ds.io.exceptionFlags
-  io.actual.recoded := ds.io.out
-
-  cq.io.deq.ready := ds.io.outValid_sqrt
-
-  io.check := ds.io.outValid_sqrt
-  io.pass :=
-    cq.io.deq.valid &&
-    io.expected.ieee === io.actual.ieee &&
-    io.expected.exception === io.actual.exception
-}
-
-class FMAPipeline(sigWidth: Int, expWidth: Int) extends Module {
-  val io = new Bundle {
-    val req = Bool(INPUT)
-    val resp = Bool(OUTPUT)
-    val a = Bits(INPUT, sigWidth + expWidth + 1)
-    val b = Bits(INPUT, sigWidth + expWidth + 1)
-    val c = Bits(INPUT, sigWidth + expWidth + 1)
-    val out = Bits(OUTPUT, sigWidth + expWidth + 1 + 5)
-  }
-  val fma = Module(new mulAddSubRecodedFloatN(sigWidth, expWidth))
-  fma.io.a := io.a
-  fma.io.b := io.b
-  fma.io.c := io.c
-  fma.io.op := Bits(0)
-  fma.io.roundingMode := io.a
-  io.out := RegEnable(Cat(fma.io.exceptionFlags, fma.io.out), io.req)
-  io.resp := Reg(next=io.req)
-}
-
-class FMARecoded(val sigWidth: Int, val expWidth: Int)  extends Module {
-  val io = new Bundle {
-    val a = Bits(INPUT, sigWidth + expWidth + 1)
-    val b = Bits(INPUT, sigWidth + expWidth + 1)
-    val c = Bits(INPUT, sigWidth + expWidth + 1)
-    val out = Bits(OUTPUT, sigWidth + expWidth + 1 + 5)
-  }
-
-  val fma = Module(new FMAPipeline(sigWidth, expWidth))
-  val en = io.a.orR
-  fma.io.req := Reg(next=en, init=Bool(false))
-  fma.io.a := RegEnable(io.a, en)
-  fma.io.b := RegEnable(io.b, en)
-  fma.io.c := RegEnable(io.c, en)
-  io.out := RegEnable(fma.io.out, fma.io.resp)
-}
-
-class SFMARecoded extends FMARecoded(23, 9)
-class DFMARecoded extends FMARecoded(52, 12)
-
-class RAM(val w: Int, val d: Int, val nr: Int) extends Module {
-  val io = new Bundle {
-    val wa = Bits(INPUT, log2Up(d))
-    val we = Bool(INPUT)
-    val wd = Bits(INPUT, w)
-
-    val ra = Vec.fill(nr)(Bits(INPUT, log2Up(d)))
-    val re = Vec.fill(nr)(Bool(INPUT))
-    val rd = Vec.fill(nr)(Bits(OUTPUT, w))
-  }
-
-  val ram = Mem(Bits(width = w), d)
-  when (io.we) { ram(io.wa) := io.wd }
-
-  for (i <- 0 until nr) {
-    val ra = RegEnable(io.ra(i), io.re(i))
-    val re = Reg(next=io.re(i), init=Bool(false))
-    io.rd(i) := RegEnable(ram(ra), re)
-  }
-}
-
+//*** CHANGE THIS NAME (HOW??):
 object FMATest {
-  def main(args: Array[String]): Unit = {
-    val testArgs = args.slice(1, args.length)
-    args(0) match {
-      case "f32_mulAdd" =>
-        chiselMain(testArgs, () => Module(new Test_f32_mulAdd))
-      case "f64_mulAdd" =>
-        chiselMain(testArgs, () => Module(new Test_f64_mulAdd))
-      case "f64_div" =>
-        chiselMain(testArgs, () => Module(new Test_f64_div))
-      case "f64_sqrt" =>
-        chiselMain(testArgs, () => Module(new Test_f64_sqrt))
+    def main(args: Array[String]): Unit = {
+        val testArgs = args.slice(1, args.length)
+        args(0) match {
+            case "f32FromRecF32" =>
+                chiselMain(testArgs, () => Module(new ValExec_f32FromRecF32))
+            case "f64FromRecF64" =>
+                chiselMain(testArgs, () => Module(new ValExec_f64FromRecF64))
+            case "UI32ToRecF32" =>
+                chiselMain(testArgs, () => Module(new ValExec_UI32ToRecF32))
+            case "UI32ToRecF64" =>
+                chiselMain(testArgs, () => Module(new ValExec_UI32ToRecF64))
+            case "UI64ToRecF32" =>
+                chiselMain(testArgs, () => Module(new ValExec_UI64ToRecF32))
+            case "UI64ToRecF64" =>
+                chiselMain(testArgs, () => Module(new ValExec_UI64ToRecF64))
+            case "I32ToRecF32" =>
+                chiselMain(testArgs, () => Module(new ValExec_I32ToRecF32))
+            case "I32ToRecF64" =>
+                chiselMain(testArgs, () => Module(new ValExec_I32ToRecF64))
+            case "I64ToRecF32" =>
+                chiselMain(testArgs, () => Module(new ValExec_I64ToRecF32))
+            case "I64ToRecF64" =>
+                chiselMain(testArgs, () => Module(new ValExec_I64ToRecF64))
+            case "RecF32ToUI32" =>
+                chiselMain(testArgs, () => Module(new ValExec_RecF32ToUI32))
+            case "RecF32ToUI64" =>
+                chiselMain(testArgs, () => Module(new ValExec_RecF32ToUI64))
+            case "RecF64ToUI32" =>
+                chiselMain(testArgs, () => Module(new ValExec_RecF64ToUI32))
+            case "RecF64ToUI64" =>
+                chiselMain(testArgs, () => Module(new ValExec_RecF64ToUI64))
+            case "RecF32ToI32" =>
+                chiselMain(testArgs, () => Module(new ValExec_RecF32ToI32))
+            case "RecF32ToI64" =>
+                chiselMain(testArgs, () => Module(new ValExec_RecF32ToI64))
+            case "RecF64ToI32" =>
+                chiselMain(testArgs, () => Module(new ValExec_RecF64ToI32))
+            case "RecF64ToI64" =>
+                chiselMain(testArgs, () => Module(new ValExec_RecF64ToI64))
+            case "RecF32ToRecF64" =>
+                chiselMain(testArgs, () => Module(new ValExec_RecF32ToRecF64))
+            case "RecF64ToRecF32" =>
+                chiselMain(testArgs, () => Module(new ValExec_RecF64ToRecF32))
+            case "MulAddRecF32" =>
+                chiselMain(testArgs, () => Module(new ValExec_MulAddRecF32))
+            case "MulAddRecF32_add" =>
+                chiselMain(
+                    testArgs, () => Module(new ValExec_MulAddRecF32_add))
+            case "MulAddRecF32_mul" =>
+                chiselMain(
+                    testArgs, () => Module(new ValExec_MulAddRecF32_mul))
+            case "MulAddRecF64" =>
+                chiselMain(testArgs, () => Module(new ValExec_MulAddRecF64))
+            case "MulAddRecF64_add" =>
+                chiselMain(
+                    testArgs, () => Module(new ValExec_MulAddRecF64_add))
+            case "MulAddRecF64_mul" =>
+                chiselMain(
+                    testArgs, () => Module(new ValExec_MulAddRecF64_mul))
+            case "DivSqrtRecF64_div" =>
+                chiselMain(
+                    testArgs, () => Module(new ValExec_DivSqrtRecF64_div))
+            case "DivSqrtRecF64_sqrt" =>
+                chiselMain(
+                    testArgs, () => Module(new ValExec_DivSqrtRecF64_sqrt))
+        }
     }
-  }
 }
+

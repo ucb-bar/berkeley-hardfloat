@@ -37,13 +37,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package hardfloat
 
-import Chisel._;
-import Node._;
+import Chisel._
+import Node._
 
-object consts {
-    val round_nearest_even = UInt("b00", 2);
-    val round_minMag       = UInt("b01", 2);
-    val round_min          = UInt("b10", 2);
-    val round_max          = UInt("b11", 2);
+object rawFNFromRecFN
+{
+    def apply(expWidth: Int, sigWidth: Int, in: Bits): RawFloat =
+    {
+        val exp = in(expWidth + sigWidth - 1, sigWidth - 1)
+        val isSpecial = (exp(expWidth, expWidth - 1) === UInt(3))
+
+        val out = new RawFloat(expWidth, sigWidth)
+        out.sign := in(expWidth + sigWidth)
+        out.isNaN := isSpecial &   exp(expWidth - 2)
+        out.isInf := isSpecial & ! exp(expWidth - 2)
+        out.isZero := (exp(expWidth, expWidth - 2) === UInt(0))
+        out.sExp := exp
+        out.sig := Cat(UInt(1, 2), in(sigWidth - 2, 0), UInt(0, 2))
+        out
+    }
 }
 

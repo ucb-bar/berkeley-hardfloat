@@ -2,4 +2,5 @@ project
 target
 ucli.key
 .*.swp
-test-*
+test-*/
+test-*.log

@@ -37,13 +37,39 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package hardfloat
 
-import Chisel._;
-import Node._;
+import Chisel._
+import Node._
 
-object consts {
-    val round_nearest_even = UInt("b00", 2);
-    val round_minMag       = UInt("b01", 2);
-    val round_min          = UInt("b10", 2);
-    val round_max          = UInt("b11", 2);
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+object lowMask
+{
+    def apply(in: UInt, topBound: Int, bottomBound: Int): UInt = {
+        require(topBound != bottomBound)
+        val numInVals = 1<<in.getWidth
+        if (topBound < bottomBound) {
+            lowMask(~in, numInVals - 1 - topBound, numInVals - 1 - bottomBound)
+        } else {
+            val shift = SInt(BigInt(-1)<<numInVals)>>in
+            Reverse(shift(numInVals - 1 - bottomBound, numInVals - topBound))
+        }
+    }
+}
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+object priorityEncode
+{
+// *** JUST ALWAYS USE `Log2' FUNCTION?
+    def apply(key: UInt, n: Int, s: Int) = {
+        if (Module.backend.isInstanceOf[CppBackend]) {
+            UInt(n + s - 1) - Log2(key(s - 1, 0), s)
+        } else {
+            PriorityMux(
+                (0 until s)
+                    .map(i => (key(s - 1 - i), UInt(n + i, log2Up(n + s - 1))))
+            )
+        }
+    }
 }
 

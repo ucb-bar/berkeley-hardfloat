@@ -37,13 +37,42 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package hardfloat
 
-import Chisel._;
-import Node._;
+import Chisel._
+import Node._
 
-object consts {
-    val round_nearest_even = UInt("b00", 2);
-    val round_minMag       = UInt("b01", 2);
-    val round_min          = UInt("b10", 2);
-    val round_max          = UInt("b11", 2);
+object recFNFromFN
+{
+    def apply(expWidth: Int, sigWidth: Int, in: Bits) = {
+        val normWidth = 1<<log2Up(sigWidth - 1)
+
+        val sign = in(expWidth + sigWidth - 1)
+        val expIn = in(expWidth + sigWidth - 2, sigWidth - 1)
+        val fractIn = in(sigWidth - 2, 0)
+
+        val isZeroExpIn = (expIn === UInt(0))
+        val isZeroFractIn = (fractIn === UInt(0))
+        val isZero = isZeroExpIn && isZeroFractIn
+
+        val normCount =
+            ~Log2(fractIn<<UInt(normWidth - sigWidth + 1), normWidth)
+        val normalizedFract =
+            Cat((fractIn<<normCount)(sigWidth - 3, 0), UInt(0, 1))
+
+        val adjustedExp =
+            Mux(isZeroExpIn,
+                normCount ^ Fill(expWidth + 1, Bool(true)),
+                expIn
+            ) + (UInt(1<<(expWidth - 1)) | Mux(isZeroExpIn, UInt(2), UInt(1)))
+
+        val isNaN =
+            (adjustedExp(expWidth, expWidth - 1) === UInt(3)) &&
+                ! isZeroFractIn
+
+        val expOut =
+            (adjustedExp & ~(Fill(3, isZero)<<UInt(expWidth - 2))) |
+                isNaN<<UInt(expWidth - 2)
+        val fractOut = Mux(isZeroExpIn, normalizedFract, fractIn)
+        Cat(sign, expOut, fractOut)
+    }
 }
 
