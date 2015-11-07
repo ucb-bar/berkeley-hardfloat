@@ -1,16 +1,14 @@
 Berkeley Hardware Floating-Point Units
 ======================================
 
-This repository contains hardware floating-point units written in Chisel. This
-library contains parameterized floating-point units for fused multiply-add
+This repository contains hardware floating-point units written in Chisel.
+This library contains parameterized floating-point units for fused multiply-add
 operations, conversions between integer and floating-point numbers, and
 conversions between floating-point conversions with different precision.
 
-
-Author
-------
-
-John Hauser
+**WARNING**:
+These units are works in progress.  They may not be yet completely free of
+bugs, nor are they fully optimized.
 
 
 Recoded Format
@@ -18,7 +16,7 @@ Recoded Format
 
 The floating-point units in this repository work on an internal recoded format
 (exponent has an additional bit) to handle subnormal numbers more efficiently
-in a microprocessor. A more detailed explanation will come soon, but in the
+in a microprocessor.  A more detailed explanation will come soon, but in the
 mean time here are some example mappings for single-precision numbers.
 
     IEEE format                           Recoded format
@@ -44,13 +42,9 @@ Unit-Testing
 ------------
 
 To unit-test these floating-point units, you need the berkeley-testfloat-3
-package. We are currently working on open-sourcing berkeley-softfloat-3 and
-berkeley-testfloat-3.
+package.
 
 To test floating-point units with the C simulator:
 
     $ make
 
-To test floating-point units with the VCS simulator:
-
-    $ make verilog

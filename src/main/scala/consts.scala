@@ -37,8 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package hardfloat
 
-import Chisel._;
-import Node._;
+import Chisel._
 
 object consts {
     val round_nearest_even = UInt("b00", 2);
