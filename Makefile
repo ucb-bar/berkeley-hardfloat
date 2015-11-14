@@ -37,6 +37,12 @@ tests = \
  MulAddRecF64 \
  DivSqrtRecF64_div \
  DivSqrtRecF64_sqrt \
+ CompareRecF32_lt \
+ CompareRecF32_le \
+ CompareRecF32_eq \
+ CompareRecF64_lt \
+ CompareRecF64_le \
+ CompareRecF64_eq \
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
@@ -125,6 +131,28 @@ test-c-$(1): \
  test-c-$(1).minMag.log \
  test-c-$(1).min.log \
  test-c-$(1).max.log \
+
+.PHONY: test-c-$(1) test-v-$(1)
+
+endef
+
+#-----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
+
+define test_CompareRecFN_template
+
+test-$(1)/ValExec_$(1).cpp: src/main/scala/*.scala
+	sbt -DchiselVersion=$(CHISEL_VERSION) "run $(1) --targetDir test-$(1)"
+
+test-$(1)/dut: test-$(1)/ValExec_$(1).cpp csrc/*.h csrc/*.cpp
+	g++ -c -o test-$(1)/test.o -Icsrc -Itest-$(1) -include csrc/test-$(1).h csrc/test-CompareRecFN.cpp
+	g++ -c -o test-$(1)/ValExec_$(1).o $$<
+	g++ -o $$@ test-$(1)/ValExec_$(1).o test-$(1)/test.o
+
+test-c-$(1).log: test-$(1)/dut
+	{ testfloat_gen $(3) $(2) | $$< ; } > $$@ 2>&1
+
+test-c-$(1): test-c-$(1).log
 
 .PHONY: test-c-$(1) test-v-$(1)
 
@@ -226,6 +254,13 @@ $(eval $(call otherTest_template,MulAddRecF64_mul,f64_mul,))
 $(eval $(call otherTest_template,MulAddRecF64,f64_mulAdd,))
 $(eval $(call otherTest_template,DivSqrtRecF64_div,f64_div,))
 $(eval $(call otherTest_template,DivSqrtRecF64_sqrt,f64_sqrt,-level2))
+
+$(eval $(call test_CompareRecFN_template,CompareRecF32_lt,f32_lt,))
+$(eval $(call test_CompareRecFN_template,CompareRecF32_le,f32_le,))
+$(eval $(call test_CompareRecFN_template,CompareRecF32_eq,f32_eq,))
+$(eval $(call test_CompareRecFN_template,CompareRecF64_lt,f64_lt,))
+$(eval $(call test_CompareRecFN_template,CompareRecF64_le,f64_le,))
+$(eval $(call test_CompareRecFN_template,CompareRecF64_eq,f64_eq,))
 
 test-c: $(addprefix test-c-, $(tests))
 	@ if grep abort test-c-*.log; then \

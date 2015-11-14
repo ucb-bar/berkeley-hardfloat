@@ -97,28 +97,46 @@ object FMATest {
                 chiselMain(testArgs, () => Module(new ValExec_RecF32ToRecF64))
             case "RecF64ToRecF32" =>
                 chiselMain(testArgs, () => Module(new ValExec_RecF64ToRecF32))
-            case "MulAddRecF32" =>
-                chiselMain(testArgs, () => Module(new ValExec_MulAddRecF32))
             case "MulAddRecF32_add" =>
                 chiselMain(
                     testArgs, () => Module(new ValExec_MulAddRecF32_add))
             case "MulAddRecF32_mul" =>
                 chiselMain(
                     testArgs, () => Module(new ValExec_MulAddRecF32_mul))
-            case "MulAddRecF64" =>
-                chiselMain(testArgs, () => Module(new ValExec_MulAddRecF64))
+            case "MulAddRecF32" =>
+                chiselMain(testArgs, () => Module(new ValExec_MulAddRecF32))
             case "MulAddRecF64_add" =>
                 chiselMain(
                     testArgs, () => Module(new ValExec_MulAddRecF64_add))
             case "MulAddRecF64_mul" =>
                 chiselMain(
                     testArgs, () => Module(new ValExec_MulAddRecF64_mul))
+            case "MulAddRecF64" =>
+                chiselMain(testArgs, () => Module(new ValExec_MulAddRecF64))
             case "DivSqrtRecF64_div" =>
                 chiselMain(
                     testArgs, () => Module(new ValExec_DivSqrtRecF64_div))
             case "DivSqrtRecF64_sqrt" =>
                 chiselMain(
                     testArgs, () => Module(new ValExec_DivSqrtRecF64_sqrt))
+            case "CompareRecF32_lt" =>
+                chiselMain(
+                    testArgs, () => Module(new ValExec_CompareRecF32_lt))
+            case "CompareRecF32_le" =>
+                chiselMain(
+                    testArgs, () => Module(new ValExec_CompareRecF32_le))
+            case "CompareRecF32_eq" =>
+                chiselMain(
+                    testArgs, () => Module(new ValExec_CompareRecF32_eq))
+            case "CompareRecF64_lt" =>
+                chiselMain(
+                    testArgs, () => Module(new ValExec_CompareRecF64_lt))
+            case "CompareRecF64_le" =>
+                chiselMain(
+                    testArgs, () => Module(new ValExec_CompareRecF64_le))
+            case "CompareRecF64_eq" =>
+                chiselMain(
+                    testArgs, () => Module(new ValExec_CompareRecF64_eq))
         }
     }
 }
