@@ -63,9 +63,9 @@ class RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int) extends Module
 // *** CROP THIS SHIFT TO ONLY THE SIZE NEEDED:
     val shiftedSig =
         Cat(magGeOne, sig)<<
-            Mux(magGeOne, exp(min(expWidth, log2Up(intWidth)) - 1, 0), UInt(0))
+            Mux(magGeOne, exp(max(expWidth, log2Up(intWidth)) - 1, 0), UInt(0))
     val unrounded =
-        shiftedSig(min(1<<expWidth, intWidth) + sigWidth - 2, sigWidth - 1)
+        shiftedSig(max(1<<expWidth, intWidth) + sigWidth - 2, sigWidth - 1)
     val roundBits =
         Cat(shiftedSig(sigWidth - 1, sigWidth - 2),
             shiftedSig(sigWidth - 3, 0).orR
