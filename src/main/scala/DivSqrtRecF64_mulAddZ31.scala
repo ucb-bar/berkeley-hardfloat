@@ -194,8 +194,9 @@ class DivSqrtRecF64_mulAddZ31 extends Module
     *------------------------------------------------------------------------*/
 //*** NEED TO COMPUTE AS MUCH AS POSSIBLE IN PREVIOUS CYCLE?:
     io.inReady_div :=
-        ready_PA & ~cyc_B6_sqrt & ~cyc_B5_sqrt & ~cyc_B4_sqrt & ~cyc_B3 &
-            ~cyc_B2 & ~cyc_B1_sqrt & ~cyc_C5 & ~cyc_C4
+//*** REPLACE ALL OF `~cyc_B*_sqrt' BY `~(valid_PB & sqrtOp_PB)'?:
+        ready_PA & ~cyc_B7_sqrt & ~cyc_B6_sqrt & ~cyc_B5_sqrt & ~cyc_B4_sqrt &
+            ~cyc_B3 & ~cyc_B2 & ~cyc_B1_sqrt & ~cyc_C5 & ~cyc_C4
     io.inReady_sqrt :=
         ready_PA & ~cyc_B6_sqrt & ~cyc_B5_sqrt & ~cyc_B4_sqrt & ~cyc_B2_div &
             ~cyc_B1_sqrt
