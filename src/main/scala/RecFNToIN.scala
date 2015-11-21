@@ -54,56 +54,72 @@ class RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int) extends Module
 
     val sign = io.in(expWidth + sigWidth)
     val exp = io.in(expWidth + sigWidth - 1, sigWidth - 1)
-    val sig = io.in(sigWidth - 2, 0)
+    val fract = io.in(sigWidth - 2, 0)
 
-    val magGeOne  = exp(expWidth)
-    val isZero    = (exp(expWidth, expWidth - 2) === UInt(0))
+    val isZero = (exp(expWidth, expWidth - 2) === UInt(0))
     val isSpecial = exp(expWidth, expWidth - 1).andR
+    val notSpecial_magGeOne = exp(expWidth)
 
-// *** CROP THIS SHIFT TO ONLY THE SIZE NEEDED:
+    /*------------------------------------------------------------------------
+    | Assuming the input floating-point value is not a NaN, its magnitude is
+    | at least 1, and it is not obviously so large as to lead to overflow,
+    | convert its significand to fixed-point (i.e., with the binary point in a
+    | fixed location).  For a non-NaN input with a magnitude less than 1, this
+    | expression contrives to ensure that the integer bits of `shiftedSig'
+    | will all be zeros.
+    *------------------------------------------------------------------------*/
     val shiftedSig =
-        Cat(magGeOne, sig)<<
-            Mux(magGeOne, exp(min(expWidth, log2Up(intWidth)) - 1, 0), UInt(0))
-    val unrounded =
-        shiftedSig(min(1<<expWidth, intWidth) + sigWidth - 2, sigWidth - 1)
+        Cat(notSpecial_magGeOne, fract)<<
+            Mux(notSpecial_magGeOne,
+                exp(min(expWidth - 2, log2Up(intWidth) - 1), 0),
+                UInt(0)
+            )
+    val unroundedInt =
+        (if (shiftedSig.getWidth - (sigWidth - 1) < intWidth) {
+             UInt(0, intWidth) |
+                 shiftedSig(shiftedSig.getWidth - 1, sigWidth - 1)
+         } else {
+             shiftedSig(intWidth + sigWidth - 2, sigWidth - 1)
+         })
     val roundBits =
         Cat(shiftedSig(sigWidth - 1, sigWidth - 2),
             shiftedSig(sigWidth - 3, 0).orR
         )
-    val roundInexact = Mux(magGeOne, roundBits(1, 0).orR, ! isZero)
+    val roundInexact = Mux(notSpecial_magGeOne, roundBits(1, 0).orR, ! isZero)
     val roundIncr_nearestEven =
-        Mux(magGeOne,
+        Mux(notSpecial_magGeOne,
             roundBits(2, 1).andR || roundBits(1, 0).andR,
-            exp(expWidth - 1, 0).andR && roundBits(1, 0).orR
+            Mux(exp(expWidth - 1, 0).andR, roundBits(1, 0).orR, Bool(false))
         )
     val roundIncr =
-        ((io.roundingMode === round_nearest_even) & roundIncr_nearestEven ) |
-        ((io.roundingMode === round_min)          &   sign && roundInexact) |
-        ((io.roundingMode === round_max)          & ! sign && roundInexact)
-    val onescomp = Mux(sign, ~unrounded, unrounded)
-    val rounded = Mux(roundIncr ^ sign, onescomp + UInt(1), onescomp).toSInt
+        ((io.roundingMode === round_nearest_even) & roundIncr_nearestEven   ) |
+        ((io.roundingMode === round_min)          & (  sign && roundInexact)) |
+        ((io.roundingMode === round_max)          & (! sign && roundInexact))
+    val onesCompUnroundedInt = Mux(sign, ~unroundedInt, unroundedInt)
+    val roundedInt =
+        Mux(roundIncr ^ sign,
+            onesCompUnroundedInt + UInt(1),
+            onesCompUnroundedInt
+        )
 
-// *** CONSIDER THAT, FOR SOME PARAMETER COMBINATIONS, ROUNDING CANNOT CAUSE
-// ***  OVERFLOW.
-
-// *** CHANGE TO TAKE BITS FROM THE ORIGINAL `sig' INSTEAD OF `unrounded':
-    val roundCarryBut2 = unrounded(intWidth - 3, 0).andR && roundIncr
+//*** CHANGE TO TAKE BITS FROM THE ORIGINAL `fract' INSTEAD OF `unroundedInt'?:
+    val roundCarryBut2 = unroundedInt(intWidth - 3, 0).andR && roundIncr
     val posExp = exp(expWidth - 1, 0)
 
     val overflow_signed =
-        Mux(magGeOne,
+        Mux(notSpecial_magGeOne,
             (posExp >= UInt(intWidth)) ||
                 ((posExp === UInt(intWidth - 1)) &&
-                     (! sign || unrounded(intWidth - 2, 0).orR
+                     (! sign || unroundedInt(intWidth - 2, 0).orR
                           || roundIncr)) ||
                 (! sign && (posExp === UInt(intWidth - 2)) && roundCarryBut2),
             Bool(false)
         )
     val overflow_unsigned =
-        Mux(magGeOne,
+        Mux(notSpecial_magGeOne,
             sign || (posExp >= UInt(intWidth)) ||
-                ((posExp === UInt(intWidth - 1)) && unrounded(intWidth - 2) &&
-                     roundCarryBut2),
+                ((posExp === UInt(intWidth - 1)) &&
+                     unroundedInt(intWidth - 2) && roundCarryBut2),
             sign && roundIncr
         )
     val overflow = Mux(io.signedOut, overflow_signed, overflow_unsigned)
@@ -117,7 +133,7 @@ class RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int) extends Module
         Mux(! io.signedOut, SInt(-1), UInt(0))
     val inexact = roundInexact && ! invalid && ! overflow
 
-    io.out := Mux(invalid | overflow, excValue, rounded)
+    io.out := Mux(invalid || overflow, excValue, roundedInt)
     io.intExceptionFlags := Cat(invalid, overflow, inexact)
 }
 
