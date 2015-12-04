@@ -58,6 +58,7 @@ class RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int) extends Module
 
     val isZero = (exp(expWidth, expWidth - 2) === UInt(0))
     val isSpecial = exp(expWidth, expWidth - 1).andR
+    val isNaN = isSpecial && exp(expWidth - 2)
     val notSpecial_magGeOne = exp(expWidth)
 
     /*------------------------------------------------------------------------
@@ -124,9 +125,10 @@ class RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int) extends Module
         )
     val overflow = Mux(io.signedOut, overflow_signed, overflow_unsigned)
     val invalid = isSpecial
+    val excSign = sign && ! isNaN
     val excValue =
-        Mux(io.signedOut && sign, SInt(BigInt(-1)<<(intWidth - 1)), UInt(0)) |
-        Mux(io.signedOut && ! sign,
+        Mux(io.signedOut && excSign, SInt(BigInt(-1)<<(intWidth - 1)), UInt(0)) |
+        Mux(io.signedOut && ! excSign,
             SInt((BigInt(1)<<(intWidth - 1)) - 1),
             UInt(0)
         ) |

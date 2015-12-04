@@ -857,7 +857,7 @@ class DivSqrtRecF64_mulAddZ31 extends Module
         (~sqrtOp_PC & isNaNA_PC) | isNaNB_PC | notSigNaN_invalid_PC
 
     val signOut_PC =
-        isNaNOut_PC | Mux(sqrtOp_PC, isZeroB_PC & sign_PC, sign_PC)
+        ~isNaNOut_PC & Mux(sqrtOp_PC, isZeroB_PC & sign_PC, sign_PC)
     val expOut_E1 =
         (expY_E1 &
              ~Mux(notSpecial_isZeroOut_E1,
@@ -882,13 +882,12 @@ class DivSqrtRecF64_mulAddZ31 extends Module
             Mux(isNaNOut_PC,           UInt("b111000000000", 12), UInt(0))
     val fractOut_E1 =
 //        Mux(notSpecial_isZeroOut_E1 | (totalUnderflowY_E1 & roundMagUp_PC),
-        Mux(notSpecial_isZeroOut_E1 | totalUnderflowY_E1,
+        Mux(notSpecial_isZeroOut_E1 | totalUnderflowY_E1 | isNaNOut_PC,
             UInt(0),
             fractY_E1
-        ) | Mux(isNaNOut_PC | pegMaxFiniteMagOut_E1,
-                UInt("hFFFFFFFFFFFFF", 52),
-                UInt(0)
-            )
+        ) |
+        Fill(52, pegMaxFiniteMagOut_E1) |
+        (isNaNOut_PC << 51)
     io.out := Cat(signOut_PC, expOut_E1, fractOut_E1)
 
     io.exceptionFlags :=

@@ -515,14 +515,15 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
         isInfA | isInfB | isInfC | (overflow & overflowY_roundMagUp)
     val isNaNOut = isNaNA | isNaNB | isNaNC | notSigNaN_invalid
 
-    val signOut =
+    val uncommonCaseSignOut =
         (! doSubMags                              && io.fromPreMul.opSignC ) ||
-        (isNaNOut                                 && Bool(true)            ) ||
         (mulSpecial && ! isSpecialC               && io.fromPreMul.signProd) ||
         (! mulSpecial && isSpecialC               && io.fromPreMul.opSignC ) ||
         (! mulSpecial && notSpecial_addZeros && doSubMags &&
-                                                     signZeroNotEqOpSigns  ) ||
-        (commonCase                               && signY                 )
+                                                     signZeroNotEqOpSigns  )
+    val signOut =
+        (! isNaNOut && uncommonCaseSignOut) ||
+        (commonCase && signY              )
     val expOut =
         (expY &
              ~Mux(notSpecial_isZeroOut,
@@ -552,8 +553,9 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
             ) |
             Mux(isNaNOut, UInt(7<<(expWidth - 2)), UInt(0, expWidth + 1))
     val fractOut =
-        Mux(totalUnderflowY && roundMagUp, UInt(0, sigWidth - 1), fractY) |
-            Fill(sigWidth - 1, isNaNOut || pegMaxFiniteMagOut)
+        Mux((totalUnderflowY && roundMagUp) || isNaNOut, UInt(0), fractY) |
+            (isNaNOut << (sigWidth - 2)) |
+            Fill(sigWidth - 1, pegMaxFiniteMagOut)
 
     io.out := Cat(signOut, expOut, fractOut)
     io.exceptionFlags :=

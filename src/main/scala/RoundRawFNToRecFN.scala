@@ -152,7 +152,7 @@ class RoundRawFNToRecFN(expWidth: Int, sigWidth: Int) extends Module
     val notNaN_isInfOut =
         notNaN_isSpecialInfOut | (overflow & overflow_roundMagUp)
 
-    val signOut = Mux(isNaNOut, Bool(true), io.in.sign)
+    val signOut = Mux(isNaNOut, Bool(false), io.in.sign)
     val expOut =
         (common_expOut &
              ~Mux(io.in.isZero | common_totalUnderflow,
@@ -182,8 +182,12 @@ class RoundRawFNToRecFN(expWidth: Int, sigWidth: Int) extends Module
             Mux(notNaN_isInfOut, UInt(infExp, expWidth + 1), UInt(0)) |
             Mux(isNaNOut,        UInt(NaNExp, expWidth + 1), UInt(0))
     val fractOut =
-        Mux(common_totalUnderflow & roundMagUp, UInt(0), common_fractOut) |
-            Fill(sigWidth - 1, isNaNOut | pegMaxFiniteMagOut)
+        Mux((common_totalUnderflow & roundMagUp) | isNaNOut,
+            UInt(0),
+            common_fractOut
+        ) |
+        Fill(sigWidth - 1, pegMaxFiniteMagOut) |
+        (isNaNOut << (sigWidth - 2))
 
     io.out := Cat(signOut, expOut, fractOut)
     io.exceptionFlags :=
