@@ -268,25 +268,25 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
         (((~doSubMags & ~CDom_estNormDist(logNormSize - 2)).toSInt &
               Cat(sigSum(sigSumSize - 1, normSize - firstNormUnit),
                   (firstReduceSigSum != UInt(0))
-              )) |
+              ).toSInt) |
          ((~doSubMags & CDom_estNormDist(logNormSize - 2)).toSInt &
               Cat(sigSum(
                       sigSumSize - firstNormUnit - 1,
                       normSize - firstNormUnit * 2
                   ),
                   firstReduceSigSum(0)
-              )) |
+              ).toSInt) |
          ((doSubMags & ~CDom_estNormDist(logNormSize - 2)).toSInt &
               Cat(notSigSum(sigSumSize - 1, normSize - firstNormUnit),
                   (firstReduceNotSigSum != UInt(0))
-              )) |
+              ).toSInt) |
          ((doSubMags & CDom_estNormDist(logNormSize - 2)).toSInt &
               Cat(notSigSum(
                       sigSumSize - firstNormUnit - 1,
                       normSize - firstNormUnit * 2
                   ),
                   firstReduceNotSigSum(0)
-              ))
+              ).toSInt)
         ).toUInt
     //------------------------------------------------------------------------
     // (For this case, bits above `sigSum(normSize)' are never interesting.
@@ -462,8 +462,8 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
     val roundUp_sigY3 =
         (((sigX3 | roundMask)>>UInt(2)) + UInt(1))(sigWidth + 1, 0)
     val sigY3 =
-        Mux(~roundUp & ~roundEven, (sigX3 & ~roundMask)>>UInt(2),    UInt(0)) |
-        Mux(roundUp,          roundUp_sigY3,                         UInt(0)) |
+        Mux((~roundUp & ~roundEven).toBool, (sigX3 & ~roundMask)>>UInt(2),    UInt(0)) |
+        Mux(roundUp.toBool,          roundUp_sigY3,                         UInt(0)) |
         Mux(roundEven,        roundUp_sigY3 & ~(roundMask>>UInt(1)), UInt(0))
 //*** HANDLE DIFFERENTLY?  (NEED TO ACCOUNT FOR ROUND-EVEN ZEROING MSB.)
     val sExpY =

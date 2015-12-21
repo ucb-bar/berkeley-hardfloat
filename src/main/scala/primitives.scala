@@ -60,16 +60,8 @@ object lowMask
 //----------------------------------------------------------------------------
 object priorityEncode
 {
-// *** JUST ALWAYS USE `Log2' FUNCTION?
     def apply(key: UInt, n: Int, s: Int) = {
-        if (Module.backend.isInstanceOf[CppBackend]) {
-            UInt(n + s - 1) - Log2(key(s - 1, 0), s)
-        } else {
-            PriorityMux(
-                (0 until s)
-                    .map(i => (key(s - 1 - i), UInt(n + i, log2Up(n + s - 1))))
-            )
-        }
+        UInt(n + s - 1) - Log2(key(s - 1, 0), s)
     }
 }
 
