@@ -178,14 +178,14 @@ class MulAddRecFN_preMul(expWidth: Int, sigWidth: Int) extends Module
 
 object estNormDistPNNegSumS
 {
-    def apply(a: UInt, b: UInt, n: Int, s: Int) =
-        priorityEncode((a ^ b) ^ ~((a & b)<<UInt(1)), n, s)
+    def apply(a: UInt, b: UInt) =
+        PriorityEncoder((a ^ b) ^ ~((a & b)<<UInt(1)))
 }
 
 object estNormDistPNPosSumS
 {
-    def apply(a: UInt, b: UInt, n: Int, s: Int) =
-        priorityEncode((a ^ b) ^ (a | b)<<UInt(1), n, s)
+    def apply(a: UInt, b: UInt) =
+        PriorityEncoder((a ^ b) ^ (a | b)<<UInt(1))
 }
 
 class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
@@ -242,7 +242,7 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
 // *** TEMPORARY:
     val estNormPos_dist =
         estNormDistPNPosSumS(
-            UInt(0, normSize), sigSum(normSize, 1), sigWidth, normSize)
+            UInt(0, normSize), sigSum(normSize, 1))
     val estNormNeg_dist = estNormPos_dist
 
     val firstReduceSigSum =
