@@ -4,9 +4,26 @@ CHISEL_VERSION = 2.2.29
 #default: test-c test-v
 default: test-c
 
-ifeq (, $(shell which testfloat_gen))
-$(error "No testfloat_gen in $(PATH), install testfloat_gen")
-endif
+berkeley-softfloat-3/extract.stamp: patches/SoftFloat-3/*
+	rm -rf berkeley-softfloat-3
+	git clone git://github.com/ucb-bar/berkeley-softfloat-3.git
+	patch -p0 < patches/berkeley-softfloat-3/0001-specialize_riscv.patch
+	touch berkeley-softfloat-3/extract.stamp
+
+berkeley-testfloat-3/extract.stamp:
+	rm -rf berkeley-testfloat-3
+	git clone git://github.com/ucb-bar/berkeley-testfloat-3.git
+	touch berkeley-testfloat-3/extract.stamp
+
+berkeley-softfloat-3/build/Linux-x86_64-GCC/softfloat.a: berkeley-softfloat-3/extract.stamp
+	$(MAKE) -C berkeley-softfloat-3/build/Linux-x86_64-GCC
+
+berkeley-testfloat-3/build/Linux-x86_64-GCC/testfloat_gen: berkeley-testfloat-3/extract.stamp \
+                                                           berkeley-softfloat-3/build/Linux-x86_64-GCC/softfloat.a
+	$(MAKE) -C berkeley-testfloat-3/build/Linux-x86_64-GCC
+
+testfloat_gen: berkeley-testfloat-3/build/Linux-x86_64-GCC/testfloat_gen
+	cp berkeley-testfloat-3/build/Linux-x86_64-GCC/testfloat_gen .
 
 tests = \
  f32FromRecF32 \

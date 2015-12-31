@@ -119,7 +119,7 @@ class RoundRawFNToRecFN(expWidth: Int, sigWidth: Int) extends Module
             (io.in.sig & ~roundMask)>>UInt(2)
         )
 //*** NEED TO ACCOUNT FOR ROUND-EVEN ZEROING MSB OF SUBNORMAL SIG?
-    val sRoundedExp = io.in.sExp + (roundedSig>>sigWidth)
+    val sRoundedExp = io.in.sExp + (roundedSig>>sigWidth).toSInt
 
     val common_expOut = sRoundedExp(expWidth, 0)
     val common_fractOut =
@@ -130,11 +130,11 @@ class RoundRawFNToRecFN(expWidth: Int, sigWidth: Int) extends Module
 
     val common_overflow = (sRoundedExp>>(expWidth - 1) >= SInt(3))
 //*** NEED TO ACCOUNT FOR ROUND-EVEN ZEROING MSB OF SUBNORMAL SIG?
-    val common_totalUnderflow = (sRoundedExp < UInt(minNonzeroExp))
+    val common_totalUnderflow = (sRoundedExp.toUInt < UInt(minNonzeroExp))
     val common_underflow =
         anyRound &
             (io.in.sExp <
-                 Mux(doShiftSigDown1, UInt(minNormExp - 1), UInt(minNormExp)))
+                 Mux(doShiftSigDown1, UInt(minNormExp - 1), UInt(minNormExp)).toSInt)
     val common_inexact = anyRound
 
     //------------------------------------------------------------------------
