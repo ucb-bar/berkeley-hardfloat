@@ -62,7 +62,7 @@ object resizeRawFN
                          Cat(Fill(expWidth - 1, Bits(1, 1)), Bits(0, 2)),
                          sNewExp(expWidth, 0)
                      )
-                 )
+                 ).toSInt
              })
         out.sig :=
             (if(sigWidth >= in.sigWidth) {

@@ -126,12 +126,12 @@ class RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int) extends Module
     val invalid = isSpecial
     val excSign = sign && ! isNaN
     val excValue =
-        Mux(io.signedOut && excSign, SInt(BigInt(-1)<<(intWidth - 1)), SInt(0)) |
+        Mux(io.signedOut && excSign, UInt(BigInt(1)<<(intWidth - 1)), UInt(0)) |
         Mux(io.signedOut && ! excSign,
-            SInt((BigInt(1)<<(intWidth - 1)) - 1),
-            SInt(0)
+            UInt((BigInt(1)<<(intWidth - 1)) - 1),
+            UInt(0)
         ) |
-        Mux(! io.signedOut, SInt(-1), SInt(0))
+        Mux(! io.signedOut, UInt((BigInt(1)<<intWidth) - 1), UInt(0))
     val inexact = roundInexact && ! invalid && ! overflow
 
     io.out := Mux(invalid || overflow, excValue, roundedInt)

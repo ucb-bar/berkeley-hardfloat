@@ -50,12 +50,12 @@ object rawFNFromRecFN
         val exp = in(expWidth + sigWidth - 1, sigWidth - 1)
         val isSpecial = (exp(expWidth, expWidth - 1) === UInt(3))
 
-        val out = new RawFloat(expWidth, sigWidth)
+        val out = Wire(new RawFloat(expWidth, sigWidth))
         out.sign := in(expWidth + sigWidth)
         out.isNaN := isSpecial &   exp(expWidth - 2)
         out.isInf := isSpecial & ! exp(expWidth - 2)
         out.isZero := (exp(expWidth, expWidth - 2) === UInt(0))
-        out.sExp := exp
+        out.sExp := exp.zext
         out.sig := Cat(UInt(1, 2), in(sigWidth - 2, 0), UInt(0, 2))
         out
     }
