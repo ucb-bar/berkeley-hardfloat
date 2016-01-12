@@ -63,6 +63,8 @@ class MulAddRecFN_interIo(expWidth: Int, sigWidth: Int) extends Bundle
     val highAlignedNegSigC = UInt(width = sigWidth + 2)
     val sExpSum            = UInt(width = expWidth + 3)
     val roundingMode       = Bits(width = 2)
+
+    override def cloneType = new MulAddRecFN_interIo(expWidth, sigWidth).asInstanceOf[this.type]
 }
 
 class MulAddRecFN_preMul_io(expWidth: Int, sigWidth: Int) extends Bundle
@@ -76,6 +78,8 @@ class MulAddRecFN_preMul_io(expWidth: Int, sigWidth: Int) extends Bundle
     val mulAddB = UInt(OUTPUT, sigWidth)
     val mulAddC = Bits(OUTPUT, sigWidth * 2)
     val toPostMul = new MulAddRecFN_interIo(expWidth, sigWidth).asOutput
+
+    override def cloneType = new MulAddRecFN_preMul_io(expWidth, sigWidth).asInstanceOf[this.type]
 }
 
 class MulAddRecFN_postMul_io(expWidth: Int, sigWidth: Int) extends Bundle
