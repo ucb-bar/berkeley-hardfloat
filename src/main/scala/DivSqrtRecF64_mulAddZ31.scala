@@ -38,7 +38,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package hardfloat
 
 import Chisel._
-import Node._
 import consts._
 
 // YUNSUP: Lines with CHISEL are modified from the original Verilog source

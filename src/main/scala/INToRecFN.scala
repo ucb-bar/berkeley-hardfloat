@@ -38,7 +38,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package hardfloat
 
 import Chisel._
-import Node._
 import consts._
 
 class INToRecFN(intWidth: Int, expWidth: Int, sigWidth: Int) extends Module

@@ -38,7 +38,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package hardfloat
 
 import Chisel._
-import Node._
 
 class DivRecF64_io extends Bundle {
     val a = Bits(width = 64)
