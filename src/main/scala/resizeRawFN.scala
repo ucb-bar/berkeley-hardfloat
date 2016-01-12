@@ -48,7 +48,7 @@ object resizeRawFN
     {
         val sNewExp = in.sExp + SInt((1<<expWidth) - (1<<in.expWidth))
 
-        val out = new RawFloat(expWidth, sigWidth)
+        val out = Wire(new RawFloat(expWidth, sigWidth))
         out.sign   := in.sign
         out.isNaN  := in.isNaN
         out.isInf  := in.isInf
