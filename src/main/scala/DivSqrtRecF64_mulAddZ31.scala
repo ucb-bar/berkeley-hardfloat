@@ -554,19 +554,19 @@ class DivSqrtRecF64_mulAddZ31 extends Module
         zK1_A4_div | zFractB_A7_sqrt(50, 42) |
             Mux(~cyc_S, nextMulAdd9B_A, UInt(0))
     val mulAdd9C_A =
-        zComplK1_A7_sqrt<<UInt(10)                                    |
+        zComplK1_A7_sqrt<<10                                          |
         Cat(cyc_A6_sqrt, zComplFractK0_A6_sqrt, Fill(6, cyc_A6_sqrt)) |
         Cat(cyc_A4_div,  zComplFractK0_A4_div,  Fill(8, cyc_A4_div )) |
 // CHISEL:
-        Mux(cyc_A5_sqrt, UInt(1<<18, 20) + (fractR0_A<<UInt(10)), UInt(0)) |
+        Mux(cyc_A5_sqrt, UInt(1<<18, 20) + (fractR0_A<<10), UInt(0)) |
         Mux(cyc_A4_sqrt & ~hiSqrR0_A_sqrt(9), UInt(1<<10), UInt(0)) |
         Mux((cyc_A4_sqrt & hiSqrR0_A_sqrt(9)) | cyc_A3_div,
             sigB_PA(46, 26) + UInt(1<<10),
             UInt(0)
         ) |
-        Mux(cyc_A3_sqrt | cyc_A2, partNegSigma0_A,     UInt(0)) |
-        Mux(cyc_A1_sqrt,          fractR0_A<<UInt(16), UInt(0)) |
-        Mux(cyc_A1_div,           fractR0_A<<UInt(15), UInt(0))
+        Mux(cyc_A3_sqrt | cyc_A2, partNegSigma0_A, UInt(0)) |
+        Mux(cyc_A1_sqrt,          fractR0_A<<16,   UInt(0)) |
+        Mux(cyc_A1_div,           fractR0_A<<15,   UInt(0))
     val loMulAdd9Out_A =
         mulAdd9A_A * mulAdd9B_A + Cat(UInt(0, 1), mulAdd9C_A(17, 0))
     val mulAdd9Out_A =
@@ -579,48 +579,48 @@ class DivSqrtRecF64_mulAddZ31 extends Module
 
     val zFractR0_A6_sqrt =
         Mux(cyc_A6_sqrt & mulAdd9Out_A(19),
-            ~mulAdd9Out_A>>UInt(10),
+            ~mulAdd9Out_A>>10,
             UInt(0)
         )(8, 0) // CHISEL
     /*------------------------------------------------------------------------
     | (`sqrR0_A5_sqrt' will usually be >= 1, but not always.)
     *------------------------------------------------------------------------*/
-    val sqrR0_A5_sqrt = Mux(exp_PA(0), mulAdd9Out_A<<UInt(1), mulAdd9Out_A)
+    val sqrR0_A5_sqrt = Mux(exp_PA(0), mulAdd9Out_A<<1, mulAdd9Out_A)
     val zFractR0_A4_div =
         Mux(cyc_A4_div & mulAdd9Out_A(20),
-            ~mulAdd9Out_A>>UInt(11),
+            ~mulAdd9Out_A>>11,
             UInt(0)
         )(8, 0) // CHISEL
 // CHISEL:
     val zSigma0_A2 =
-        Mux(cyc_A2 & mulAdd9Out_A(11), ~mulAdd9Out_A>>UInt(2), UInt(0))(8, 0)
+        Mux(cyc_A2 & mulAdd9Out_A(11), ~mulAdd9Out_A>>2, UInt(0))(8, 0)
 // CHISEL:
     val fractR1_A1 =
-        Mux(sqrtOp_PA, mulAdd9Out_A>>UInt(10), mulAdd9Out_A>>UInt(9))(14, 0)
+        Mux(sqrtOp_PA, mulAdd9Out_A>>10, mulAdd9Out_A>>9)(14, 0)
     val r1_A1 = Cat(UInt(1, 1), fractR1_A1)
-    val ER1_A1_sqrt = Mux(exp_PA(0), r1_A1<<UInt(1), r1_A1)
+    val ER1_A1_sqrt = Mux(exp_PA(0), r1_A1<<1, r1_A1)
 
     when (cyc_A6_sqrt | cyc_A4_div) {
         fractR0_A := zFractR0_A6_sqrt | zFractR0_A4_div
     }
 
     when (cyc_A5_sqrt) {
-        hiSqrR0_A_sqrt := sqrR0_A5_sqrt>>UInt(10)
+        hiSqrR0_A_sqrt := sqrR0_A5_sqrt>>10
     }
 
     when (cyc_A4_sqrt | cyc_A3) {
 // CHISEL:
         partNegSigma0_A :=
-            Mux(cyc_A4_sqrt, mulAdd9Out_A, mulAdd9Out_A>>UInt(9))(20, 0)
+            Mux(cyc_A4_sqrt, mulAdd9Out_A, mulAdd9Out_A>>9)(20, 0)
     }
 
     when (cyc_A7_sqrt | cyc_A6_sqrt | cyc_A5_sqrt | cyc_A4 | cyc_A3 | cyc_A2) {
         nextMulAdd9A_A :=
-            Mux(cyc_A7_sqrt,          ~mulAdd9Out_A>>UInt(11), UInt(0)) |
-            zFractR0_A6_sqrt                                            |
-            Mux(cyc_A4_sqrt,          sigB_PA(43, 35),         UInt(0)) |
-            zFractB_A4_div(43, 35)                                      |
-            Mux(cyc_A5_sqrt | cyc_A3, sigB_PA(52, 44),         UInt(0)) |
+            Mux(cyc_A7_sqrt,          ~mulAdd9Out_A>>11, UInt(0)) |
+            zFractR0_A6_sqrt                                      |
+            Mux(cyc_A4_sqrt,          sigB_PA(43, 35),   UInt(0)) |
+            zFractB_A4_div(43, 35)                                |
+            Mux(cyc_A5_sqrt | cyc_A3, sigB_PA(52, 44),   UInt(0)) |
             zSigma0_A2
     }
     when (cyc_A7_sqrt | cyc_A6_sqrt | cyc_A5_sqrt | cyc_A4 | cyc_A2) {
@@ -643,27 +643,27 @@ class DivSqrtRecF64_mulAddZ31 extends Module
         cyc_A1 | cyc_B7_sqrt | cyc_B6_div | cyc_B4 | cyc_B3 |
             cyc_C6_sqrt | cyc_C4 | cyc_C1
     io.mulAddA_0 :=
-        Mux(cyc_A1_sqrt,             ER1_A1_sqrt<<UInt(36), UInt(0)) | // 52:36
-        Mux(cyc_B7_sqrt | cyc_A1_div, sigB_PA,              UInt(0)) | // 52:0
-        Mux(cyc_B6_div,               sigA_PA,              UInt(0)) | // 52:0
-        zSigma1_B4(45, 12)                                           | // 33:0
+        Mux(cyc_A1_sqrt,             ER1_A1_sqrt<<36,   UInt(0)) | // 52:36
+        Mux(cyc_B7_sqrt | cyc_A1_div, sigB_PA,          UInt(0)) | // 52:0
+        Mux(cyc_B6_div,               sigA_PA,          UInt(0)) | // 52:0
+        zSigma1_B4(45, 12)                                       | // 33:0
 //*** ONLY 30 BITS NEEDED IN CYCLE C6:
-        Mux(cyc_B3 | cyc_C6_sqrt, sigXNU_B3_CX(57, 12),     UInt(0)) | // 45:0
-        Mux(cyc_C4_div,          sigXN_C(57, 25)<<UInt(13), UInt(0)) | // 45:13
-        Mux(cyc_C4_sqrt,         u_C_sqrt<<UInt(15),        UInt(0)) | // 45:15
-        Mux(cyc_C1_div,          sigB_PC,                   UInt(0)) | // 52:0
-        zComplSigT_C1_sqrt                                             // 53:0
+        Mux(cyc_B3 | cyc_C6_sqrt, sigXNU_B3_CX(57, 12), UInt(0)) | // 45:0
+        Mux(cyc_C4_div,          sigXN_C(57, 25)<<13,   UInt(0)) | // 45:13
+        Mux(cyc_C4_sqrt,         u_C_sqrt<<15,          UInt(0)) | // 45:15
+        Mux(cyc_C1_div,          sigB_PC,               UInt(0)) | // 52:0
+        zComplSigT_C1_sqrt                                         // 53:0
     io.latchMulAddB_0 :=
         cyc_A1 | cyc_B7_sqrt | cyc_B6_sqrt | cyc_B4 |
             cyc_C6_sqrt | cyc_C4 | cyc_C1
     io.mulAddB_0 :=
-        Mux(cyc_A1,      r1_A1<<UInt(36),         UInt(0)) |  // 51:36
-        Mux(cyc_B7_sqrt, ESqrR1_B_sqrt<<UInt(19), UInt(0)) |  // 50:19
-        Mux(cyc_B6_sqrt, ER1_B_sqrt<<UInt(36),    UInt(0)) |  // 52:36
-        zSigma1_B4                                         |  // 45:0
-        Mux(cyc_C6_sqrt, sqrSigma1_C(30, 1),      UInt(0)) |  // 29:0
-        Mux(cyc_C4,      sqrSigma1_C,             UInt(0)) |  // 32:0
-        zComplSigT_C1                                         // 53:0
+        Mux(cyc_A1,      r1_A1<<36,          UInt(0)) |  // 51:36
+        Mux(cyc_B7_sqrt, ESqrR1_B_sqrt<<19,  UInt(0)) |  // 50:19
+        Mux(cyc_B6_sqrt, ER1_B_sqrt<<36,     UInt(0)) |  // 52:36
+        zSigma1_B4                                    |  // 45:0
+        Mux(cyc_C6_sqrt, sqrSigma1_C(30, 1), UInt(0)) |  // 29:0
+        Mux(cyc_C4,      sqrSigma1_C,        UInt(0)) |  // 32:0
+        zComplSigT_C1                                    // 53:0
     io.usingMulAdd :=
         Cat(cyc_A4 | cyc_A3_div | cyc_A1_div |
                 cyc_B10_sqrt | cyc_B9_sqrt | cyc_B7_sqrt | cyc_B6 |
@@ -678,15 +678,15 @@ class DivSqrtRecF64_mulAddZ31 extends Module
         )
 
     io.mulAddC_2 :=
-        Mux(cyc_B1,                sigX1_B<<UInt(47),     UInt(0)) |
-        Mux(cyc_C6_sqrt,           sigX1_B<<UInt(46),     UInt(0)) |
-        Mux(cyc_C4_sqrt | cyc_C2,  sigXN_C<<UInt(47),     UInt(0)) |
-        Mux(cyc_E3_div & ~E_E_div, fractA_0_PC<<UInt(53), UInt(0)) |
+        Mux(cyc_B1,                sigX1_B<<47,     UInt(0)) |
+        Mux(cyc_C6_sqrt,           sigX1_B<<46,     UInt(0)) |
+        Mux(cyc_C4_sqrt | cyc_C2,  sigXN_C<<47,     UInt(0)) |
+        Mux(cyc_E3_div & ~E_E_div, fractA_0_PC<<53, UInt(0)) |
         Mux(cyc_E3_sqrt,
             (Mux(exp_PC(0),
                  Cat(sigB_PC(0), UInt(0, 1)),
                  Cat(sigB_PC(1) ^ sigB_PC(0), sigB_PC(0))
-             ) ^ Cat(~extraT_E, UInt(0, 1)))<<UInt(54),
+             ) ^ Cat(~extraT_E, UInt(0, 1)))<<54,
              UInt(0)
         )
 
@@ -744,9 +744,9 @@ class DivSqrtRecF64_mulAddZ31 extends Module
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
     val sExpX_E =
-        Mux(~sqrtOp_PC &  E_E_div, exp_PC,                           UInt(0)) |
-        Mux(~sqrtOp_PC & ~E_E_div, expP1_PC,                         UInt(0)) |
-        Mux( sqrtOp_PC,        (exp_PC>>UInt(1)) + UInt("h400", 12), UInt(0))
+        Mux(~sqrtOp_PC &  E_E_div, exp_PC,                     UInt(0)) |
+        Mux(~sqrtOp_PC & ~E_E_div, expP1_PC,                   UInt(0)) |
+        Mux( sqrtOp_PC,        (exp_PC>>1) + UInt("h400", 12), UInt(0))
 
     val posExpX_E = sExpX_E(12, 0)
 // *** IMPROVE:
@@ -754,11 +754,11 @@ class DivSqrtRecF64_mulAddZ31 extends Module
     val incrPosMask_E =
         ~Cat(UInt(0, 1), roundMask_E) & Cat(roundMask_E, UInt(1, 1))
 
-    val hiRoundPosBitT_E = ((sigT_E & incrPosMask_E>>UInt(1)) != UInt(0))
+    val hiRoundPosBitT_E = ((sigT_E & incrPosMask_E>>1) != UInt(0))
     val all0sHiRoundExtraT_E =
-        ((sigT_E & roundMask_E>>UInt(1)) === UInt(0))
+        ((sigT_E & roundMask_E>>1) === UInt(0))
     val all1sHiRoundExtraT_E =
-        ((~sigT_E & roundMask_E>>UInt(1)) === UInt(0))
+        ((~sigT_E & roundMask_E>>1) === UInt(0))
     val all1sHiRoundT_E =
         (~roundMask_E(0) | hiRoundPosBitT_E) & all1sHiRoundExtraT_E
 
@@ -809,7 +809,7 @@ class DivSqrtRecF64_mulAddZ31 extends Module
         Mux(sigY_E1(53) & ~sqrtOp_PC &  E_E_div, expP1_PC, UInt(0)) |
         Mux(sigY_E1(53) & ~sqrtOp_PC & ~E_E_div, expP2_PC, UInt(0)) |
         Mux(sigY_E1(53) & sqrtOp_PC,
-            (expP2_PC>>UInt(1)) + UInt("h400", 12),
+            (expP2_PC>>1) + UInt("h400", 12),
             UInt(0)
         )
     val expY_E1 = sExpY_E1(11, 0)

@@ -53,7 +53,7 @@ object recFNFromFN
         val isZero = isZeroExpIn && isZeroFractIn
 
         val normCount =
-            ~Log2(fractIn<<UInt(normWidth - sigWidth + 1), normWidth)
+            ~Log2(fractIn<<(normWidth - sigWidth + 1), normWidth)
         val normalizedFract =
             Cat((fractIn<<normCount)(sigWidth - 3, 0), UInt(0, 1))
 
@@ -68,8 +68,8 @@ object recFNFromFN
                 ! isZeroFractIn
 
         val expOut =
-            (adjustedExp & ~(Fill(3, isZero)<<UInt(expWidth - 2))) |
-                isNaN<<UInt(expWidth - 2)
+            (adjustedExp & ~(Fill(3, isZero)<<(expWidth - 2))) |
+                isNaN<<(expWidth - 2)
         val fractOut = Mux(isZeroExpIn, normalizedFract, fractIn)
         Cat(sign, expOut, fractOut)
     }

@@ -182,13 +182,13 @@ class MulAddRecFN_preMul(expWidth: Int, sigWidth: Int) extends Module
 object estNormDistPNNegSumS
 {
     def apply(a: UInt, b: UInt, n: Int, s: Int) =
-        priorityEncode((a ^ b) ^ ~((a & b)<<UInt(1)), n, s)
+        priorityEncode((a ^ b) ^ ~((a & b)<<1), n, s)
 }
 
 object estNormDistPNPosSumS
 {
     def apply(a: UInt, b: UInt, n: Int, s: Int) =
-        priorityEncode((a ^ b) ^ (a | b)<<UInt(1), n, s)
+        priorityEncode((a ^ b) ^ (a | b)<<1, n, s)
 }
 
 class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
@@ -442,10 +442,10 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
                 UInt(3, 2)
             )
 
-    val roundPosMask = ~(roundMask>>UInt(1)) & roundMask
+    val roundPosMask = ~(roundMask>>1) & roundMask
     val roundPosBit = ((sigX3 & roundPosMask) != UInt(0))
-    val anyRoundExtra = (( sigX3 & roundMask>>UInt(1)) !=  UInt(0))
-    val allRoundExtra = ((~sigX3 & roundMask>>UInt(1)) === UInt(0))
+    val anyRoundExtra = (( sigX3 & roundMask>>1) !=  UInt(0))
+    val allRoundExtra = ((~sigX3 & roundMask>>1) === UInt(0))
     val anyRound = roundPosBit | anyRoundExtra
     val allRound = roundPosBit & allRoundExtra
     val roundDirectUp = Mux(signY, roundingMode_min, roundingMode_max)
@@ -463,11 +463,11 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
         )
     val roundInexact = Mux(doIncrSig, ~allRound, anyRound)
     val roundUp_sigY3 =
-        (((sigX3 | roundMask)>>UInt(2)) + UInt(1))(sigWidth + 1, 0)
+        (((sigX3 | roundMask)>>2) + UInt(1))(sigWidth + 1, 0)
     val sigY3 =
-        Mux((~roundUp & ~roundEven).toBool, (sigX3 & ~roundMask)>>UInt(2),    UInt(0)) |
-        Mux(roundUp.toBool,          roundUp_sigY3,                         UInt(0)) |
-        Mux(roundEven,        roundUp_sigY3 & ~(roundMask>>UInt(1)), UInt(0))
+        Mux((~roundUp & ~roundEven).toBool, (sigX3 & ~roundMask)>>2, UInt(0)) |
+        Mux(roundUp.toBool,          roundUp_sigY3,                  UInt(0)) |
+        Mux(roundEven,        roundUp_sigY3 & ~(roundMask>>1),       UInt(0))
 //*** HANDLE DIFFERENTLY?  (NEED TO ACCOUNT FOR ROUND-EVEN ZEROING MSB.)
     val sExpY =
         Mux(sigY3(sigWidth + 1), sExpX3 + UInt(1), UInt(0)) |

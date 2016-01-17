@@ -54,7 +54,7 @@ class INToRecFN(intWidth: Int, expWidth: Int, sigWidth: Int) extends Module
 
     val sign = io.signedIn && io.in(intWidth - 1)
     val absIn = Mux(sign, -io.in, io.in)
-    val normCount = ~Log2(absIn<<UInt(normWidth - intWidth), normWidth)
+    val normCount = ~Log2(absIn<<(normWidth - intWidth), normWidth)
     val normAbsIn = (absIn<<normCount)(intWidth - 1, 0)
 
     var roundBits = UInt(0, 3)
