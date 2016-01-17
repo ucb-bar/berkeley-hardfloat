@@ -280,7 +280,7 @@ $(eval $(call test_CompareRecFN_template,CompareRecF64_le,f64_le,))
 $(eval $(call test_CompareRecFN_template,CompareRecF64_eq,f64_eq,))
 
 test-c: $(addprefix test-c-, $(tests))
-	@ if grep abort test-c-*.log; then \
+	@ if grep -q "expected" test-c-*.log; then \
 		echo "some test FAILED!!!"; \
 		exit 1; \
 	fi
