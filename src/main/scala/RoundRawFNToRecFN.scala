@@ -105,8 +105,8 @@ class RoundRawFNToRecFN(expWidth: Int, sigWidth: Int) extends Module
             UInt(3, 2)
         )
     val roundPosMask = ~(roundMask>>UInt(1)) & roundMask
-    val roundPosBit = ((io.in.sig & roundPosMask) =/= UInt(0))
-    val anyRoundExtra = ((io.in.sig & roundMask>>UInt(1)) =/= UInt(0))
+    val roundPosBit = ((io.in.sig & roundPosMask) != UInt(0))
+    val anyRoundExtra = ((io.in.sig & roundMask>>UInt(1)) != UInt(0))
     val anyRound = roundPosBit | anyRoundExtra
 
     val roundedSig =

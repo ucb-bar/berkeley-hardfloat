@@ -153,7 +153,7 @@ class MulAddRecFN_preMul(expWidth: Int, sigWidth: Int) extends Module
     val alignedNegSigC =
         Cat(Cat(doSubMags, negSigC, Fill(normSize, doSubMags)).toSInt>>
                 CAlignDist,
-            ((sigC & CExtraMask) =/= UInt(0)) ^ doSubMags
+            ((sigC & CExtraMask) != UInt(0)) ^ doSubMags
         )(sigSumSize - 1, 0)
 
     io.mulAddA := sigA
@@ -251,15 +251,15 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
     val firstReduceSigSum =
         Cat((sigSum(
                  normSize - firstNormUnit - 1, normSize - firstNormUnit * 2
-             ) =/= UInt(0)),
-            (sigSum(normSize - firstNormUnit * 2 - 1, 0) =/= UInt(0))
+             ) != UInt(0)),
+            (sigSum(normSize - firstNormUnit * 2 - 1, 0) != UInt(0))
         )
     val notSigSum = ~sigSum
     val firstReduceNotSigSum =
         Cat((notSigSum(
                  normSize - firstNormUnit - 1, normSize - firstNormUnit * 2
-             ) =/= UInt(0)),
-            (notSigSum(normSize - firstNormUnit * 2 - 1, 0) =/= UInt(0))
+             ) != UInt(0)),
+            (notSigSum(normSize - firstNormUnit * 2 - 1, 0) != UInt(0))
         )
 //*** USE RESULT OF `CAlignDest - 1' TO TEST FOR ZERO?
     val CDom_estNormDist =
@@ -270,7 +270,7 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
     val CDom_firstNormAbsSigSum =
         (((~doSubMags & ~CDom_estNormDist(logNormSize - 2)).toSInt &
               Cat(sigSum(sigSumSize - 1, normSize - firstNormUnit),
-                  (firstReduceSigSum =/= UInt(0))
+                  (firstReduceSigSum != UInt(0))
               ).toSInt) |
          ((~doSubMags & CDom_estNormDist(logNormSize - 2)).toSInt &
               Cat(sigSum(
@@ -281,7 +281,7 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
               ).toSInt) |
          ((doSubMags & ~CDom_estNormDist(logNormSize - 2)).toSInt &
               Cat(notSigSum(sigSumSize - 1, normSize - firstNormUnit),
-                  (firstReduceNotSigSum =/= UInt(0))
+                  (firstReduceNotSigSum != UInt(0))
               ).toSInt) |
          ((doSubMags & CDom_estNormDist(logNormSize - 2)).toSInt &
               Cat(notSigSum(
@@ -318,7 +318,7 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
                       Mux(doSubMags,
                           (notSigSum(normSize - firstNormUnit * 3 - 1, 1) ===
                                UInt(0)),
-                          (sigSum(normSize - firstNormUnit * 3 - 1, 1) =/=
+                          (sigSum(normSize - firstNormUnit * 3 - 1, 1) !=
                                UInt(0))
                       )
                  )
@@ -364,7 +364,7 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
                          normSize - firstNormUnit * 3
                      ),
                      (notSigSum(normSize - firstNormUnit * 3 - 1, 1)
-                          =/= UInt(0))
+                          != UInt(0))
                  )
         }
         Mux(estNormNeg_dist(logNormSize - 1),
@@ -419,7 +419,7 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
                       absSigSumExtraMask) ===
                      UInt(0)),
                 ((cFirstNormAbsSigSum(firstNormUnit - 1, 0) &
-                      absSigSumExtraMask) =/=
+                      absSigSumExtraMask) !=
                      UInt(0))
             )
         )(sigWidth + 3, 0)
@@ -443,8 +443,8 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
             )
 
     val roundPosMask = ~(roundMask>>UInt(1)) & roundMask
-    val roundPosBit = ((sigX3 & roundPosMask) =/= UInt(0))
-    val anyRoundExtra = (( sigX3 & roundMask>>UInt(1)) =/=  UInt(0))
+    val roundPosBit = ((sigX3 & roundPosMask) != UInt(0))
+    val anyRoundExtra = (( sigX3 & roundMask>>UInt(1)) !=  UInt(0))
     val allRoundExtra = ((~sigX3 & roundMask>>UInt(1)) === UInt(0))
     val anyRound = roundPosBit | anyRoundExtra
     val allRound = roundPosBit & allRoundExtra
