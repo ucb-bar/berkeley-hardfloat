@@ -66,7 +66,7 @@ class
         // No rounding required.
         //--------------------------------------------------------------------
 
-        val sign = outRawFloat.sign | outRawFloat.isNaN
+        val sign = outRawFloat.sign & ~outRawFloat.isNaN
         val expOut =
             (outRawFloat.sExp(outExpWidth, 0) &
                  ~Mux(outRawFloat.isZero,
@@ -86,8 +86,9 @@ class
                     UInt(0)
                 )
         val fractOut =
-            outRawFloat.sig(outSigWidth, 2) |
-                Fill(outSigWidth - 1, outRawFloat.isNaN)
+            Mux(outRawFloat.isNaN,
+                UInt(BigInt(1)<<(outSigWidth - 2)),
+                outRawFloat.sig(outSigWidth, 2))
 
         io.out := Cat(sign, expOut, fractOut)
         io.exceptionFlags := Cat(invalidExc, Bits(0, 4))

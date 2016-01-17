@@ -120,14 +120,7 @@ class
 
     io.check := Bool(true)
     io.pass :=
-        Mux(io.expected.exceptionFlags(4),
-            (io.actual.out ===
-                 Mux(io.in(expWidth + sigWidth - 1),
-                     UInt(1, intWidth)<<(intWidth - 1),
-                     (UInt(1, intWidth)<<(intWidth - 1)) - UInt(1)
-                 )),
-            (io.actual.out === io.expected.out)
-        ) &&
+        (io.actual.out === io.expected.out) &&
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
 
