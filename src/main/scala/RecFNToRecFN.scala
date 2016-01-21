@@ -5,8 +5,8 @@ This Chisel source file is part of a pre-release version of the HardFloat IEEE
 Floating-Point Arithmetic Package, by John R. Hauser (with contributions from
 Brian Richards, Yunsup Lee, and Andrew Waterman).
 
-Copyright 2010, 2011, 2012, 2013, 2014, 2015 The Regents of the University of
-California.  All rights reserved.
+Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016 The Regents of the
+University of California.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
