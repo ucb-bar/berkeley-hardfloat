@@ -76,7 +76,7 @@ class MulAddRecFN_preMul_io(expWidth: Int, sigWidth: Int) extends Bundle
     val roundingMode = Bits(INPUT, 2)
     val mulAddA = UInt(OUTPUT, sigWidth)
     val mulAddB = UInt(OUTPUT, sigWidth)
-    val mulAddC = Bits(OUTPUT, sigWidth * 2)
+    val mulAddC = UInt(OUTPUT, sigWidth * 2)
     val toPostMul = new MulAddRecFN_interIo(expWidth, sigWidth).asOutput
 
     override def cloneType = new MulAddRecFN_preMul_io(expWidth, sigWidth).asInstanceOf[this.type]
@@ -263,34 +263,41 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
         )
 //*** USE RESULT OF `CAlignDest - 1' TO TEST FOR ZERO?
     val CDom_estNormDist =
-        Mux(io.fromPreMul.CAlignDist_0 | doSubMags,
+        Mux(io.fromPreMul.CAlignDist_0 || doSubMags,
             io.fromPreMul.CAlignDist,
             (io.fromPreMul.CAlignDist - UInt(1))(log2Up(sigWidth) - 1, 0)
         )
     val CDom_firstNormAbsSigSum =
-        (((~doSubMags & ~CDom_estNormDist(logNormSize - 2)).toSInt &
-              Cat(sigSum(sigSumSize - 1, normSize - firstNormUnit),
-                  (firstReduceSigSum != UInt(0))
-              ).toSInt) |
-         ((~doSubMags & CDom_estNormDist(logNormSize - 2)).toSInt &
-              Cat(sigSum(
-                      sigSumSize - firstNormUnit - 1,
-                      normSize - firstNormUnit * 2
-                  ),
-                  firstReduceSigSum(0)
-              ).toSInt) |
-         ((doSubMags & ~CDom_estNormDist(logNormSize - 2)).toSInt &
-              Cat(notSigSum(sigSumSize - 1, normSize - firstNormUnit),
-                  (firstReduceNotSigSum != UInt(0))
-              ).toSInt) |
-         ((doSubMags & CDom_estNormDist(logNormSize - 2)).toSInt &
-              Cat(notSigSum(
-                      sigSumSize - firstNormUnit - 1,
-                      normSize - firstNormUnit * 2
-                  ),
-                  firstReduceNotSigSum(0)
-              ).toSInt)
-        ).toUInt
+        Mux(! doSubMags && ! CDom_estNormDist(logNormSize - 2),
+            Cat(sigSum(sigSumSize - 1, normSize - firstNormUnit),
+                (firstReduceSigSum != UInt(0))
+            ),
+            UInt(0)
+        ) |
+        Mux(! doSubMags && CDom_estNormDist(logNormSize - 2),
+            Cat(sigSum(
+                    sigSumSize - firstNormUnit - 1,
+                    normSize - firstNormUnit * 2
+                ),
+                firstReduceSigSum(0)
+            ),
+            UInt(0)
+        ) |
+        Mux(doSubMags && ! CDom_estNormDist(logNormSize - 2),
+            Cat(notSigSum(sigSumSize - 1, normSize - firstNormUnit),
+                (firstReduceNotSigSum != UInt(0))
+            ),
+            UInt(0)
+        ) |
+        Mux(doSubMags && CDom_estNormDist(logNormSize - 2),
+            Cat(notSigSum(
+                    sigSumSize - firstNormUnit - 1,
+                    normSize - firstNormUnit * 2
+                ),
+                firstReduceNotSigSum(0)
+            ),
+            UInt(0)
+        )
     //------------------------------------------------------------------------
     // (For this case, bits above `sigSum(normSize)' are never interesting.
     // Also, if there is any significant cancellation, then `sigSum(0)' must
@@ -383,7 +390,7 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
     val notCDom_signSigSum = sigSum(normSize + 1)
     val doNegSignSum =
         Mux(io.fromPreMul.isCDominant,
-            doSubMags & ~isZeroC,
+            doSubMags && ! isZeroC,
             notCDom_signSigSum
         )
     val estNormDist =
@@ -406,8 +413,8 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
             )
         )
     val doIncrSig =
-        ~io.fromPreMul.isCDominant & ~notCDom_signSigSum & doSubMags
-    val estNormDist_5 = estNormDist(logNormSize - 3, 0).toUInt
+        ! io.fromPreMul.isCDominant && ! notCDom_signSigSum && doSubMags
+    val estNormDist_5 = estNormDist(logNormSize - 3, 0)
     val normTo2ShiftDist = ~estNormDist_5
     val absSigSumExtraMask =
         Cat(lowMask(normTo2ShiftDist, firstNormUnit - 1, 0), Bool(true))
@@ -428,7 +435,7 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
     val sExpX3 = io.fromPreMul.sExpSum - estNormDist
 
     val isZeroY = (sigX3(sigWidth + 3, sigWidth + 1) === UInt(0))
-//    val signY = ~isZeroY & (io.fromPreMul.signProd ^ doNegSignSum)
+//    val signY = ! isZeroY && (io.fromPreMul.signProd ^ doNegSignSum)
     val signY =
         Mux(isZeroY,
             signZeroNotEqOpSigns,
@@ -446,28 +453,28 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
     val roundPosBit = ((sigX3 & roundPosMask) != UInt(0))
     val anyRoundExtra = (( sigX3 & roundMask>>1) !=  UInt(0))
     val allRoundExtra = ((~sigX3 & roundMask>>1) === UInt(0))
-    val anyRound = roundPosBit | anyRoundExtra
-    val allRound = roundPosBit & allRoundExtra
+    val anyRound = roundPosBit || anyRoundExtra
+    val allRound = roundPosBit && allRoundExtra
     val roundDirectUp = Mux(signY, roundingMode_min, roundingMode_max)
     val roundUp =
-        (~doIncrSig & roundingMode_nearest_even &
-                                                roundPosBit & anyRoundExtra) |
-        (~doIncrSig & roundDirectUp            & anyRound   ) |
-        (doIncrSig                             & allRound   ) |
-        (doIncrSig & roundingMode_nearest_even & roundPosBit) |
-        (doIncrSig & roundDirectUp             & UInt(1)    )
+        (! doIncrSig && roundingMode_nearest_even &&
+                                               roundPosBit && anyRoundExtra) ||
+        (! doIncrSig && roundDirectUp           && anyRound   ) ||
+        (doIncrSig                              && allRound   ) ||
+        (doIncrSig && roundingMode_nearest_even && roundPosBit) ||
+        (doIncrSig && roundDirectUp             && Bool(true) )
     val roundEven =
         Mux(doIncrSig,
-            roundingMode_nearest_even & ~roundPosBit &  allRoundExtra,
-            roundingMode_nearest_even &  roundPosBit & ~anyRoundExtra
+            roundingMode_nearest_even && ! roundPosBit &&   allRoundExtra,
+            roundingMode_nearest_even &&   roundPosBit && ! anyRoundExtra
         )
-    val roundInexact = Mux(doIncrSig, ~allRound, anyRound)
+    val roundInexact = Mux(doIncrSig, ! allRound, anyRound)
     val roundUp_sigY3 =
         (((sigX3 | roundMask)>>2) + UInt(1))(sigWidth + 1, 0)
     val sigY3 =
-        Mux((~roundUp & ~roundEven).toBool, (sigX3 & ~roundMask)>>2, UInt(0)) |
-        Mux(roundUp.toBool,          roundUp_sigY3,                  UInt(0)) |
-        Mux(roundEven,        roundUp_sigY3 & ~(roundMask>>1),       UInt(0))
+        Mux(! roundUp && ! roundEven, (sigX3 & ~roundMask)>>2,       UInt(0)) |
+        Mux(roundUp,                roundUp_sigY3,                   UInt(0)) |
+        Mux(roundEven,              roundUp_sigY3 & ~(roundMask>>1), UInt(0))
 //*** HANDLE DIFFERENTLY?  (NEED TO ACCOUNT FOR ROUND-EVEN ZEROING MSB.)
     val sExpY =
         Mux(sigY3(sigWidth + 1), sExpX3 + UInt(1), UInt(0)) |
@@ -483,8 +490,8 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
     val overflowY = (sExpY(expWidth + 1, expWidth - 1) === UInt(3))
 //*** HANDLE DIFFERENTLY?  (NEED TO ACCOUNT FOR ROUND-EVEN ZEROING MSB.)
     val totalUnderflowY =
-        ~isZeroY &
-            (sExpY(expWidth + 1) | (sExpY(expWidth, 0) < UInt(minExp)))
+        ! isZeroY &&
+            (sExpY(expWidth + 1) || (sExpY(expWidth, 0) < UInt(minExp)))
     val underflowY =
         roundInexact &&
             (sExpX3(expWidth + 2) ||
@@ -493,30 +500,32 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
             )
     val inexactY = roundInexact
 
-    val roundMagUp = (roundingMode_min & signY) | (roundingMode_max & ~signY)
-    val overflowY_roundMagUp = roundingMode_nearest_even | roundMagUp
+    val roundMagUp =
+        (roundingMode_min && signY) || (roundingMode_max && ! signY)
+    val overflowY_roundMagUp = roundingMode_nearest_even || roundMagUp
 
     //------------------------------------------------------------------------
     //------------------------------------------------------------------------
-    val mulSpecial = isSpecialA | isSpecialB
-    val addSpecial = mulSpecial | isSpecialC
-    val notSpecial_addZeros = io.fromPreMul.isZeroProd & isZeroC
-    val commonCase = ~addSpecial & ~notSpecial_addZeros
+    val mulSpecial = isSpecialA || isSpecialB
+    val addSpecial = mulSpecial || isSpecialC
+    val notSpecial_addZeros = io.fromPreMul.isZeroProd && isZeroC
+    val commonCase = ! addSpecial && ! notSpecial_addZeros
 
     val notSigNaN_invalid =
-        (isInfA & isZeroB) | (isZeroA & isInfB) |
-            (~isNaNA & ~isNaNB & (isInfA | isInfB) & isInfC & doSubMags)
-    val invalid = isSigNaNA | isSigNaNB | isSigNaNC | notSigNaN_invalid
-    val overflow  = commonCase & overflowY
-    val underflow = commonCase & underflowY
-    val inexact = overflow | (commonCase & inexactY)
+        (isInfA && isZeroB) || (isZeroA && isInfB) ||
+            (! isNaNA && ! isNaNB && (isInfA || isInfB) && isInfC && doSubMags)
+    val invalid = isSigNaNA || isSigNaNB || isSigNaNC || notSigNaN_invalid
+    val overflow  = commonCase && overflowY
+    val underflow = commonCase && underflowY
+    val inexact = overflow || (commonCase && inexactY)
 
-    val notSpecial_isZeroOut = notSpecial_addZeros | isZeroY | totalUnderflowY
-    val pegMinFiniteMagOut = commonCase & totalUnderflowY & roundMagUp
-    val pegMaxFiniteMagOut = overflow & ~overflowY_roundMagUp
+    val notSpecial_isZeroOut =
+        notSpecial_addZeros || isZeroY || totalUnderflowY
+    val pegMinFiniteMagOut = commonCase && totalUnderflowY && roundMagUp
+    val pegMaxFiniteMagOut = overflow && ! overflowY_roundMagUp
     val notNaN_isInfOut =
-        isInfA | isInfB | isInfC | (overflow & overflowY_roundMagUp)
-    val isNaNOut = isNaNA | isNaNB | isNaNC | notSigNaN_invalid
+        isInfA || isInfB || isInfC || (overflow && overflowY_roundMagUp)
+    val isNaNOut = isNaNA || isNaNB || isNaNC || notSigNaN_invalid
 
     val uncommonCaseSignOut =
         (! doSubMags                              && io.fromPreMul.opSignC ) ||
@@ -524,9 +533,7 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
         (! mulSpecial && isSpecialC               && io.fromPreMul.opSignC ) ||
         (! mulSpecial && notSpecial_addZeros && doSubMags &&
                                                      signZeroNotEqOpSigns  )
-    val signOut =
-        (! isNaNOut && uncommonCaseSignOut) ||
-        (commonCase && signY              )
+    val signOut = (! isNaNOut && uncommonCaseSignOut) || (commonCase && signY)
     val expOut =
         (expY &
              ~Mux(notSpecial_isZeroOut,
