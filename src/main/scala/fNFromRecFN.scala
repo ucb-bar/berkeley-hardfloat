@@ -46,7 +46,7 @@ object fNFromRecFN
         val expIn = in(expWidth + sigWidth - 1, sigWidth - 1)
         val fractIn = in(sigWidth - 2, 0)
 
-        val isHighSubnormalIn = expIn(expWidth - 2, 0) < UInt(2)
+        val isHighSubnormalIn = (expIn(expWidth - 2, 0) < UInt(2))
         val isSubnormal =
             (expIn(expWidth, expWidth - 2) === UInt(1)) ||
                 ((expIn(expWidth, expWidth - 1) === UInt(1)) &&
@@ -60,7 +60,7 @@ object fNFromRecFN
 
         val denormShiftDist = UInt(2) - expIn(log2Up(sigWidth - 1) - 1, 0)
         val subnormal_fractOut =
-            (Cat(Bool(true), fractIn)>>denormShiftDist)(sigWidth - 2, 0)
+            (Cat(UInt(1), fractIn)>>denormShiftDist)(sigWidth - 2, 0)
         val normal_expOut =
             expIn(expWidth - 1, 0) - UInt((1<<(expWidth - 1)) + 1)
 

@@ -41,7 +41,8 @@ import Chisel._
 
 object equivRecFN
 {
-    def apply(expWidth: Int, sigWidth: Int, a: UInt, b: UInt) = {
+    def apply(expWidth: Int, sigWidth: Int, a: Bits, b: Bits) = {
+//*** NEED `.toUInt'?:
         val top4A = a(expWidth + sigWidth, expWidth + sigWidth - 3).toUInt
         val top4B = b(expWidth + sigWidth, expWidth + sigWidth - 3).toUInt
         Mux((top4A(2, 0) === UInt(0)) || (top4A(2, 0) === UInt(7)),

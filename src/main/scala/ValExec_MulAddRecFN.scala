@@ -108,8 +108,7 @@ class ValExec_MulAddRecFN_add(expWidth: Int, sigWidth: Int) extends Module
     val mulAddRecFN = Module(new MulAddRecFN(expWidth, sigWidth))
     mulAddRecFN.io.op := UInt(0)
     mulAddRecFN.io.a := recFNFromFN(expWidth, sigWidth, io.a)
-    mulAddRecFN.io.b :=
-        UInt(1, expWidth + sigWidth + 1)<<(expWidth + sigWidth - 1)
+    mulAddRecFN.io.b := UInt(1)<<(expWidth + sigWidth - 1)
     mulAddRecFN.io.c := recFNFromFN(expWidth, sigWidth, io.b)
     mulAddRecFN.io.roundingMode := io.roundingMode
 
@@ -153,10 +152,7 @@ class ValExec_MulAddRecFN_mul(expWidth: Int, sigWidth: Int) extends Module
     mulAddRecFN.io.op := UInt(0)
     mulAddRecFN.io.a := recFNFromFN(expWidth, sigWidth, io.a)
     mulAddRecFN.io.b := recFNFromFN(expWidth, sigWidth, io.b)
-    mulAddRecFN.io.c :=
-        ((io.a ^ io.b) &
-             UInt(1, expWidth + sigWidth + 1)<<(expWidth + sigWidth - 1))<<
-            UInt(1)
+    mulAddRecFN.io.c := ((io.a ^ io.b) & UInt(1)<<(expWidth + sigWidth - 1))<<1
     mulAddRecFN.io.roundingMode := io.roundingMode
 
     io.expected.recOut := recFNFromFN(expWidth, sigWidth, io.expected.out)

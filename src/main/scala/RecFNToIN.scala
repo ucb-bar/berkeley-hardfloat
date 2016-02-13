@@ -56,7 +56,7 @@ class RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int) extends Module
     val fract = io.in(sigWidth - 2, 0)
 
     val isZero = (exp(expWidth, expWidth - 2) === UInt(0))
-    val isSpecial = exp(expWidth, expWidth - 1).andR
+    val isSpecial = (exp(expWidth, expWidth - 1) === UInt(3))
     val isNaN = isSpecial && exp(expWidth - 2)
     val notSpecial_magGeOne = exp(expWidth)
 
@@ -92,15 +92,12 @@ class RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int) extends Module
             Mux(exp(expWidth - 1, 0).andR, roundBits(1, 0).orR, Bool(false))
         )
     val roundIncr =
-        ((io.roundingMode === round_nearest_even) & roundIncr_nearestEven   ) |
-        ((io.roundingMode === round_min)          & (  sign && roundInexact)) |
-        ((io.roundingMode === round_max)          & (! sign && roundInexact))
-    val onesCompUnroundedInt = Mux(sign, ~unroundedInt, unroundedInt)
+        ((io.roundingMode === round_nearest_even) && roundIncr_nearestEven ) ||
+        ((io.roundingMode === round_min)        && (  sign && roundInexact)) ||
+        ((io.roundingMode === round_max)        && (! sign && roundInexact))
+    val complUnroundedInt = Mux(sign, ~unroundedInt, unroundedInt)
     val roundedInt =
-        Mux(roundIncr ^ sign,
-            onesCompUnroundedInt + UInt(1),
-            onesCompUnroundedInt
-        )
+        Mux(roundIncr ^ sign, complUnroundedInt + UInt(1), complUnroundedInt)
 
 //*** CHANGE TO TAKE BITS FROM THE ORIGINAL `fract' INSTEAD OF `unroundedInt'?:
     val roundCarryBut2 = unroundedInt(intWidth - 3, 0).andR && roundIncr
@@ -126,7 +123,7 @@ class RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int) extends Module
     val invalid = isSpecial
     val excSign = sign && ! isNaN
     val excValue =
-        Mux(io.signedOut && excSign, UInt(BigInt(1)<<(intWidth - 1)), UInt(0)) |
+        Mux(io.signedOut && excSign, UInt(1)<<(intWidth - 1), UInt(0)) |
         Mux(io.signedOut && ! excSign,
             UInt((BigInt(1)<<(intWidth - 1)) - 1),
             UInt(0)

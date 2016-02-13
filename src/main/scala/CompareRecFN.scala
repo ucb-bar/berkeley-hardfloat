@@ -54,29 +54,30 @@ class CompareRecFN(expWidth: Int, sigWidth: Int) extends Module
     val rawA = rawFNFromRecFN(expWidth, sigWidth, io.a)
     val rawB = rawFNFromRecFN(expWidth, sigWidth, io.b)
 
-    val ordered = ~rawA.isNaN & ~rawB.isNaN
-    val bothInfs  = rawA.isInf  & rawB.isInf
-    val bothZeros = rawA.isZero & rawB.isZero
+    val ordered = ! rawA.isNaN && ! rawB.isNaN
+    val bothInfs  = rawA.isInf  && rawB.isInf
+    val bothZeros = rawA.isZero && rawB.isZero
     val eqExps = (rawA.sExp === rawB.sExp)
     val common_ltMags =
-        (rawA.sExp < rawB.sExp) | (eqExps & (rawA.sig < rawB.sig))
-    val common_eqMags = eqExps & (rawA.sig === rawB.sig)
+        (rawA.sExp < rawB.sExp) || (eqExps && (rawA.sig < rawB.sig))
+    val common_eqMags = eqExps && (rawA.sig === rawB.sig)
 
     val ordered_lt =
-        ~bothZeros &
-            ((rawA.sign & ~rawB.sign) |
-                 (~bothInfs &
-                      ((rawA.sign & ~common_ltMags & ~common_eqMags) |
-                           (~rawB.sign & common_ltMags))))
+        ! bothZeros &&
+            ((rawA.sign && ! rawB.sign) ||
+                 (! bothInfs &&
+                      ((rawA.sign && ! common_ltMags && ! common_eqMags) ||
+                           (! rawB.sign && common_ltMags))))
     val ordered_eq =
-        bothZeros | ((rawA.sign === rawB.sign) & (bothInfs | common_eqMags))
+        bothZeros || ((rawA.sign === rawB.sign) && (bothInfs || common_eqMags))
 
     val invalid =
-        isSigNaNRawFN(rawA) | isSigNaNRawFN(rawB) | (io.signaling & ~ordered)
+        isSigNaNRawFN(rawA) || isSigNaNRawFN(rawB) ||
+            (io.signaling && ! ordered)
 
-    io.lt := ordered & ordered_lt
-    io.eq := ordered & ordered_eq
-    io.gt := ordered & ~ordered_lt & ~ordered_eq
+    io.lt := ordered && ordered_lt
+    io.eq := ordered && ordered_eq
+    io.gt := ordered && ! ordered_lt && ! ordered_eq
 
     io.exceptionFlags := Cat(invalid, Bits(0, 4))
 }

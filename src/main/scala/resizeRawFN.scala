@@ -54,7 +54,7 @@ object resizeRawFN
         out.isInf  := in.isInf
         out.isZero := in.isZero
         out.sExp :=
-            (if(expWidth >= in.expWidth) {
+            (if (expWidth >= in.expWidth) {
                  sNewExp
              } else {
                  Cat((sNewExp < SInt(0)),
@@ -65,7 +65,7 @@ object resizeRawFN
                  ).toSInt
              })
         out.sig :=
-            (if(sigWidth >= in.sigWidth) {
+            (if (sigWidth >= in.sigWidth) {
                  in.sig<<(sigWidth - in.sigWidth)
              } else {
                  Cat(in.sig(in.sigWidth + 2, in.sigWidth - sigWidth + 1),

@@ -66,14 +66,14 @@ class
         // No rounding required.
         //--------------------------------------------------------------------
 
-        val sign = outRawFloat.sign & ~outRawFloat.isNaN
+        val sign = outRawFloat.sign && ! outRawFloat.isNaN
         val expOut =
             (outRawFloat.sExp(outExpWidth, 0) &
                  ~Mux(outRawFloat.isZero,
                       UInt(6<<(outExpWidth - 2), outExpWidth + 1),
                       UInt(0)
                   ) &
-                 ~Mux(outRawFloat.isZero | outRawFloat.isInf,
+                 ~Mux(outRawFloat.isZero || outRawFloat.isInf,
                       UInt(1<<(outExpWidth - 2), outExpWidth + 1),
                       UInt(0)
                   )) |
@@ -87,7 +87,7 @@ class
                 )
         val fractOut =
             Mux(outRawFloat.isNaN,
-                UInt(BigInt(1)<<(outSigWidth - 2)),
+                UInt(1)<<(outSigWidth - 2),
                 outRawFloat.sig(outSigWidth, 2))
 
         io.out := Cat(sign, expOut, fractOut)

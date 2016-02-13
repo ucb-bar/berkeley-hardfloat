@@ -153,7 +153,7 @@ class MulAddRecFN_preMul(expWidth: Int, sigWidth: Int) extends Module
     val alignedNegSigC =
         Cat(Cat(doSubMags, negSigC, Fill(normSize, doSubMags)).toSInt>>
                 CAlignDist,
-            ((sigC & CExtraMask) != UInt(0)) ^ doSubMags
+            (sigC & CExtraMask).orR ^ doSubMags
         )(sigSumSize - 1, 0)
 
     io.mulAddA := sigA
@@ -249,17 +249,17 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
     val estNormNeg_dist = estNormPos_dist
 
     val firstReduceSigSum =
-        Cat((sigSum(
-                 normSize - firstNormUnit - 1, normSize - firstNormUnit * 2
-             ) != UInt(0)),
-            (sigSum(normSize - firstNormUnit * 2 - 1, 0) != UInt(0))
+        Cat(sigSum(
+                normSize - firstNormUnit - 1, normSize - firstNormUnit * 2
+            ).orR,
+            sigSum(normSize - firstNormUnit * 2 - 1, 0).orR
         )
-    val notSigSum = ~sigSum
-    val firstReduceNotSigSum =
-        Cat((notSigSum(
-                 normSize - firstNormUnit - 1, normSize - firstNormUnit * 2
-             ) != UInt(0)),
-            (notSigSum(normSize - firstNormUnit * 2 - 1, 0) != UInt(0))
+    val complSigSum = ~sigSum
+    val firstReduceComplSigSum =
+        Cat(complSigSum(
+                normSize - firstNormUnit - 1, normSize - firstNormUnit * 2
+            ).orR,
+            complSigSum(normSize - firstNormUnit * 2 - 1, 0).orR
         )
 //*** USE RESULT OF `CAlignDest - 1' TO TEST FOR ZERO?
     val CDom_estNormDist =
@@ -270,7 +270,7 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
     val CDom_firstNormAbsSigSum =
         Mux(! doSubMags && ! CDom_estNormDist(logNormSize - 2),
             Cat(sigSum(sigSumSize - 1, normSize - firstNormUnit),
-                (firstReduceSigSum != UInt(0))
+                firstReduceSigSum.orR
             ),
             UInt(0)
         ) |
@@ -284,17 +284,17 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
             UInt(0)
         ) |
         Mux(doSubMags && ! CDom_estNormDist(logNormSize - 2),
-            Cat(notSigSum(sigSumSize - 1, normSize - firstNormUnit),
-                (firstReduceNotSigSum != UInt(0))
+            Cat(complSigSum(sigSumSize - 1, normSize - firstNormUnit),
+                firstReduceComplSigSum.orR
             ),
             UInt(0)
         ) |
         Mux(doSubMags && CDom_estNormDist(logNormSize - 2),
-            Cat(notSigSum(
+            Cat(complSigSum(
                     sigSumSize - firstNormUnit - 1,
                     normSize - firstNormUnit * 2
                 ),
-                firstReduceNotSigSum(0)
+                firstReduceComplSigSum(0)
             ),
             UInt(0)
         )
@@ -306,7 +306,10 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
     val notCDom_pos_firstNormAbsSigSum = {
         var t1 =
             Cat(sigSum(normSize, normSize - firstNormUnit * 2),
-                Mux(doSubMags, ~firstReduceNotSigSum(0), firstReduceSigSum(0))
+                Mux(doSubMags,
+                    ! firstReduceComplSigSum(0),
+                    firstReduceSigSum(0)
+                )
             )
         var t2 = sigSum(sigSumSize - firstNormUnit * 2 - 1, 1)
         if (firstNormUnit * 5 + 1 < sigSumSize) {
@@ -323,7 +326,7 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
                          normSize - firstNormUnit * 3
                       ),
                       Mux(doSubMags,
-                          (notSigSum(normSize - firstNormUnit * 3 - 1, 1) ===
+                          (complSigSum(normSize - firstNormUnit * 3 - 1, 1) ===
                                UInt(0)),
                           (sigSum(normSize - firstNormUnit * 3 - 1, 1) !=
                                UInt(0))
@@ -348,42 +351,41 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
         )
     }
     //------------------------------------------------------------------------
-    // (For this case, bits above `notSigSum(normSize - 1)' are never
+    // (For this case, bits above `complSigSum(normSize - 1)' are never
     // interesting.  Also, if there is any significant cancellation, then
-    // `notSigSum(0)' must be zero.)
+    // `complSigSum(0)' must be zero.)
     //------------------------------------------------------------------------
     val notCDom_neg_cFirstNormAbsSigSum = {
         var t1 =
-            Cat(notSigSum(normSize - 1, normSize - firstNormUnit * 2),
-                firstReduceNotSigSum(0)
+            Cat(complSigSum(normSize - 1, normSize - firstNormUnit * 2),
+                firstReduceComplSigSum(0)
             )
-        var t2 = notSigSum(sigSumSize - firstNormUnit * 2 - 1, 1)
+        var t2 = complSigSum(sigSumSize - firstNormUnit * 2 - 1, 1)
         if (firstNormUnit * 5 < sigSumSize) {
             t1 = Mux(estNormNeg_dist(logNormSize - 3),
                      t1,
-                     notSigSum(sigSumSize - firstNormUnit * 5, 1)<<
-                         UInt(firstNormUnit * 6 - sigWidth * 2)
+                     complSigSum(sigSumSize - firstNormUnit * 5, 1)<<
+                         (firstNormUnit * 6 - sigWidth * 2)
                  )
         }
         if (2 < normSize - firstNormUnit * 3) {
-            t2 = Cat(notSigSum(
+            t2 = Cat(complSigSum(
                          sigSumSize - firstNormUnit * 2,
                          normSize - firstNormUnit * 3
                      ),
-                     (notSigSum(normSize - firstNormUnit * 3 - 1, 1)
-                          != UInt(0))
+                     complSigSum(normSize - firstNormUnit * 3 - 1, 1).orR
                  )
         }
         Mux(estNormNeg_dist(logNormSize - 1),
              Mux(estNormNeg_dist(logNormSize - 2),
-                 notSigSum(sigSumSize - firstNormUnit * 3, 1)<<
-                     UInt(firstNormUnit * 4 - sigWidth * 2),
+                 complSigSum(sigSumSize - firstNormUnit * 3, 1)<<
+                     (firstNormUnit * 4 - sigWidth * 2),
                  t2
              ),
              Mux(estNormNeg_dist(logNormSize - 2),
                  t1,
-                 notSigSum(sigSumSize - firstNormUnit * 4, 1)<<
-                     UInt(firstNormUnit * 5 - sigWidth * 2)
+                 complSigSum(sigSumSize - firstNormUnit * 4, 1)<<
+                     (firstNormUnit * 5 - sigWidth * 2)
              )
         )
     }
@@ -450,7 +452,7 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
             )
 
     val roundPosMask = ~(roundMask>>1) & roundMask
-    val roundPosBit = ((sigX3 & roundPosMask) != UInt(0))
+    val roundPosBit = (sigX3 & roundPosMask).orR
     val anyRoundExtra = (( sigX3 & roundMask>>1) !=  UInt(0))
     val allRoundExtra = ((~sigX3 & roundMask>>1) === UInt(0))
     val anyRound = roundPosBit || anyRoundExtra
@@ -563,9 +565,11 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
             ) |
             Mux(isNaNOut, UInt(7<<(expWidth - 2)), UInt(0, expWidth + 1))
     val fractOut =
-        Mux((totalUnderflowY && roundMagUp) || isNaNOut, UInt(0), fractY) |
-            (isNaNOut << (sigWidth - 2)) |
-            Fill(sigWidth - 1, pegMaxFiniteMagOut)
+        Mux((totalUnderflowY && roundMagUp) || isNaNOut,
+            Mux(isNaNOut, UInt(1)<<(sigWidth - 2), UInt(0)),
+            fractY
+        ) |
+        Fill(sigWidth - 1, pegMaxFiniteMagOut)
 
     io.out := Cat(signOut, expOut, fractOut)
     io.exceptionFlags :=

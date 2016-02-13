@@ -95,7 +95,7 @@ class ValExec_CompareRecFN_le(expWidth: Int, sigWidth: Int) extends Module
     compareRecFN.io.b := recFNFromFN(expWidth, sigWidth, io.b)
     compareRecFN.io.signaling := Bool(true)
 
-    io.actual.out := compareRecFN.io.lt | compareRecFN.io.eq
+    io.actual.out := compareRecFN.io.lt || compareRecFN.io.eq
     io.actual.exceptionFlags := compareRecFN.io.exceptionFlags
 
     io.check := Bool(true)

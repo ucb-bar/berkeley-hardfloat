@@ -47,17 +47,18 @@ class RawFloat(val expWidth: Int, val sigWidth: Int) extends Bundle
 {
     val sign = Bool()
     val isNaN = Bool()               // overrides all other fields
-    val isInf = Bool()               // overrides `isZero', `exp', and `fract'
-    val isZero = Bool()              // overrides `exp' and `fract'
+    val isInf = Bool()               // overrides `isZero', `sExp', and `fract'
+    val isZero = Bool()              // overrides `sExp' and `fract'
     val sExp = SInt(width = expWidth + 2)
     val sig = Bits(width = sigWidth + 3)   // 2 m.s. bits cannot both be 0
 
-    override def cloneType = new RawFloat(expWidth, sigWidth).asInstanceOf[this.type]
+    override def cloneType =
+        new RawFloat(expWidth, sigWidth).asInstanceOf[this.type]
 }
 
 object isSigNaNRawFN
 {
-    def apply(in: RawFloat): Bool = in.isNaN & ! in.sig(in.sigWidth)
+    def apply(in: RawFloat): Bool = in.isNaN && ! in.sig(in.sigWidth)
 }
 
 //----------------------------------------------------------------------------
@@ -90,7 +91,7 @@ class RoundRawFNToRecFN(expWidth: Int, sigWidth: Int) extends Module
     val roundingMode_max          = (io.roundingMode === round_max)
 
     val roundMagUp =
-        (roundingMode_min & io.in.sign) | (roundingMode_max & ~io.in.sign)
+        (roundingMode_min && io.in.sign) || (roundingMode_max && ! io.in.sign)
 
     //------------------------------------------------------------------------
     //------------------------------------------------------------------------
@@ -105,15 +106,16 @@ class RoundRawFNToRecFN(expWidth: Int, sigWidth: Int) extends Module
             UInt(3, 2)
         )
     val roundPosMask = ~(roundMask>>1) & roundMask
-    val roundPosBit = ((io.in.sig & roundPosMask) != UInt(0))
-    val anyRoundExtra = ((io.in.sig & roundMask>>1) != UInt(0))
-    val anyRound = roundPosBit | anyRoundExtra
+    val roundPosBit = (io.in.sig & roundPosMask).orR
+    val anyRoundExtra = (io.in.sig & roundMask>>1).orR
+    val anyRound = roundPosBit || anyRoundExtra
 
     val roundedSig =
-        Mux((roundingMode_nearest_even & roundPosBit)
-                | (roundMagUp & anyRound),
+        Mux((roundingMode_nearest_even && roundPosBit) ||
+                (roundMagUp && anyRound),
             (((io.in.sig | roundMask)>>2) + UInt(1)) &
-                ~Mux(roundingMode_nearest_even & roundPosBit & ~anyRoundExtra,
+                ~Mux(roundingMode_nearest_even && roundPosBit &&
+                         ! anyRoundExtra,
                      roundMask>>1,
                      UInt(0, sigWidth + 2)
                  ),
@@ -133,30 +135,30 @@ class RoundRawFNToRecFN(expWidth: Int, sigWidth: Int) extends Module
 //*** NEED TO ACCOUNT FOR ROUND-EVEN ZEROING MSB OF SUBNORMAL SIG?
     val common_totalUnderflow = (sRoundedExp < SInt(minNonzeroExp))
     val common_underflow =
-        anyRound &
+        anyRound &&
             (io.in.sExp <
                  Mux(doShiftSigDown1, SInt(minNormExp - 1), SInt(minNormExp)))
     val common_inexact = anyRound
 
     //------------------------------------------------------------------------
     //------------------------------------------------------------------------
-    val isNaNOut = io.invalidExc | io.in.isNaN
-    val notNaN_isSpecialInfOut = io.infiniteExc | io.in.isInf
-    val commonCase = ~isNaNOut & ~notNaN_isSpecialInfOut & ~io.in.isZero
-    val overflow  = commonCase & common_overflow
-    val underflow = commonCase & common_underflow
-    val inexact = overflow | (commonCase & common_inexact)
+    val isNaNOut = io.invalidExc || io.in.isNaN
+    val notNaN_isSpecialInfOut = io.infiniteExc || io.in.isInf
+    val commonCase = ! isNaNOut && ! notNaN_isSpecialInfOut && ! io.in.isZero
+    val overflow  = commonCase && common_overflow
+    val underflow = commonCase && common_underflow
+    val inexact = overflow || (commonCase && common_inexact)
 
-    val overflow_roundMagUp = roundingMode_nearest_even | roundMagUp
-    val pegMinNonzeroMagOut = commonCase & common_totalUnderflow & roundMagUp
-    val pegMaxFiniteMagOut = commonCase & overflow & ~overflow_roundMagUp
+    val overflow_roundMagUp = roundingMode_nearest_even || roundMagUp
+    val pegMinNonzeroMagOut = commonCase && common_totalUnderflow && roundMagUp
+    val pegMaxFiniteMagOut = commonCase && overflow && ! overflow_roundMagUp
     val notNaN_isInfOut =
-        notNaN_isSpecialInfOut | (overflow & overflow_roundMagUp)
+        notNaN_isSpecialInfOut || (overflow && overflow_roundMagUp)
 
     val signOut = Mux(isNaNOut, Bool(false), io.in.sign)
     val expOut =
         (common_expOut &
-             ~Mux(io.in.isZero | common_totalUnderflow,
+             ~Mux(io.in.isZero || common_totalUnderflow,
                   UInt(7<<(expWidth - 2), expWidth + 1),
                   UInt(0)
               ) &
@@ -183,12 +185,11 @@ class RoundRawFNToRecFN(expWidth: Int, sigWidth: Int) extends Module
             Mux(notNaN_isInfOut, UInt(infExp, expWidth + 1), UInt(0)) |
             Mux(isNaNOut,        UInt(NaNExp, expWidth + 1), UInt(0))
     val fractOut =
-        Mux((common_totalUnderflow & roundMagUp) | isNaNOut,
-            UInt(0),
+        Mux(common_totalUnderflow || isNaNOut,
+            Mux(isNaNOut, UInt(1)<<(sigWidth - 2), UInt(0)),
             common_fractOut
         ) |
-        Fill(sigWidth - 1, pegMaxFiniteMagOut) |
-        (isNaNOut << (sigWidth - 2))
+        Fill(sigWidth - 1, pegMaxFiniteMagOut)
 
     io.out := Cat(signOut, expOut, fractOut)
     io.exceptionFlags :=

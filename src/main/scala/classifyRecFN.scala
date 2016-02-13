@@ -46,20 +46,20 @@ object classifyRecFN
 
         val rawIn = rawFNFromRecFN(expWidth, sigWidth, in)
 
-        val isNonzeroFinite = ~rawIn.isNaN & ~rawIn.isInf & ~rawIn.isZero
+        val isNonzeroFinite = ! rawIn.isNaN && ! rawIn.isInf && ! rawIn.isZero
         val common_isSubnormal = (rawIn.sExp < SInt(minNormExp))
 
         Cat(
-            rawIn.isNaN & ~isSigNaNRawFN(rawIn),
+            rawIn.isNaN && ! isSigNaNRawFN(rawIn),
             isSigNaNRawFN(rawIn),
-            ~rawIn.sign & rawIn.isInf,
-            ~rawIn.sign & isNonzeroFinite & ~common_isSubnormal,
-            ~rawIn.sign & isNonzeroFinite &  common_isSubnormal,
-            ~rawIn.sign & rawIn.isZero,
-            rawIn.sign  & rawIn.isZero,
-            rawIn.sign  & isNonzeroFinite &  common_isSubnormal,
-            rawIn.sign  & isNonzeroFinite & ~common_isSubnormal,
-            rawIn.sign  & rawIn.isInf
+            ! rawIn.sign && rawIn.isInf,
+            ! rawIn.sign && isNonzeroFinite && ! common_isSubnormal,
+            ! rawIn.sign && isNonzeroFinite &&   common_isSubnormal,
+            ! rawIn.sign && rawIn.isZero,
+            rawIn.sign   && rawIn.isZero,
+            rawIn.sign   && isNonzeroFinite &&   common_isSubnormal,
+            rawIn.sign   && isNonzeroFinite && ! common_isSubnormal,
+            rawIn.sign   && rawIn.isInf
         )
     }
 }
