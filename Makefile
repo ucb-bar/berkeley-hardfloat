@@ -4,7 +4,7 @@ CHISEL_VERSION = 2.2.29
 #default: test-c test-v
 default: test-c
 
-berkeley-softfloat-3/extract.stamp: patches/SoftFloat-3/*
+berkeley-softfloat-3/extract.stamp: patches/berkeley-softfloat-3/*
 	rm -rf berkeley-softfloat-3
 	git clone git://github.com/ucb-bar/berkeley-softfloat-3.git
 	patch -p0 < patches/berkeley-softfloat-3/0001-specialize_riscv.patch
@@ -18,12 +18,12 @@ berkeley-testfloat-3/extract.stamp:
 berkeley-softfloat-3/build/Linux-x86_64-GCC/softfloat.a: berkeley-softfloat-3/extract.stamp
 	$(MAKE) -C berkeley-softfloat-3/build/Linux-x86_64-GCC
 
-berkeley-testfloat-3/build/Linux-x86_64-GCC/testfloat_gen: berkeley-testfloat-3/extract.stamp \
+berkeley-testfloat-3/build/Linux-x86_64-GCC/./testfloat_gen: berkeley-testfloat-3/extract.stamp \
                                                            berkeley-softfloat-3/build/Linux-x86_64-GCC/softfloat.a
 	$(MAKE) -C berkeley-testfloat-3/build/Linux-x86_64-GCC
 
-testfloat_gen: berkeley-testfloat-3/build/Linux-x86_64-GCC/testfloat_gen
-	cp berkeley-testfloat-3/build/Linux-x86_64-GCC/testfloat_gen .
+./testfloat_gen: berkeley-testfloat-3/build/Linux-x86_64-GCC/testfloat_gen
+	cp berkeley-testfloat-3/build/Linux-x86_64-GCC/./testfloat_gen .
 
 tests = \
  f32FromRecF32 \
@@ -75,7 +75,7 @@ test-$(1)/dut: test-$(1)/ValExec_$(1).cpp csrc/*.h csrc/*.cpp
 	g++ -o $$@ test-$(1)/ValExec_$(1).o test-$(1)/test.o
 
 test-c-$(1).log: test-$(1)/dut
-	{ testfloat_gen $(3) $(2) | $$< ; } > $$@ 2>&1
+	{ ./testfloat_gen $(3) $(2) | $$< ; } > $$@ 2>&1
 
 test-c-$(1): test-c-$(1).log
 
@@ -97,16 +97,16 @@ test-$(1)/dut: test-$(1)/ValExec_$(1).cpp csrc/*.h csrc/*.cpp
 	g++ -o $$@ test-$(1)/ValExec_$(1).o test-$(1)/test.o
 
 test-c-$(1).near_even.log: test-$(1)/dut
-	{ testfloat_gen -rnear_even -exact $(3) $(2) | $$< 0 ; } > $$@ 2>&1
+	{ ./testfloat_gen -rnear_even -exact $(3) $(2) | $$< 0 ; } > $$@ 2>&1
 
 test-c-$(1).minMag.log: test-$(1)/dut
-	{ testfloat_gen -rminMag -exact $(3) $(2) | $$< 1 ; } > $$@ 2>&1
+	{ ./testfloat_gen -rminMag -exact $(3) $(2) | $$< 1 ; } > $$@ 2>&1
 
 test-c-$(1).min.log: test-$(1)/dut
-	{ testfloat_gen -rmin -exact $(3) $(2) | $$< 2 ; } > $$@ 2>&1
+	{ ./testfloat_gen -rmin -exact $(3) $(2) | $$< 2 ; } > $$@ 2>&1
 
 test-c-$(1).max.log: test-$(1)/dut
-	{ testfloat_gen -rmax -exact $(3) $(2) | $$< 3 ; } > $$@ 2>&1
+	{ ./testfloat_gen -rmax -exact $(3) $(2) | $$< 3 ; } > $$@ 2>&1
 
 test-c-$(1): \
  test-c-$(1).near_even.log \
@@ -132,16 +132,16 @@ test-$(1)/dut: test-$(1)/ValExec_$(1).cpp csrc/*.h csrc/*.cpp
 	g++ -o $$@ test-$(1)/ValExec_$(1).o test-$(1)/test.o
 
 test-c-$(1).near_even.log: test-$(1)/dut
-	{ testfloat_gen -rnear_even -exact $(3) $(2) | $$< 0 ; } > $$@ 2>&1
+	{ ./testfloat_gen -rnear_even -exact $(3) $(2) | $$< 0 ; } > $$@ 2>&1
 
 test-c-$(1).minMag.log: test-$(1)/dut
-	{ testfloat_gen -rminMag -exact $(3) $(2) | $$< 1 ; } > $$@ 2>&1
+	{ ./testfloat_gen -rminMag -exact $(3) $(2) | $$< 1 ; } > $$@ 2>&1
 
 test-c-$(1).min.log: test-$(1)/dut
-	{ testfloat_gen -rmin -exact $(3) $(2) | $$< 2 ; } > $$@ 2>&1
+	{ ./testfloat_gen -rmin -exact $(3) $(2) | $$< 2 ; } > $$@ 2>&1
 
 test-c-$(1).max.log: test-$(1)/dut
-	{ testfloat_gen -rmax -exact $(3) $(2) | $$< 3 ; } > $$@ 2>&1
+	{ ./testfloat_gen -rmax -exact $(3) $(2) | $$< 3 ; } > $$@ 2>&1
 
 test-c-$(1): \
  test-c-$(1).near_even.log \
@@ -167,7 +167,7 @@ test-$(1)/dut: test-$(1)/ValExec_$(1).cpp csrc/*.h csrc/*.cpp
 	g++ -o $$@ test-$(1)/ValExec_$(1).o test-$(1)/test.o
 
 test-c-$(1).log: test-$(1)/dut
-	{ testfloat_gen $(3) $(2) | $$< ; } > $$@ 2>&1
+	{ ./testfloat_gen $(3) $(2) | $$< ; } > $$@ 2>&1
 
 test-c-$(1): test-c-$(1).log
 
@@ -189,16 +189,16 @@ test-$(1)/dut: test-$(1)/ValExec_$(1).cpp csrc/*.h csrc/*.cpp
 	g++ -o $$@ test-$(1)/ValExec_$(1).o test-$(1)/test.o
 
 test-c-$(1).near_even.log: test-$(1)/dut
-	{ testfloat_gen -rnear_even $(3) $(2) | $$< 0 ; } > $$@ 2>&1
+	{ ./testfloat_gen -rnear_even $(3) $(2) | $$< 0 ; } > $$@ 2>&1
 
 test-c-$(1).minMag.log: test-$(1)/dut
-	{ testfloat_gen -rminMag $(3) $(2) | $$< 1 ; } > $$@ 2>&1
+	{ ./testfloat_gen -rminMag $(3) $(2) | $$< 1 ; } > $$@ 2>&1
 
 test-c-$(1).min.log: test-$(1)/dut
-	{ testfloat_gen -rmin $(3) $(2) | $$< 2 ; } > $$@ 2>&1
+	{ ./testfloat_gen -rmin $(3) $(2) | $$< 2 ; } > $$@ 2>&1
 
 test-c-$(1).max.log: test-$(1)/dut
-	{ testfloat_gen -rmax $(3) $(2) | $$< 3 ; } > $$@ 2>&1
+	{ ./testfloat_gen -rmax $(3) $(2) | $$< 3 ; } > $$@ 2>&1
 
 test-c-$(1): \
  test-c-$(1).near_even.log \
@@ -218,16 +218,16 @@ test-c-$(1): \
 #	cd test-$(1) && vcs -full64 -timescale=1ns/10ps +define+EXPERIMENT=\"emulator-$(1).vh\" +incdir+../vsrc +define+DEBUG -debug_pp $$(notdir $$<) ../vsrc/emulator.v -o $$(notdir $$@)
 #
 #test-v-$(1).near_even.log: test-$(1)/simv
-#	{ time testfloat_gen -rnear_even $(1) | $$< +rm=0 ; } > $$@ 2>&1
+#	{ time ./testfloat_gen -rnear_even $(1) | $$< +rm=0 ; } > $$@ 2>&1
 #
 #test-v-$(1).minMag.log: test-$(1)/simv
-#	{ time testfloat_gen -rminMag $(1) | $$< +rm=1 ; } > $$@ 2>&1
+#	{ time ./testfloat_gen -rminMag $(1) | $$< +rm=1 ; } > $$@ 2>&1
 #
 #test-v-$(1).min.log: test-$(1)/simv
-#	{ time testfloat_gen -rmin $(1) | $$< +rm=2 ; } > $$@ 2>&1
+#	{ time ./testfloat_gen -rmin $(1) | $$< +rm=2 ; } > $$@ 2>&1
 #
 #test-v-$(1).max.log: test-$(1)/simv
-#	{ time testfloat_gen -rmax $(1) | $$< +rm=3 ; } > $$@ 2>&1
+#	{ time ./testfloat_gen -rmax $(1) | $$< +rm=3 ; } > $$@ 2>&1
 #
 #$(1)-v: $$(addsuffix .log, $$(addprefix test-v-$(1)., near_even minMag min max))
 
