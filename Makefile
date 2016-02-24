@@ -18,7 +18,7 @@ berkeley-testfloat-3/extract.stamp:
 berkeley-softfloat-3/build/Linux-x86_64-GCC/softfloat.a: berkeley-softfloat-3/extract.stamp
 	$(MAKE) -C berkeley-softfloat-3/build/Linux-x86_64-GCC
 
-berkeley-testfloat-3/build/Linux-x86_64-GCC/./testfloat_gen: berkeley-testfloat-3/extract.stamp \
+berkeley-testfloat-3/build/Linux-x86_64-GCC/testfloat_gen: berkeley-testfloat-3/extract.stamp \
                                                            berkeley-softfloat-3/build/Linux-x86_64-GCC/softfloat.a
 	$(MAKE) -C berkeley-testfloat-3/build/Linux-x86_64-GCC
 
