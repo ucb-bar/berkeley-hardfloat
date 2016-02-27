@@ -556,7 +556,7 @@ class DivSqrtRecF64_mulAddZ31 extends Module
         zK1_A4_div | zFractB_A7_sqrt(50, 42) |
             Mux(! cyc_S, nextMulAdd9B_A, UInt(0))
     val mulAdd9C_A =
-        zComplK1_A7_sqrt<<10                                          |
+        Cat(zComplK1_A7_sqrt,                  Fill(10, cyc_A7_sqrt)) |
         Cat(cyc_A6_sqrt, zComplFractK0_A6_sqrt, Fill(6, cyc_A6_sqrt)) |
         Cat(cyc_A4_div,  zComplFractK0_A4_div,  Fill(8, cyc_A4_div )) |
 // CHISEL:
