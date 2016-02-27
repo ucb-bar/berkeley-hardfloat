@@ -128,7 +128,10 @@ class RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int) extends Module
             UInt((BigInt(1)<<(intWidth - 1)) - 1),
             UInt(0)
         ) |
-        Mux(! io.signedOut, UInt((BigInt(1)<<intWidth) - 1), UInt(0))
+        Mux(! io.signedOut && ! excSign,
+            UInt((BigInt(1)<<intWidth) - 1),
+            UInt(0)
+        )
     val inexact = roundInexact && ! invalid && ! overflow
 
     io.out := Mux(invalid || overflow, excValue, roundedInt)
