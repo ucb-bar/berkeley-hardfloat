@@ -1,5 +1,5 @@
 
-CHISEL_VERSION = 2.2.29
+CHISEL_VERSION = 2.2.32
 
 #default: test-c test-v
 default: test-c

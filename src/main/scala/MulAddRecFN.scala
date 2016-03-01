@@ -328,7 +328,7 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
                       Mux(doSubMags,
                           (complSigSum(normSize - firstNormUnit * 3 - 1, 1) ===
                                UInt(0)),
-                          (sigSum(normSize - firstNormUnit * 3 - 1, 1) !=
+                          (sigSum(normSize - firstNormUnit * 3 - 1, 1) =/=
                                UInt(0))
                       )
                  )
@@ -428,7 +428,7 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
                       absSigSumExtraMask) ===
                      UInt(0)),
                 ((cFirstNormAbsSigSum(firstNormUnit - 1, 0) &
-                      absSigSumExtraMask) !=
+                      absSigSumExtraMask) =/=
                      UInt(0))
             )
         )(sigWidth + 3, 0)
@@ -453,7 +453,7 @@ class MulAddRecFN_postMul(expWidth: Int, sigWidth: Int) extends Module
 
     val roundPosMask = ~(roundMask>>1) & roundMask
     val roundPosBit = (sigX3 & roundPosMask).orR
-    val anyRoundExtra = (( sigX3 & roundMask>>1) !=  UInt(0))
+    val anyRoundExtra = (( sigX3 & roundMask>>1) =/=  UInt(0))
     val allRoundExtra = ((~sigX3 & roundMask>>1) === UInt(0))
     val anyRound = roundPosBit || anyRoundExtra
     val allRound = roundPosBit && allRoundExtra

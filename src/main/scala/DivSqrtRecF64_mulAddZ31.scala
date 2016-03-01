@@ -385,7 +385,7 @@ class DivSqrtRecF64_mulAddZ31 extends Module
 
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-    when (entering_PA_normalCase || (cycleNum_A != UInt(0))) {
+    when (entering_PA_normalCase || (cycleNum_A =/= UInt(0))) {
         cycleNum_A :=
             Mux(entering_PA_normalCase_div,  UInt(3),           UInt(0)) |
             Mux(entering_PA_normalCase_sqrt, UInt(6),           UInt(0)) |
@@ -412,7 +412,7 @@ class DivSqrtRecF64_mulAddZ31 extends Module
     val cyc_A2_sqrt = cyc_A2 && sqrtOp_PA
     val cyc_A1_sqrt = cyc_A1 && sqrtOp_PA
 
-    when (cyc_A1 || (cycleNum_B != UInt(0))) {
+    when (cyc_A1 || (cycleNum_B =/= UInt(0))) {
         cycleNum_B :=
             Mux(cyc_A1,
                 Mux(sqrtOp_PA, UInt(10), UInt(6)),
@@ -446,7 +446,7 @@ class DivSqrtRecF64_mulAddZ31 extends Module
     cyc_B2_sqrt := cyc_B2 && sqrtOp_PB
     cyc_B1_sqrt := cyc_B1 && sqrtOp_PB
 
-    when (cyc_B1 || (cycleNum_C != UInt(0))) {
+    when (cyc_B1 || (cycleNum_C =/= UInt(0))) {
         cycleNum_C :=
             Mux(cyc_B1, Mux(sqrtOp_PB, UInt(6), UInt(5)), cycleNum_C - UInt(1))
     }
@@ -471,7 +471,7 @@ class DivSqrtRecF64_mulAddZ31 extends Module
     val cyc_C2_sqrt = cyc_C2 && sqrtOp_PC
     val cyc_C1_sqrt = cyc_C1 && sqrtOp_PC
 
-    when (cyc_C1 || (cycleNum_E != UInt(0))) {
+    when (cyc_C1 || (cycleNum_E =/= UInt(0))) {
         cycleNum_E := Mux(cyc_C1, UInt(4), cycleNum_E - UInt(1))
     }
 
