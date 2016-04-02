@@ -46,7 +46,7 @@ object resizeRawFN
 {
     def apply(expWidth: Int, sigWidth: Int, in: RawFloat): RawFloat =
     {
-        val sNewExp = in.sExp + SInt((1<<expWidth) - (1<<in.expWidth))
+        val sNewExp = in.sExp +& SInt((1<<expWidth) - (1<<in.expWidth))
 
         val out = Wire(new RawFloat(expWidth, sigWidth))
         out.sign   := in.sign
@@ -58,7 +58,7 @@ object resizeRawFN
                  sNewExp
              } else {
                  Cat((sNewExp < SInt(0)),
-                     Mux(sNewExp(in.expWidth, expWidth + 1).orR,
+                     Mux(sNewExp(in.expWidth + 1, expWidth + 1).orR,
                          Cat(Fill(expWidth - 1, Bits(1, 1)), Bits(0, 2)),
                          sNewExp(expWidth, 0)
                      )

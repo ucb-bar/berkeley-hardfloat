@@ -50,7 +50,7 @@ class RawFloat(val expWidth: Int, val sigWidth: Int) extends Bundle
     val isInf = Bool()               // overrides `isZero', `sExp', and `fract'
     val isZero = Bool()              // overrides `sExp' and `fract'
     val sExp = SInt(width = expWidth + 2)
-    val sig = Bits(width = sigWidth + 3)   // 2 m.s. bits cannot both be 0
+    val sig = UInt(width = sigWidth + 3)   // 2 m.s. bits cannot both be 0
 
     override def cloneType =
         new RawFloat(expWidth, sigWidth).asInstanceOf[this.type]
@@ -96,8 +96,9 @@ class RoundRawFNToRecFN(expWidth: Int, sigWidth: Int) extends Module
     //------------------------------------------------------------------------
     //------------------------------------------------------------------------
     val doShiftSigDown1 = io.in.sig(sigWidth + 2)
+    val isNegExp = (io.in.sExp < SInt(0))
     val roundMask =
-        Cat(Fill(sigWidth + 1, (io.in.sExp < SInt(0))) |
+        Cat(Fill(sigWidth + 1, isNegExp) |
                 lowMask(
                     io.in.sExp(expWidth, 0),
                     minNormExp - sigWidth - 1,
@@ -105,15 +106,16 @@ class RoundRawFNToRecFN(expWidth: Int, sigWidth: Int) extends Module
                 ) | doShiftSigDown1,
             UInt(3, 2)
         )
-    val roundPosMask = ~(roundMask>>1) & roundMask
+    val shiftedRoundMask = Cat(isNegExp, roundMask)>>1
+    val roundPosMask = ~shiftedRoundMask & roundMask
     val roundPosBit = (io.in.sig & roundPosMask).orR
-    val anyRoundExtra = (io.in.sig & roundMask>>1).orR
+    val anyRoundExtra = (io.in.sig & shiftedRoundMask).orR
     val anyRound = roundPosBit || anyRoundExtra
 
     val roundedSig =
         Mux((roundingMode_nearest_even && roundPosBit) ||
                 (roundMagUp && anyRound),
-            (((io.in.sig | roundMask)>>2) + UInt(1)) &
+            (((io.in.sig | roundMask)>>2) +& UInt(1)) &
                 ~Mux(roundingMode_nearest_even && roundPosBit &&
                          ! anyRoundExtra,
                      roundMask>>1,
@@ -122,7 +124,7 @@ class RoundRawFNToRecFN(expWidth: Int, sigWidth: Int) extends Module
             (io.in.sig & ~roundMask)>>2
         )
 //*** NEED TO ACCOUNT FOR ROUND-EVEN ZEROING MSB OF SUBNORMAL SIG?
-    val sRoundedExp = io.in.sExp + (roundedSig>>sigWidth).zext
+    val sRoundedExp = io.in.sExp +& (roundedSig>>sigWidth).zext
 
     val common_expOut = sRoundedExp(expWidth, 0)
     val common_fractOut =
