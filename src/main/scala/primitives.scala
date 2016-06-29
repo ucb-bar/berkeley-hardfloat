@@ -48,6 +48,22 @@ object lowMask
         val numInVals = 1<<in.getWidth
         if (topBound < bottomBound) {
             lowMask(~in, numInVals - 1 - topBound, numInVals - 1 - bottomBound)
+        } else if (numInVals > 64 /* Empirical */) {
+            // For simulation performance, we should avoid generating
+            // exteremely wide shifters, so we divide and conquer.
+            // Empirically, this does not impact synthesis QoR.
+            val mid = numInVals/2
+            val msb = in(in.getWidth - 1)
+            val lsbs = in(in.getWidth - 2, 0)
+            if (topBound > mid && bottomBound >= mid) {
+                Mux(msb, lowMask(lsbs, topBound - mid, bottomBound - mid), UInt(0))
+            } else if (topBound > mid) {
+                Mux(msb,
+                    Cat(lowMask(lsbs, topBound - mid, 0), UInt((BigInt(1) << (mid - bottomBound)) - 1)),
+                    lowMask(lsbs, mid, bottomBound))
+            } else {
+                ~Mux(msb, UInt(0), ~lowMask(lsbs, topBound, bottomBound))
+            }
         } else {
             val shift = SInt(BigInt(-1)<<numInVals)>>in
             Reverse(shift(numInVals - 1 - bottomBound, numInVals - topBound))
