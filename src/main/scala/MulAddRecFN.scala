@@ -151,7 +151,7 @@ class MulAddRecFN_preMul(expWidth: Int, sigWidth: Int) extends Module
     val negSigC = Mux(doSubMags, ~sigC, sigC)
 // *** FINAL CLIPPING NOT NEEDED?:
     val alignedNegSigC =
-        Cat(Cat(doSubMags, negSigC, Fill(normSize, doSubMags)).toSInt>>
+        Cat(Cat(doSubMags, negSigC, Fill(normSize, doSubMags)).asSInt>>
                 CAlignDist,
             (sigC & CExtraMask).orR ^ doSubMags
         )(sigSumSize - 1, 0)
