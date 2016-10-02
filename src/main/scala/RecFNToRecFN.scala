@@ -100,6 +100,7 @@ class
 
         val roundRawFNToRecFN =
             Module(new RoundRawFNToRecFN(outExpWidth, outSigWidth))
+        roundRawFNToRecFN.suggestName("roundRawFNToRecFNInst")
         roundRawFNToRecFN.io.invalidExc := invalidExc
         roundRawFNToRecFN.io.infiniteExc := Bool(false)
         roundRawFNToRecFN.io.in := outRawFloat

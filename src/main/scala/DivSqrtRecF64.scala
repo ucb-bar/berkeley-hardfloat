@@ -57,6 +57,7 @@ class DivSqrtRecF64 extends Module
     }
 
     val ds = Module(new DivSqrtRecF64_mulAddZ31)
+    ds.suggestName("dsInst")
 
     io.inReady_div := ds.io.inReady_div
     io.inReady_sqrt := ds.io.inReady_sqrt
@@ -71,6 +72,7 @@ class DivSqrtRecF64 extends Module
     io.exceptionFlags := ds.io.exceptionFlags
 
     val mul = Module(new Mul54)
+    mul.suggestName("mulInst")
 
     mul.io.val_s0 := ds.io.usingMulAdd(0)
     mul.io.latch_a_s0 := ds.io.latchMulAddA_0
