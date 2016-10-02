@@ -596,8 +596,10 @@ class MulAddRecFN(expWidth: Int, sigWidth: Int) extends Module
 
     val mulAddRecFN_preMul =
         Module(new MulAddRecFN_preMul(expWidth, sigWidth))
+    mulAddRecFN_preMul.suggestName("mulAddRecFN_preMulInst")
     val mulAddRecFN_postMul =
         Module(new MulAddRecFN_postMul(expWidth, sigWidth))
+    mulAddRecFN_postMul.suggestName("mulAddRecFN_postMulInst")
 
     mulAddRecFN_preMul.io.op := io.op
     mulAddRecFN_preMul.io.a  := io.a
