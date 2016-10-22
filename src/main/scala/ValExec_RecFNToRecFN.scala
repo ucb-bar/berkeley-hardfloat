@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =============================================================================*/
 
-package hardfloat
+package HardFloat
 
 import Chisel._
 
@@ -46,7 +46,8 @@ class
 {
     val io = new Bundle {
         val in = Bits(INPUT, inExpWidth + inSigWidth)
-        val roundingMode = Bits(INPUT, 2)
+        val roundingMode   = UInt(INPUT, 3)
+        val detectTininess = UInt(INPUT, 1)
 
         val expected = new Bundle {
             val out = Bits(INPUT, outExpWidth + outSigWidth)
@@ -67,7 +68,8 @@ class
         Module(
             new RecFNToRecFN(inExpWidth, inSigWidth, outExpWidth, outSigWidth))
     recFNToRecFN.io.in := recFNFromFN(inExpWidth, inSigWidth, io.in)
-    recFNToRecFN.io.roundingMode := io.roundingMode
+    recFNToRecFN.io.roundingMode   := io.roundingMode
+    recFNToRecFN.io.detectTininess := io.detectTininess
 
     io.expected.recOut :=
         recFNFromFN(outExpWidth, outSigWidth, io.expected.out)
@@ -82,6 +84,10 @@ class
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
 
-class ValExec_RecF64ToRecF32 extends ValExec_RecFNToRecFN(11, 53, 8, 24)
+class ValExec_RecF16ToRecF32 extends ValExec_RecFNToRecFN(5, 11, 8, 24)
+class ValExec_RecF16ToRecF64 extends ValExec_RecFNToRecFN(5, 11, 11, 53)
+class ValExec_RecF32ToRecF16 extends ValExec_RecFNToRecFN(8, 24, 5, 11)
 class ValExec_RecF32ToRecF64 extends ValExec_RecFNToRecFN(8, 24, 11, 53)
+class ValExec_RecF64ToRecF16 extends ValExec_RecFNToRecFN(11, 53, 5, 11)
+class ValExec_RecF64ToRecF32 extends ValExec_RecFNToRecFN(11, 53, 8, 24)
 

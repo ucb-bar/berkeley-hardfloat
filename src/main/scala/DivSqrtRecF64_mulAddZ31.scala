@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =============================================================================*/
 
-package hardfloat
+package HardFloat
 
 import Chisel._
 import consts._
@@ -59,18 +59,19 @@ class DivSqrtRecF64_mulAddZ31 extends Module
         val sqrtOp = Bool(INPUT)
         val a = Bits(INPUT, 65)
         val b = Bits(INPUT, 65)
-        val roundingMode = Bits(INPUT, 2)
+        val roundingMode   = UInt(INPUT, 3)
+        val detectTininess = UInt(INPUT, 1)
         val outValid_div  = Bool(OUTPUT)
         val outValid_sqrt = Bool(OUTPUT)
         val out = Bits(OUTPUT, 65)
         val exceptionFlags = Bits(OUTPUT, 5)
         val usingMulAdd = Bits(OUTPUT, 4)
         val latchMulAddA_0 = Bool(OUTPUT)
-        val mulAddA_0 = Bits(OUTPUT, 54)
+        val mulAddA_0 = UInt(OUTPUT, 54)
         val latchMulAddB_0 = Bool(OUTPUT)
-        val mulAddB_0 = Bits(OUTPUT, 54)
-        val mulAddC_2 = Bits(OUTPUT, 105)
-        val mulAddResult_3 = Bits(INPUT, 105)
+        val mulAddB_0 = UInt(OUTPUT, 54)
+        val mulAddC_2 = UInt(OUTPUT, 105)
+        val mulAddResult_3 = UInt(INPUT, 105)
     }
 
     /*------------------------------------------------------------------------
@@ -81,12 +82,12 @@ class DivSqrtRecF64_mulAddZ31 extends Module
 //*** REDUCE?:
     val specialCodeB_PA = Reg(Bits(width = 3))
     val fractB_51_PA    = Reg(Bool())
-    val roundingMode_PA = Reg(Bits(width = 2))
+    val roundingMode_PA = Reg(UInt(width = 3))
     val specialCodeA_PA = Reg(Bits(width = 3))
     val fractA_51_PA    = Reg(Bool())
-    val exp_PA          = Reg(Bits(width = 14))
-    val fractB_other_PA = Reg(Bits(width = 51))
-    val fractA_other_PA = Reg(Bits(width = 51))
+    val exp_PA          = Reg(UInt(width = 14))
+    val fractB_other_PA = Reg(UInt(width = 51))
+    val fractA_other_PA = Reg(UInt(width = 51))
 
     val valid_PB        = Reg(init = Bool(false))
     val sqrtOp_PB       = Reg(Bool())
@@ -96,10 +97,10 @@ class DivSqrtRecF64_mulAddZ31 extends Module
     val fractA_51_PB    = Reg(Bool())
     val specialCodeB_PB = Reg(Bits(width = 3))
     val fractB_51_PB    = Reg(Bool())
-    val roundingMode_PB = Reg(Bits(width = 2))
-    val exp_PB          = Reg(Bits(width = 14))
+    val roundingMode_PB = Reg(UInt(width = 3))
+    val exp_PB          = Reg(UInt(width = 14))
     val fractA_0_PB     = Reg(Bool())
-    val fractB_other_PB = Reg(Bits(width = 51))
+    val fractB_other_PB = Reg(UInt(width = 51))
 
     val valid_PC        = Reg(init = Bool(false))
     val sqrtOp_PC       = Reg(Bool())
@@ -109,31 +110,31 @@ class DivSqrtRecF64_mulAddZ31 extends Module
     val fractA_51_PC    = Reg(Bool())
     val specialCodeB_PC = Reg(Bits(width = 3))
     val fractB_51_PC    = Reg(Bool())
-    val roundingMode_PC = Reg(Bits(width = 2))
-    val exp_PC          = Reg(Bits(width = 14))
+    val roundingMode_PC = Reg(UInt(width = 3))
+    val exp_PC          = Reg(UInt(width = 14))
     val fractA_0_PC     = Reg(Bool())
-    val fractB_other_PC = Reg(Bits(width = 51))
+    val fractB_other_PC = Reg(UInt(width = 51))
 
-    val cycleNum_A      = Reg(init = Bits(0, 3))
-    val cycleNum_B      = Reg(init = Bits(0, 4))
-    val cycleNum_C      = Reg(init = Bits(0, 3))
-    val cycleNum_E      = Reg(init = Bits(0, 3))
+    val cycleNum_A      = Reg(init = UInt(0, 3))
+    val cycleNum_B      = Reg(init = UInt(0, 4))
+    val cycleNum_C      = Reg(init = UInt(0, 3))
+    val cycleNum_E      = Reg(init = UInt(0, 3))
 
-    val fractR0_A       = Reg(Bits(width = 9 ))
-//*** COMBINE `hiSqrR0_A_sqrt' AND `partNegSigma0_A'?
-    val hiSqrR0_A_sqrt  = Reg(Bits(width = 10))
-    val partNegSigma0_A = Reg(Bits(width = 21))
-    val nextMulAdd9A_A  = Reg(Bits(width = 9 ))
-    val nextMulAdd9B_A  = Reg(Bits(width = 9 ))
-    val ER1_B_sqrt      = Reg(Bits(width = 17))
+    val fractR0_A       = Reg(UInt(width = 9 ))
+//*** COMBINE 'hiSqrR0_A_sqrt' AND 'partNegSigma0_A'?
+    val hiSqrR0_A_sqrt  = Reg(UInt(width = 10))
+    val partNegSigma0_A = Reg(UInt(width = 21))
+    val nextMulAdd9A_A  = Reg(UInt(width = 9 ))
+    val nextMulAdd9B_A  = Reg(UInt(width = 9 ))
+    val ER1_B_sqrt      = Reg(UInt(width = 17))
 
-    val ESqrR1_B_sqrt   = Reg(Bits(width = 32))
-    val sigX1_B         = Reg(Bits(width = 58))
-    val sqrSigma1_C     = Reg(Bits(width = 33))
-    val sigXN_C         = Reg(Bits(width = 58))
-    val u_C_sqrt        = Reg(Bits(width = 31))
+    val ESqrR1_B_sqrt   = Reg(UInt(width = 32))
+    val sigX1_B         = Reg(UInt(width = 58))
+    val sqrSigma1_C     = Reg(UInt(width = 33))
+    val sigXN_C         = Reg(UInt(width = 58))
+    val u_C_sqrt        = Reg(UInt(width = 31))
     val E_E_div         = Reg(Bool())
-    val sigT_E          = Reg(Bits(width = 53))
+    val sigT_E          = Reg(UInt(width = 53))
     val extraT_E        = Reg(Bool())
     val isNegRemT_E     = Reg(Bool())
     val isZeroRemT_E    = Reg(Bool())
@@ -184,16 +185,16 @@ class DivSqrtRecF64_mulAddZ31 extends Module
     val cyc_E2 = Wire(Bool())
     val cyc_E1 = Wire(Bool())
 
-    val zSigma1_B4         = Wire(Bits())
-    val sigXNU_B3_CX       = Wire(Bits())
-    val zComplSigT_C1_sqrt = Wire(Bits())
-    val zComplSigT_C1      = Wire(Bits())
+    val zSigma1_B4         = Wire(UInt())
+    val sigXNU_B3_CX       = Wire(UInt())
+    val zComplSigT_C1_sqrt = Wire(UInt())
+    val zComplSigT_C1      = Wire(UInt())
 
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
 //*** NEED TO COMPUTE AS MUCH AS POSSIBLE IN PREVIOUS CYCLE?:
     io.inReady_div :=
-//*** REPLACE ALL OF `! cyc_B*_sqrt' BY `! (valid_PB && sqrtOp_PB)'?:
+//*** REPLACE ALL OF '! cyc_B*_sqrt' BY '! (valid_PB && sqrtOp_PB)'?:
         ready_PA && ! cyc_B7_sqrt && ! cyc_B6_sqrt && ! cyc_B5_sqrt &&
             ! cyc_B4_sqrt && ! cyc_B3 && ! cyc_B2 && ! cyc_B1_sqrt &&
             ! cyc_C5 && ! cyc_C4
@@ -367,7 +368,7 @@ class DivSqrtRecF64_mulAddZ31 extends Module
             Cat(exp_PC(13, 1),   UInt(1, 1))
         )
 
-    val roundingMode_near_even_PC = (roundingMode_PC === round_nearest_even)
+    val roundingMode_near_even_PC = (roundingMode_PC === round_near_even)
     val roundingMode_minMag_PC    = (roundingMode_PC === round_minMag)
     val roundingMode_min_PC       = (roundingMode_PC === round_min)
     val roundingMode_max_PC       = (roundingMode_PC === round_max)
@@ -585,7 +586,7 @@ class DivSqrtRecF64_mulAddZ31 extends Module
             UInt(0)
         )(8, 0) // CHISEL
     /*------------------------------------------------------------------------
-    | (`sqrR0_A5_sqrt' will usually be >= 1, but not always.)
+    | ('sqrR0_A5_sqrt' will usually be >= 1, but not always.)
     *------------------------------------------------------------------------*/
     val sqrR0_A5_sqrt = Mux(exp_PA(0), mulAdd9Out_A<<1, mulAdd9Out_A)
     val zFractR0_A4_div =
@@ -715,7 +716,7 @@ class DivSqrtRecF64_mulAddZ31 extends Module
     zComplSigT_C1_sqrt :=
         Mux(cyc_C1_sqrt, ~io.mulAddResult_3(104, 51), UInt(0))
     /*------------------------------------------------------------------------
-    | (For square root, `sigT_C1' will usually be >= 1, but not always.)
+    | (For square root, 'sigT_C1' will usually be >= 1, but not always.)
     *------------------------------------------------------------------------*/
     val sigT_C1 = ~zComplSigT_C1
     val remT_E2 = io.mulAddResult_3(55, 0)
@@ -796,7 +797,7 @@ class DivSqrtRecF64_mulAddZ31 extends Module
     val roundEvenMask_E1 =
         Mux(roundingMode_near_even_PC && hiRoundPosBit_E1 &&
                 ! anyRoundExtra_E1,
-//*** CAN SUBSTITUTE `{roundMask_E, UInt("b1", 1)}'.
+//*** CAN SUBSTITUTE '{roundMask_E, UInt("b1", 1)}'.
             incrPosMask_E,
             UInt(0)
         )
@@ -846,8 +847,8 @@ class DivSqrtRecF64_mulAddZ31 extends Module
 
     val overflow_E1 = normalCase_PC && overflowY_E1
     val underflow_E1 = normalCase_PC && underflowY_E1
-//*** SPEED BY USING `normalCase_PC && totalUnderflowY_E1' INSTEAD OF
-//***  `underflow_E1'?
+//*** SPEED BY USING 'normalCase_PC && totalUnderflowY_E1' INSTEAD OF
+//***  'underflow_E1'?
     val inexact_E1 =
         overflow_E1 || underflow_E1 || (normalCase_PC && inexactY_E1)
 

@@ -35,14 +35,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =============================================================================*/
 
-package hardfloat
+package HardFloat
 
 import Chisel._
 
 class DivRecF64_io extends Bundle {
     val a = Bits(width = 64)
     val b = Bits(width = 64)
-    val roundingMode = Bits(width = 2)
+    val roundingMode   = UInt(width = 3)
+    val detectTininess = UInt(width = 1)
     val out = Bits(width = 64)
     val exceptionFlags = Bits(width = 5)
 }
@@ -54,7 +55,8 @@ class ValExec_DivSqrtRecF64_div extends Module {
         val output = new Bundle {
             val a = Bits(OUTPUT, 64)
             val b = Bits(OUTPUT, 64)
-            val roundingMode = Bits(OUTPUT, 2)
+            val roundingMode   = UInt(OUTPUT, 3)
+            val detectTininess = UInt(OUTPUT, 1)
         }
 
         val expected = new Bundle {
@@ -83,11 +85,13 @@ class ValExec_DivSqrtRecF64_div extends Module {
     ds.io.sqrtOp := Bool(false)
     ds.io.a := recFNFromFN(11, 53, io.input.bits.a)
     ds.io.b := recFNFromFN(11, 53, io.input.bits.b)
-    ds.io.roundingMode := io.input.bits.roundingMode
+    ds.io.roundingMode   := io.input.bits.roundingMode
+    ds.io.detectTininess := io.input.bits.detectTininess
 
     io.output.a := cq.io.deq.bits.a
     io.output.b := cq.io.deq.bits.b
-    io.output.roundingMode := cq.io.deq.bits.roundingMode
+    io.output.roundingMode   := cq.io.deq.bits.roundingMode
+    io.output.detectTininess := cq.io.deq.bits.detectTininess
 
     io.expected.out := cq.io.deq.bits.out
     io.expected.exceptionFlags := cq.io.deq.bits.exceptionFlags
@@ -107,7 +111,8 @@ class ValExec_DivSqrtRecF64_div extends Module {
 
 class SqrtRecF64_io extends Bundle {
     val b = Bits(width = 64)
-    val roundingMode = Bits(width = 2)
+    val roundingMode   = UInt(width = 3)
+    val detectTininess = UInt(width = 1)
     val out = Bits(width = 64)
     val exceptionFlags = Bits(width = 5)
 }
@@ -118,7 +123,8 @@ class ValExec_DivSqrtRecF64_sqrt extends Module {
 
         val output = new Bundle {
             val b = Bits(OUTPUT, 64)
-            val roundingMode = Bits(OUTPUT, 2)
+            val roundingMode   = UInt(OUTPUT, 3)
+            val detectTininess = UInt(OUTPUT, 1)
         }
 
         val expected = new Bundle {
@@ -146,10 +152,12 @@ class ValExec_DivSqrtRecF64_sqrt extends Module {
     ds.io.inValid := io.input.valid && cq.io.enq.ready
     ds.io.sqrtOp := Bool(true)
     ds.io.b := recFNFromFN(11, 53, io.input.bits.b)
-    ds.io.roundingMode := io.input.bits.roundingMode
+    ds.io.roundingMode   := io.input.bits.roundingMode
+    ds.io.detectTininess := io.input.bits.detectTininess
 
     io.output.b := cq.io.deq.bits.b
-    io.output.roundingMode := cq.io.deq.bits.roundingMode
+    io.output.roundingMode   := cq.io.deq.bits.roundingMode
+    io.output.detectTininess := cq.io.deq.bits.detectTininess
 
     io.expected.out := cq.io.deq.bits.out
     io.expected.exceptionFlags := cq.io.deq.bits.exceptionFlags

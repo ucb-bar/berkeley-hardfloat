@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =============================================================================*/
 
-package hardfloat
+package HardFloat
 
 import Chisel._
 
@@ -43,7 +43,8 @@ import Chisel._
 //----------------------------------------------------------------------------
 object lowMask
 {
-    def apply(in: UInt, topBound: Int, bottomBound: Int): UInt = {
+    def apply(in: UInt, topBound: Int, bottomBound: Int): UInt =
+    {
         require(topBound != bottomBound)
         val numInVals = 1<<in.getWidth
         if (topBound < bottomBound) {
@@ -52,15 +53,23 @@ object lowMask
             // For simulation performance, we should avoid generating
             // exteremely wide shifters, so we divide and conquer.
             // Empirically, this does not impact synthesis QoR.
-            val mid = numInVals/2
+            val mid = numInVals / 2
             val msb = in(in.getWidth - 1)
             val lsbs = in(in.getWidth - 2, 0)
-            if (topBound > mid && bottomBound >= mid) {
-                Mux(msb, lowMask(lsbs, topBound - mid, bottomBound - mid), UInt(0))
-            } else if (topBound > mid) {
-                Mux(msb,
-                    Cat(lowMask(lsbs, topBound - mid, 0), UInt((BigInt(1) << (mid - bottomBound)) - 1)),
-                    lowMask(lsbs, mid, bottomBound))
+            if (mid < topBound) {
+                if (mid <= bottomBound) {
+                    Mux(msb,
+                        lowMask(lsbs, topBound - mid, bottomBound - mid),
+                        UInt(0)
+                    )
+                } else {
+                    Mux(msb,
+                        Cat(lowMask(lsbs, topBound - mid, 0),
+                            UInt((BigInt(1)<<(mid - bottomBound)) - 1)
+                        ),
+                        lowMask(lsbs, mid, bottomBound)
+                    )
+                }
             } else {
                 ~Mux(msb, UInt(0), ~lowMask(lsbs, topBound, bottomBound))
             }
@@ -73,10 +82,42 @@ object lowMask
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-object priorityEncode
+object countLeadingZeros
 {
-    def apply(key: UInt, n: Int, s: Int) = {
-        UInt(n + s - 1) - Log2(key(s - 1, 0), s)
+    def apply(in: UInt): UInt = PriorityEncoder(Reverse(in))
+}
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+object orReduceBy2
+{
+    def apply(in: UInt): UInt =
+    {
+        val reducedWidth = (in.getWidth + 1)>>1
+        val reducedVec = Vec(Seq.fill(reducedWidth)(Bool()))
+        for (ix <- 0 until reducedWidth - 1) {
+            reducedVec(ix) := in(ix * 2 + 1, ix * 2).orR
+        }
+        reducedVec(reducedWidth - 1) :=
+            in(in.getWidth - 1, (reducedWidth - 1) * 2).orR
+        reducedVec.toBits
+    }
+}
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+object orReduceBy4
+{
+    def apply(in: UInt): UInt =
+    {
+        val reducedWidth = (in.getWidth + 3)>>2
+        val reducedVec = Vec(Seq.fill(reducedWidth)(Bool()))
+        for (ix <- 0 until reducedWidth - 1) {
+            reducedVec(ix) := in(ix * 4 + 3, ix * 4).orR
+        }
+        reducedVec(reducedWidth - 1) :=
+            in(in.getWidth - 1, (reducedWidth - 1) * 4).orR
+        reducedVec.toBits
     }
 }
 

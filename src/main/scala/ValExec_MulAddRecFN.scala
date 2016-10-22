@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =============================================================================*/
 
-package hardfloat
+package HardFloat
 
 import Chisel._
 
@@ -45,7 +45,8 @@ class ValExec_MulAddRecFN(expWidth: Int, sigWidth: Int) extends Module
         val a = Bits(INPUT, expWidth + sigWidth)
         val b = Bits(INPUT, expWidth + sigWidth)
         val c = Bits(INPUT, expWidth + sigWidth)
-        val roundingMode = Bits(INPUT, 2)
+        val roundingMode   = UInt(INPUT, 3)
+        val detectTininess = UInt(INPUT, 1)
 
         val expected = new Bundle {
             val out = Bits(INPUT, expWidth + sigWidth)
@@ -67,7 +68,8 @@ class ValExec_MulAddRecFN(expWidth: Int, sigWidth: Int) extends Module
     mulAddRecFN.io.a := recFNFromFN(expWidth, sigWidth, io.a)
     mulAddRecFN.io.b := recFNFromFN(expWidth, sigWidth, io.b)
     mulAddRecFN.io.c := recFNFromFN(expWidth, sigWidth, io.c)
-    mulAddRecFN.io.roundingMode := io.roundingMode
+    mulAddRecFN.io.roundingMode   := io.roundingMode
+    mulAddRecFN.io.detectTininess := io.detectTininess
 
     io.expected.recOut := recFNFromFN(expWidth, sigWidth, io.expected.out)
 
@@ -80,6 +82,7 @@ class ValExec_MulAddRecFN(expWidth: Int, sigWidth: Int) extends Module
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
 
+class ValExec_MulAddRecF16 extends ValExec_MulAddRecFN(5, 11)
 class ValExec_MulAddRecF32 extends ValExec_MulAddRecFN(8, 24)
 class ValExec_MulAddRecF64 extends ValExec_MulAddRecFN(11, 53)
 
@@ -88,7 +91,8 @@ class ValExec_MulAddRecFN_add(expWidth: Int, sigWidth: Int) extends Module
     val io = new Bundle {
         val a = Bits(INPUT, expWidth + sigWidth)
         val b = Bits(INPUT, expWidth + sigWidth)
-        val roundingMode = Bits(INPUT, 2)
+        val roundingMode   = UInt(INPUT, 3)
+        val detectTininess = UInt(INPUT, 1)
 
         val expected = new Bundle {
             val out = Bits(INPUT, expWidth + sigWidth)
@@ -110,7 +114,8 @@ class ValExec_MulAddRecFN_add(expWidth: Int, sigWidth: Int) extends Module
     mulAddRecFN.io.a := recFNFromFN(expWidth, sigWidth, io.a)
     mulAddRecFN.io.b := UInt(1)<<(expWidth + sigWidth - 1)
     mulAddRecFN.io.c := recFNFromFN(expWidth, sigWidth, io.b)
-    mulAddRecFN.io.roundingMode := io.roundingMode
+    mulAddRecFN.io.roundingMode   := io.roundingMode
+    mulAddRecFN.io.detectTininess := io.detectTininess
 
     io.expected.recOut := recFNFromFN(expWidth, sigWidth, io.expected.out)
 
@@ -123,6 +128,7 @@ class ValExec_MulAddRecFN_add(expWidth: Int, sigWidth: Int) extends Module
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
 
+class ValExec_MulAddRecF16_add extends ValExec_MulAddRecFN_add(5, 11)
 class ValExec_MulAddRecF32_add extends ValExec_MulAddRecFN_add(8, 24)
 class ValExec_MulAddRecF64_add extends ValExec_MulAddRecFN_add(11, 53)
 
@@ -131,7 +137,8 @@ class ValExec_MulAddRecFN_mul(expWidth: Int, sigWidth: Int) extends Module
     val io = new Bundle {
         val a = Bits(INPUT, expWidth + sigWidth)
         val b = Bits(INPUT, expWidth + sigWidth)
-        val roundingMode = Bits(INPUT, 2)
+        val roundingMode   = UInt(INPUT, 3)
+        val detectTininess = UInt(INPUT, 1)
 
         val expected = new Bundle {
             val out = Bits(INPUT, expWidth + sigWidth)
@@ -153,7 +160,8 @@ class ValExec_MulAddRecFN_mul(expWidth: Int, sigWidth: Int) extends Module
     mulAddRecFN.io.a := recFNFromFN(expWidth, sigWidth, io.a)
     mulAddRecFN.io.b := recFNFromFN(expWidth, sigWidth, io.b)
     mulAddRecFN.io.c := ((io.a ^ io.b) & UInt(1)<<(expWidth + sigWidth - 1))<<1
-    mulAddRecFN.io.roundingMode := io.roundingMode
+    mulAddRecFN.io.roundingMode   := io.roundingMode
+    mulAddRecFN.io.detectTininess := io.detectTininess
 
     io.expected.recOut := recFNFromFN(expWidth, sigWidth, io.expected.out)
 
@@ -166,6 +174,7 @@ class ValExec_MulAddRecFN_mul(expWidth: Int, sigWidth: Int) extends Module
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
 
+class ValExec_MulAddRecF16_mul extends ValExec_MulAddRecFN_mul(5, 11)
 class ValExec_MulAddRecF32_mul extends ValExec_MulAddRecFN_mul(8, 24)
 class ValExec_MulAddRecF64_mul extends ValExec_MulAddRecFN_mul(11, 53)
 

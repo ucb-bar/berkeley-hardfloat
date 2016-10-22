@@ -35,29 +35,32 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =============================================================================*/
 
-package hardfloat
+package HardFloat
 
 import Chisel._
 
-/*----------------------------------------------------------------------------
-| In the result, no more than one of `isNaN', `isInf', and `isZero' will be
-| set.
-*----------------------------------------------------------------------------*/
-object rawFNFromRecFN
+object rawFloatFromIN
 {
-    def apply(expWidth: Int, sigWidth: Int, in: Bits): RawFloat =
+    def apply(signedIn: Bool, in: Bits): RawFloat =
     {
-        val exp = in(expWidth + sigWidth - 1, sigWidth - 1)
-        val isZero    = (exp(expWidth, expWidth - 2) === UInt(0))
-        val isSpecial = (exp(expWidth, expWidth - 1) === UInt(3))
+        val expWidth = log2Up(in.getWidth)
+        val extIntWidth = 1<<expWidth
 
-        val out = Wire(new RawFloat(expWidth, sigWidth))
-        out.sign := in(expWidth + sigWidth)
-        out.isNaN := isSpecial &&   exp(expWidth - 2)
-        out.isInf := isSpecial && ! exp(expWidth - 2)
-        out.isZero := isZero
-        out.sExp := exp.zext
-        out.sig := Cat(UInt(0, 1), ! isZero, in(sigWidth - 2, 0), UInt(0, 2))
+        val sign = signedIn && in(in.getWidth - 1)
+        val absIn = Mux(sign, -in.asUInt, in.asUInt)
+        val extAbsIn = Cat(UInt(0, extIntWidth), absIn)(extIntWidth - 1, 0)
+        val adjustedNormDist = countLeadingZeros(extAbsIn)
+        val sig =
+            (extAbsIn<<adjustedNormDist)(
+                extIntWidth - 1, extIntWidth - in.getWidth)
+
+        val out = Wire(new RawFloat(expWidth, in.getWidth))
+        out.isNaN  := Bool(false)
+        out.isInf  := Bool(false)
+        out.isZero := ! sig(in.getWidth - 1)
+        out.sign   := sign
+        out.sExp   := Cat(UInt(1, 1), ~adjustedNormDist(expWidth - 1, 0)).zext
+        out.sig    := sig
         out
     }
 }

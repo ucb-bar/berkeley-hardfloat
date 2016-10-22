@@ -1,0 +1,292 @@
+
+/*============================================================================
+
+This Chisel source file is part of a pre-release version of the HardFloat IEEE
+Floating-Point Arithmetic Package, by John R. Hauser (with contributions from
+Brian Richards, Yunsup Lee, and Andrew Waterman).
+
+Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016 The Regents of the
+University of California.  All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+ 1. Redistributions of source code must retain the above copyright notice,
+    this list of conditions, and the following disclaimer.
+
+ 2. Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions, and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+
+ 3. Neither the name of the University nor the names of its contributors may
+    be used to endorse or promote products derived from this software without
+    specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS "AS IS", AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE, ARE
+DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+=============================================================================*/
+
+package HardFloat
+
+import Chisel._
+import consts._
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+class
+    RoundAnyRawFNToRecFN(
+        inExpWidth: Int,
+        inSigWidth: Int,
+        outExpWidth: Int,
+        outSigWidth: Int,
+        options: Int
+    )
+    extends Module
+{
+    val io = new Bundle {
+        val invalidExc  = Bool(INPUT)   // overrides 'infiniteExc' and 'in'
+        val infiniteExc = Bool(INPUT)   // overrides 'in' except for 'in.sign'
+        val in = new RawFloat(inExpWidth, inSigWidth).asInput
+                                        // (allowed exponent range has limits)
+        val roundingMode   = UInt(INPUT, 3)
+        val detectTininess = UInt(INPUT, 1)
+        val out = Bits(OUTPUT, outExpWidth + outSigWidth + 1)
+        val exceptionFlags = Bits(OUTPUT, 5)
+    }
+
+    //------------------------------------------------------------------------
+    //------------------------------------------------------------------------
+    val sigMSBitAlwaysZero = ((options & flRoundOpt_sigMSBitAlwaysZero) != 0)
+    val effectiveInSigWidth =
+        if (sigMSBitAlwaysZero) inSigWidth else inSigWidth + 1
+    val neverUnderflows =
+        ((options &
+              (flRoundOpt_neverUnderflows | flRoundOpt_subnormsAlwaysExact)
+         ) != 0) ||
+            (inExpWidth < outExpWidth)
+    val neverOverflows =
+        ((options & flRoundOpt_neverOverflows) != 0) ||
+            (inExpWidth < outExpWidth)
+    val outNaNExp = 7<<(outExpWidth - 2)
+    val outInfExp = 6<<(outExpWidth - 2)
+    val outMaxFiniteExp = outInfExp - 1
+    val outMinNormExp = (1<<(outExpWidth - 1)) + 2
+    val outMinNonzeroExp = outMinNormExp - outSigWidth + 1
+
+    //------------------------------------------------------------------------
+    //------------------------------------------------------------------------
+    val roundingMode_near_even = (io.roundingMode === round_near_even)
+    val roundingMode_minMag    = (io.roundingMode === round_minMag)
+    val roundingMode_min       = (io.roundingMode === round_min)
+    val roundingMode_max       = (io.roundingMode === round_max)
+
+    val roundMagUp =
+        (roundingMode_min && io.in.sign) || (roundingMode_max && ! io.in.sign)
+
+    //------------------------------------------------------------------------
+    //------------------------------------------------------------------------
+    val sAdjustedExp =
+        if (inExpWidth < outExpWidth)
+            (io.in.sExp +& SInt((1<<outExpWidth) - (1<<inExpWidth))
+            )(outExpWidth, 0).zext
+        else if (inExpWidth == outExpWidth)
+            io.in.sExp
+        else
+            io.in.sExp +& SInt((1<<outExpWidth) - (1<<inExpWidth))
+    val adjustedSig =
+        if (inSigWidth <= outSigWidth + 2)
+            io.in.sig<<(outSigWidth - inSigWidth + 2)
+        else
+            Cat(io.in.sig(inSigWidth, inSigWidth - outSigWidth - 1),
+                io.in.sig(inSigWidth - outSigWidth - 2, 0).orR
+            )
+    val doShiftSigDown1 =
+        if (sigMSBitAlwaysZero) Bool(false) else adjustedSig(outSigWidth + 2)
+
+//*** TEMPORARILY TWEAK MODULE `RecFNToRecFN' TO TEST `doShiftSigDown1' CASE.
+
+    val common_expOut   = UInt(width = outExpWidth + 1)
+    val common_fractOut = UInt(width = outSigWidth - 1)
+    val common_overflow       = Bool()
+    val common_totalUnderflow = Bool()
+    val common_underflow      = Bool()
+    val common_inexact        = Bool()
+
+    if (
+        neverOverflows && neverUnderflows
+            && (effectiveInSigWidth <= outSigWidth)
+    ) {
+
+        //--------------------------------------------------------------------
+        //--------------------------------------------------------------------
+        common_expOut := sAdjustedExp(outExpWidth, 0) + doShiftSigDown1
+        common_fractOut := 
+            Mux(doShiftSigDown1,
+                adjustedSig(outSigWidth + 1, 3),
+                adjustedSig(outSigWidth, 2)
+            )
+        common_overflow       := Bool(false)
+        common_totalUnderflow := Bool(false)
+        common_underflow      := Bool(false)
+        common_inexact        := Bool(false)
+
+    } else {
+
+        //--------------------------------------------------------------------
+        //--------------------------------------------------------------------
+        val isNegExp =
+            if (neverUnderflows) Bool(false) else (sAdjustedExp < SInt(0))
+        val roundMask =
+            if (neverUnderflows)
+                Cat(UInt(0, outSigWidth), doShiftSigDown1, UInt(3, 2))
+            else
+                Cat(Fill(outSigWidth + 1, isNegExp) |
+                        lowMask(
+                            sAdjustedExp(outExpWidth, 0),
+                            outMinNormExp - outSigWidth - 1,
+                            outMinNormExp
+                        ) | doShiftSigDown1,
+                    UInt(3, 2)
+                )
+        val shiftedRoundMask = Cat(isNegExp, roundMask)>>1
+        val roundPosMask = ~shiftedRoundMask & roundMask
+        val roundPosBit = (adjustedSig & roundPosMask).orR
+        val anyRoundExtra = (adjustedSig & shiftedRoundMask).orR
+        val anyRound = roundPosBit || anyRoundExtra
+
+        val roundedSig =
+            Mux((roundingMode_near_even && roundPosBit) ||
+                    (roundMagUp && anyRound),
+                (((adjustedSig | roundMask)>>2) +& UInt(1)) &
+                    ~Mux(roundingMode_near_even && roundPosBit &&
+                             ! anyRoundExtra,
+                         roundMask>>1,
+                         UInt(0, outSigWidth + 2)
+                     ),
+                (adjustedSig & ~roundMask)>>2
+            )
+//*** NEED TO ACCOUNT FOR ROUND-EVEN ZEROING M.S. BIT OF SUBNORMAL SIG?
+        val sRoundedExp = sAdjustedExp +& (roundedSig>>outSigWidth).zext
+
+        common_expOut := sRoundedExp(outExpWidth, 0)
+        common_fractOut :=
+            Mux(doShiftSigDown1,
+                roundedSig(outSigWidth - 1, 1),
+                roundedSig(outSigWidth - 2, 0)
+            )
+        common_overflow :=
+            (if (neverOverflows) Bool(false) else
+//*** REWRITE BASED ON BEFORE-ROUNDING EXPONENT?:
+                 (sRoundedExp>>(outExpWidth - 1) >= SInt(3)))
+        common_totalUnderflow :=
+            (if (neverUnderflows) Bool(false) else
+//*** WOULD BE GOOD ENOUGH TO USE EXPONENT BEFORE ROUNDING?:
+                 (sRoundedExp < SInt(outMinNonzeroExp)))
+        common_underflow :=
+            (if (neverUnderflows) Bool(false) else
+//*** NEED TO ACCOUNT FOR ROUND-EVEN ZEROING M.S. BIT OF SUBNORMAL SIG?
+                 anyRound &&
+                     (sAdjustedExp <
+                          Mux(doShiftSigDown1,
+                              SInt(outMinNormExp - 1),
+                              SInt(outMinNormExp)
+                          )))
+        common_inexact := anyRound
+    }
+
+    //------------------------------------------------------------------------
+    //------------------------------------------------------------------------
+    val isNaNOut = io.invalidExc || io.in.isNaN
+    val notNaN_isSpecialInfOut = io.infiniteExc || io.in.isInf
+    val commonCase = ! isNaNOut && ! notNaN_isSpecialInfOut && ! io.in.isZero
+    val overflow  = commonCase && common_overflow
+    val underflow = commonCase && common_underflow
+    val inexact = overflow || (commonCase && common_inexact)
+
+    val overflow_roundMagUp = roundingMode_near_even || roundMagUp
+    val pegMinNonzeroMagOut = commonCase && common_totalUnderflow && roundMagUp
+    val pegMaxFiniteMagOut = commonCase && overflow && ! overflow_roundMagUp
+    val notNaN_isInfOut =
+        notNaN_isSpecialInfOut || (overflow && overflow_roundMagUp)
+
+    val signOut = Mux(isNaNOut, Bool(false), io.in.sign)
+    val expOut =
+        (common_expOut &
+             ~Mux(io.in.isZero || common_totalUnderflow,
+                  UInt(7<<(outExpWidth - 2), outExpWidth + 1),
+                  UInt(0)
+              ) &
+             ~Mux(pegMinNonzeroMagOut,
+                  ~UInt(outMinNonzeroExp, outExpWidth + 1),
+                  UInt(0)
+              ) &
+             ~Mux(pegMaxFiniteMagOut,
+                  UInt(1<<(outExpWidth - 1), outExpWidth + 1),
+                  UInt(0)
+              ) &
+             ~Mux(notNaN_isInfOut,
+                  UInt(1<<(outExpWidth - 2), outExpWidth + 1),
+                  UInt(0)
+              )) |
+            Mux(pegMinNonzeroMagOut,
+                UInt(outMinNonzeroExp, outExpWidth + 1),
+                UInt(0)
+            ) |
+            Mux(pegMaxFiniteMagOut,
+                UInt(outMaxFiniteExp, outExpWidth + 1),
+                UInt(0)
+            ) |
+            Mux(notNaN_isInfOut, UInt(outInfExp, outExpWidth + 1), UInt(0)) |
+            Mux(isNaNOut,        UInt(outNaNExp, outExpWidth + 1), UInt(0))
+    val fractOut =
+        Mux(common_totalUnderflow || isNaNOut,
+            Mux(isNaNOut, UInt(1)<<(outSigWidth - 2), UInt(0)),
+            common_fractOut
+        ) |
+        Fill(outSigWidth - 1, pegMaxFiniteMagOut)
+
+    io.out := Cat(signOut, expOut, fractOut)
+    io.exceptionFlags :=
+        Cat(io.invalidExc, io.infiniteExc, overflow, underflow, inexact)
+}
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+class
+    RoundRawFNToRecFN(expWidth: Int, sigWidth: Int, options: Int)
+    extends Module
+{
+    val io = new Bundle {
+        val invalidExc  = Bool(INPUT)   // overrides 'infiniteExc' and 'in'
+        val infiniteExc = Bool(INPUT)   // overrides 'in' except for 'in.sign'
+        val in = new RawFloat(expWidth, sigWidth + 2).asInput
+        val roundingMode   = UInt(INPUT, 3)
+        val detectTininess = UInt(INPUT, 1)
+        val out = Bits(OUTPUT, expWidth + sigWidth + 1)
+        val exceptionFlags = Bits(OUTPUT, 5)
+    }
+
+    val roundAnyRawFNToRecFN =
+        Module(
+            new RoundAnyRawFNToRecFN(
+                    expWidth, sigWidth + 2, expWidth, sigWidth, options))
+    roundAnyRawFNToRecFN.io.invalidExc     := io.invalidExc
+    roundAnyRawFNToRecFN.io.infiniteExc    := io.infiniteExc
+    roundAnyRawFNToRecFN.io.in             := io.in
+    roundAnyRawFNToRecFN.io.roundingMode   := io.roundingMode
+    roundAnyRawFNToRecFN.io.detectTininess := io.detectTininess
+    io.out            := roundAnyRawFNToRecFN.io.out
+    io.exceptionFlags := roundAnyRawFNToRecFN.io.exceptionFlags
+}
+

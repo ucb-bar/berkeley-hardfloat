@@ -1,5 +1,6 @@
 
-static dat_t<2>* roundingMode;
+static dat_t<3>* roundingMode;
+static dat_t<1>* detectTininess;
 static std::vector<dat_t<ILEN>*> inputs;
 static dat_t<FLEN>* expected_out;
 static dat_t<FLEN+1>* expected_recOut;
@@ -14,7 +15,8 @@ static dat_t<1>* pass;
 
 static void initialize_dat_pointers(dut_t* m)
 {
-  roundingMode = SIGNAL(ILEN, FLEN, roundingMode);
+  roundingMode   = SIGNAL(ILEN, FLEN, roundingMode);
+  detectTininess = SIGNAL(ILEN, FLEN, detectTininess);
   inputs.push_back(SIGNAL(ILEN, FLEN, in));
   expected_out = SIGNAL(ILEN, FLEN, expected_out);
   expected_recOut = SIGNAL(ILEN, FLEN, expected_recOut);

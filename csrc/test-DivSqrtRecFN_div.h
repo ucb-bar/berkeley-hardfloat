@@ -1,5 +1,6 @@
 
-static dat_t<2>* roundingMode;
+static dat_t<3>* roundingMode;
+static dat_t<1>* detectTininess;
 
 static dat_t<1>* read_ready;
 static dat_t<1>* read_valid;
@@ -21,7 +22,8 @@ static dat_t<1>* pass;
 
 static void initialize_dat_pointers(dut_t* m)
 {
-  roundingMode = SIGNAL(FLEN, input_bits_roundingMode);
+  roundingMode   = SIGNAL(FLEN, input_bits_roundingMode);
+  detectTininess = SIGNAL(FLEN, input_bits_detectTininess);
 
   read_ready = SIGNAL(FLEN, input_ready);
   read_valid = SIGNAL(FLEN, input_valid);

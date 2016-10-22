@@ -38,52 +38,37 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package HardFloat
 
 import Chisel._
-import consts._
 
-class
-    RecFNToRecFN(
-        inExpWidth: Int, inSigWidth: Int, outExpWidth: Int, outSigWidth: Int)
-    extends Module
+object consts {
+    val round_near_even   = UInt("b000", 3)
+    val round_minMag      = UInt("b001", 3)
+    val round_min         = UInt("b010", 3)
+    val round_max         = UInt("b011", 3)
+    val round_near_maxMag = UInt("b100", 3)
+    val round_odd         = UInt("b101", 3)
+    val tininess_beforeRounding = UInt(0, 1)
+    val tininess_afterRounding  = UInt(1, 1)
+    val flRoundOpt_sigMSBitAlwaysZero  = 1
+    val flRoundOpt_subnormsAlwaysExact = 2
+    val flRoundOpt_neverUnderflows     = 4
+    val flRoundOpt_neverOverflows      = 8
+}
+
+class RawFloat(val expWidth: Int, val sigWidth: Int) extends Bundle
 {
-    val io = new Bundle {
-        val in = Bits(INPUT, inExpWidth + inSigWidth + 1)
-        val roundingMode   = UInt(INPUT, 3)
-        val detectTininess = UInt(INPUT, 1)
-        val out = Bits(OUTPUT, outExpWidth + outSigWidth + 1)
-        val exceptionFlags = Bits(OUTPUT, 5)
-    }
+    val isNaN  = Bool()              // overrides all other fields
+    val isInf  = Bool()              // overrides 'isZero', 'sExp', and 'sig'
+    val isZero = Bool()              // overrides 'sExp' and 'sig'
+    val sign   = Bool()
+    val sExp = SInt(width = expWidth + 2)
+    val sig  = UInt(width = sigWidth + 1)   // 2 m.s. bits cannot both be 0
 
-    //------------------------------------------------------------------------
-    //------------------------------------------------------------------------
-    val rawIn = rawFloatFromRecFN(inExpWidth, inSigWidth, io.in);
+    override def cloneType =
+        new RawFloat(expWidth, sigWidth).asInstanceOf[this.type]
+}
 
-    if ((inExpWidth == outExpWidth) && (inSigWidth <= outSigWidth)) {
-
-        //--------------------------------------------------------------------
-        //--------------------------------------------------------------------
-        io.out            := io.in<<(outSigWidth - inSigWidth)
-        io.exceptionFlags := Cat(isSigNaNRawFloat(rawIn), Bits(0, 4))
-
-    } else {
-
-        //--------------------------------------------------------------------
-        //--------------------------------------------------------------------
-        val roundAnyRawFNToRecFN =
-            Module(
-                new RoundAnyRawFNToRecFN(
-                        inExpWidth,
-                        inSigWidth,
-                        outExpWidth,
-                        outSigWidth,
-                        flRoundOpt_sigMSBitAlwaysZero
-                    ))
-        roundAnyRawFNToRecFN.io.invalidExc     := isSigNaNRawFloat(rawIn)
-        roundAnyRawFNToRecFN.io.infiniteExc    := Bool(false)
-        roundAnyRawFNToRecFN.io.in             := rawIn
-        roundAnyRawFNToRecFN.io.roundingMode   := io.roundingMode
-        roundAnyRawFNToRecFN.io.detectTininess := io.detectTininess
-        io.out            := roundAnyRawFNToRecFN.io.out
-        io.exceptionFlags := roundAnyRawFNToRecFN.io.exceptionFlags
-    }
+object isSigNaNRawFloat
+{
+    def apply(in: RawFloat): Bool = in.isNaN && ! in.sig(in.sigWidth - 2)
 }
 

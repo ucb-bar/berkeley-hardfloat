@@ -35,30 +35,31 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =============================================================================*/
 
-package hardfloat
+package HardFloat
 
 import Chisel._
 
 object classifyRecFN
 {
-    def apply(expWidth: Int, sigWidth: Int, in: Bits) = {
+    def apply(expWidth: Int, sigWidth: Int, in: Bits) =
+    {
         val minNormExp = (1<<(expWidth - 1)) + 2
 
-        val rawIn = rawFNFromRecFN(expWidth, sigWidth, in)
-
-        val isNonzeroFinite = ! rawIn.isNaN && ! rawIn.isInf && ! rawIn.isZero
-        val common_isSubnormal = (rawIn.sExp < SInt(minNormExp))
+        val rawIn = rawFloatFromRecFN(expWidth, sigWidth, in)
+        val isSigNaN = isSigNaNRawFloat(rawIn)
+        val isFiniteNonzero = ! rawIn.isNaN && ! rawIn.isInf && ! rawIn.isZero
+        val isSubnormal = (rawIn.sExp < SInt(minNormExp))
 
         Cat(
-            rawIn.isNaN && ! isSigNaNRawFN(rawIn),
-            isSigNaNRawFN(rawIn),
+            rawIn.isNaN && ! isSigNaN,
+            isSigNaN,
             ! rawIn.sign && rawIn.isInf,
-            ! rawIn.sign && isNonzeroFinite && ! common_isSubnormal,
-            ! rawIn.sign && isNonzeroFinite &&   common_isSubnormal,
+            ! rawIn.sign && isFiniteNonzero && ! isSubnormal,
+            ! rawIn.sign && isFiniteNonzero &&   isSubnormal,
             ! rawIn.sign && rawIn.isZero,
             rawIn.sign   && rawIn.isZero,
-            rawIn.sign   && isNonzeroFinite &&   common_isSubnormal,
-            rawIn.sign   && isNonzeroFinite && ! common_isSubnormal,
+            rawIn.sign   && isFiniteNonzero &&   isSubnormal,
+            rawIn.sign   && isFiniteNonzero && ! isSubnormal,
             rawIn.sign   && rawIn.isInf
         )
     }

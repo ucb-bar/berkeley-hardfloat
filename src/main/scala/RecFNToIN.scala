@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =============================================================================*/
 
-package hardfloat
+package HardFloat
 
 import Chisel._
 import scala.math._
@@ -45,7 +45,7 @@ class RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int) extends Module
 {
     val io = new Bundle {
         val in = Bits(INPUT, expWidth + sigWidth + 1)
-        val roundingMode = Bits(INPUT, 2)
+        val roundingMode = UInt(INPUT, 3)
         val signedOut = Bool(INPUT)
         val out = Bits(OUTPUT, intWidth)
         val intExceptionFlags = Bits(OUTPUT, 3)
@@ -65,7 +65,7 @@ class RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int) extends Module
     | at least 1, and it is not obviously so large as to lead to overflow,
     | convert its significand to fixed-point (i.e., with the binary point in a
     | fixed location).  For a non-NaN input with a magnitude less than 1, this
-    | expression contrives to ensure that the integer bits of `shiftedSig'
+    | expression contrives to ensure that the integer bits of 'shiftedSig'
     | will all be zeros.
     *------------------------------------------------------------------------*/
     val shiftedSig =
@@ -86,20 +86,20 @@ class RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int) extends Module
             shiftedSig(sigWidth - 3, 0).orR
         )
     val roundInexact = Mux(notSpecial_magGeOne, roundBits(1, 0).orR, ! isZero)
-    val roundIncr_nearestEven =
+    val roundIncr_near_even =
         Mux(notSpecial_magGeOne,
             roundBits(2, 1).andR || roundBits(1, 0).andR,
             Mux(exp(expWidth - 1, 0).andR, roundBits(1, 0).orR, Bool(false))
         )
     val roundIncr =
-        ((io.roundingMode === round_nearest_even) && roundIncr_nearestEven ) ||
-        ((io.roundingMode === round_min)        && (  sign && roundInexact)) ||
-        ((io.roundingMode === round_max)        && (! sign && roundInexact))
+        ((io.roundingMode === round_near_even) && roundIncr_near_even     ) ||
+        ((io.roundingMode === round_min)       && (  sign && roundInexact)) ||
+        ((io.roundingMode === round_max)       && (! sign && roundInexact))
     val complUnroundedInt = Mux(sign, ~unroundedInt, unroundedInt)
     val roundedInt =
         Mux(roundIncr ^ sign, complUnroundedInt + UInt(1), complUnroundedInt)
 
-//*** CHANGE TO TAKE BITS FROM THE ORIGINAL `fract' INSTEAD OF `unroundedInt'?:
+//*** CHANGE TO TAKE BITS FROM THE ORIGINAL 'fract' INSTEAD OF 'unroundedInt'?:
     val roundCarryBut2 = unroundedInt(intWidth - 3, 0).andR && roundIncr
     val posExp = exp(expWidth - 1, 0)
 

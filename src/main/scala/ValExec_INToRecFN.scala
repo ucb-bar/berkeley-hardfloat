@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =============================================================================*/
 
-package hardfloat
+package HardFloat
 
 import Chisel._
 
@@ -45,7 +45,8 @@ class
 {
     val io = new Bundle {
         val in = Bits(INPUT, intWidth)
-        val roundingMode = Bits(INPUT, 2)
+        val roundingMode   = UInt(INPUT, 3)
+        val detectTininess = UInt(INPUT, 1)
 
         val expected = new Bundle {
             val out = Bits(INPUT, expWidth + sigWidth)
@@ -65,7 +66,8 @@ class
     val iNToRecFN = Module(new INToRecFN(intWidth, expWidth, sigWidth))
     iNToRecFN.io.signedIn := Bool(false)
     iNToRecFN.io.in := io.in
-    iNToRecFN.io.roundingMode := io.roundingMode
+    iNToRecFN.io.roundingMode   := io.roundingMode
+    iNToRecFN.io.detectTininess := io.detectTininess
 
     io.expected.recOut := recFNFromFN(expWidth, sigWidth, io.expected.out)
 
@@ -78,8 +80,10 @@ class
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
 
+class ValExec_UI32ToRecF16 extends ValExec_UINToRecFN(32, 5, 11)
 class ValExec_UI32ToRecF32 extends ValExec_UINToRecFN(32, 8, 24)
 class ValExec_UI32ToRecF64 extends ValExec_UINToRecFN(32, 11, 53)
+class ValExec_UI64ToRecF16 extends ValExec_UINToRecFN(64, 5, 11)
 class ValExec_UI64ToRecF32 extends ValExec_UINToRecFN(64, 8, 24)
 class ValExec_UI64ToRecF64 extends ValExec_UINToRecFN(64, 11, 53)
 
@@ -89,7 +93,8 @@ class
 {
     val io = new Bundle {
         val in = Bits(INPUT, intWidth)
-        val roundingMode = Bits(INPUT, 2)
+        val roundingMode   = UInt(INPUT, 3)
+        val detectTininess = UInt(INPUT, 1)
 
         val expected = new Bundle {
             val out = Bits(INPUT, expWidth + sigWidth)
@@ -109,7 +114,8 @@ class
     val iNToRecFN = Module(new INToRecFN(intWidth, expWidth, sigWidth))
     iNToRecFN.io.signedIn := Bool(true)
     iNToRecFN.io.in := io.in
-    iNToRecFN.io.roundingMode := io.roundingMode
+    iNToRecFN.io.roundingMode   := io.roundingMode
+    iNToRecFN.io.detectTininess := io.detectTininess
 
     io.expected.recOut := recFNFromFN(expWidth, sigWidth, io.expected.out)
 
@@ -122,8 +128,10 @@ class
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
 
+class ValExec_I32ToRecF16 extends ValExec_INToRecFN(32, 5, 11)
 class ValExec_I32ToRecF32 extends ValExec_INToRecFN(32, 8, 24)
 class ValExec_I32ToRecF64 extends ValExec_INToRecFN(32, 11, 53)
+class ValExec_I64ToRecF16 extends ValExec_INToRecFN(64, 5, 11)
 class ValExec_I64ToRecF32 extends ValExec_INToRecFN(64, 8, 24)
 class ValExec_I64ToRecF64 extends ValExec_INToRecFN(64, 11, 53)
 

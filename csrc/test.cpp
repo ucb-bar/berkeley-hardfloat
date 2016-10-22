@@ -3,15 +3,16 @@
 
 int main (int argc, char* argv[])
 {
-    if (argc < 2) {
-        printf("usage: %s <rounding mode>\n", argv[0]);
+    if (argc < 3) {
+        printf("usage: %s <rounding-mode> <tininess-detection>\n", argv[0]);
         return -1;
     }
 
     dut_t* module = new dut_t();
     module->init();
     initialize_dat_pointers(module);
-    dat_from_hex<2>(argv[1], *roundingMode);
+    dat_from_hex<3>(argv[1], *roundingMode);
+    dat_from_hex<1>(argv[2], *detectTininess);
 
     size_t error = 0;
     size_t cnt = 0;

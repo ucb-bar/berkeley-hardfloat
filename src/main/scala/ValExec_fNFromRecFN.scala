@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =============================================================================*/
 
-package hardfloat
+package HardFloat
 
 import Chisel._
 
@@ -55,6 +55,7 @@ class ValExec_fNFromRecFN(expWidth: Int, sigWidth: Int) extends Module
     io.pass := (io.out === io.a)
 }
 
+class ValExec_f16FromRecF16 extends ValExec_fNFromRecFN(5, 11)
 class ValExec_f32FromRecF32 extends ValExec_fNFromRecFN(8, 24)
 class ValExec_f64FromRecF64 extends ValExec_fNFromRecFN(11, 53)
 

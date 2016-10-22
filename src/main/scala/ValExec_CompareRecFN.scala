@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =============================================================================*/
 
-package hardfloat
+package HardFloat
 
 import Chisel._
 
@@ -70,6 +70,7 @@ class ValExec_CompareRecFN_lt(expWidth: Int, sigWidth: Int) extends Module
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
 
+class ValExec_CompareRecF16_lt extends ValExec_CompareRecFN_lt(5, 11)
 class ValExec_CompareRecF32_lt extends ValExec_CompareRecFN_lt(8, 24)
 class ValExec_CompareRecF64_lt extends ValExec_CompareRecFN_lt(11, 53)
 
@@ -104,6 +105,7 @@ class ValExec_CompareRecFN_le(expWidth: Int, sigWidth: Int) extends Module
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
 
+class ValExec_CompareRecF16_le extends ValExec_CompareRecFN_le(5, 11)
 class ValExec_CompareRecF32_le extends ValExec_CompareRecFN_le(8, 24)
 class ValExec_CompareRecF64_le extends ValExec_CompareRecFN_le(11, 53)
 
@@ -138,6 +140,7 @@ class ValExec_CompareRecFN_eq(expWidth: Int, sigWidth: Int) extends Module
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
 
+class ValExec_CompareRecF16_eq extends ValExec_CompareRecFN_eq(5, 11)
 class ValExec_CompareRecF32_eq extends ValExec_CompareRecFN_eq(8, 24)
 class ValExec_CompareRecF64_eq extends ValExec_CompareRecFN_eq(11, 53)
 

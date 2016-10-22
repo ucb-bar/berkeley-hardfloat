@@ -32,26 +32,42 @@ TESTFLOAT_GEN = ./testfloat_gen
 endif
 
 tests = \
+ f16FromRecF16 \
  f32FromRecF32 \
  f64FromRecF64 \
+ UI32ToRecF16 \
  UI32ToRecF32 \
  UI32ToRecF64 \
+ UI64ToRecF16 \
  UI64ToRecF32 \
  UI64ToRecF64 \
+ I32ToRecF16 \
  I32ToRecF32 \
  I32ToRecF64 \
+ I64ToRecF16 \
  I64ToRecF32 \
  I64ToRecF64 \
+ RecF16ToUI32 \
+ RecF16ToUI64 \
  RecF32ToUI32 \
  RecF32ToUI64 \
  RecF64ToUI32 \
  RecF64ToUI64 \
+ RecF16ToI32 \
+ RecF16ToI64 \
  RecF32ToI32 \
  RecF32ToI64 \
  RecF64ToI32 \
  RecF64ToI64 \
+ RecF16ToRecF32 \
+ RecF16ToRecF64 \
+ RecF32ToRecF16 \
  RecF32ToRecF64 \
+ RecF64ToRecF16 \
  RecF64ToRecF32 \
+ MulAddRecF16_add \
+ MulAddRecF16_mul \
+ MulAddRecF16 \
  MulAddRecF32_add \
  MulAddRecF32_mul \
  MulAddRecF32 \
@@ -60,6 +76,9 @@ tests = \
  MulAddRecF64 \
  DivSqrtRecF64_div \
  DivSqrtRecF64_sqrt \
+ CompareRecF16_lt \
+ CompareRecF16_le \
+ CompareRecF16_eq \
  CompareRecF32_lt \
  CompareRecF32_le \
  CompareRecF32_eq \
@@ -194,23 +213,23 @@ test-$(1)/dut: test-$(1)/ValExec_$(1).cpp csrc/*.h csrc/*.cpp
 	g++ -c -o test-$(1)/ValExec_$(1).o $$<
 	g++ -o $$@ test-$(1)/ValExec_$(1).o test-$(1)/test.o
 
-test-c-$(1).near_even.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rnear_even $(3) $(2) | $$< 0 ; } > $$@ 2>&1
+test-c-$(1).near_even.t-before.log: test-$(1)/dut $(TESTFLOAT_GEN)
+	{ $(TESTFLOAT_GEN) -rnear_even -tininessbefore $(3) $(2) | $$< 0 0 ; } > $$@ 2>&1
 
-test-c-$(1).minMag.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rminMag $(3) $(2) | $$< 1 ; } > $$@ 2>&1
+test-c-$(1).minMag.t-before.log: test-$(1)/dut $(TESTFLOAT_GEN)
+	{ $(TESTFLOAT_GEN) -rminMag -tininessbefore $(3) $(2) | $$< 1 0 ; } > $$@ 2>&1
 
-test-c-$(1).min.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rmin $(3) $(2) | $$< 2 ; } > $$@ 2>&1
+test-c-$(1).min.t-before.log: test-$(1)/dut $(TESTFLOAT_GEN)
+	{ $(TESTFLOAT_GEN) -rmin -tininessbefore $(3) $(2) | $$< 2 0 ; } > $$@ 2>&1
 
-test-c-$(1).max.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rmax $(3) $(2) | $$< 3 ; } > $$@ 2>&1
+test-c-$(1).max.t-before.log: test-$(1)/dut $(TESTFLOAT_GEN)
+	{ $(TESTFLOAT_GEN) -rmax -tininessbefore $(3) $(2) | $$< 3 0 ; } > $$@ 2>&1
 
 test-c-$(1): \
- test-c-$(1).near_even.log \
- test-c-$(1).minMag.log \
- test-c-$(1).min.log \
- test-c-$(1).max.log \
+ test-c-$(1).near_even.t-before.log \
+ test-c-$(1).minMag.t-before.log \
+ test-c-$(1).min.t-before.log \
+ test-c-$(1).max.t-before.log \
 
 
 #*** FOR VERILOG TESTING:
@@ -245,30 +264,46 @@ endef
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 
+$(eval $(call test_fNFromRecFN_template,f16FromRecF16,f16,-level2))
 $(eval $(call test_fNFromRecFN_template,f32FromRecF32,f32,-level2))
 $(eval $(call test_fNFromRecFN_template,f64FromRecF64,f64,-level2))
 
+$(eval $(call otherTest_template,UI32ToRecF16,ui32_to_f16,-level2))
 $(eval $(call otherTest_template,UI32ToRecF32,ui32_to_f32,-level2))
 $(eval $(call otherTest_template,UI32ToRecF64,ui32_to_f64,-level2))
+$(eval $(call otherTest_template,UI64ToRecF16,ui64_to_f16,-level2))
 $(eval $(call otherTest_template,UI64ToRecF32,ui64_to_f32,-level2))
 $(eval $(call otherTest_template,UI64ToRecF64,ui64_to_f64,-level2))
+$(eval $(call otherTest_template,I32ToRecF16,i32_to_f16,-level2))
 $(eval $(call otherTest_template,I32ToRecF32,i32_to_f32,-level2))
 $(eval $(call otherTest_template,I32ToRecF64,i32_to_f64,-level2))
+$(eval $(call otherTest_template,I64ToRecF16,i64_to_f16,-level2))
 $(eval $(call otherTest_template,I64ToRecF32,i64_to_f32,-level2))
 $(eval $(call otherTest_template,I64ToRecF64,i64_to_f64,-level2))
 
+$(eval $(call test_RecFNToUIN_template,RecF16ToUI32,f16_to_ui32,-level2))
+$(eval $(call test_RecFNToUIN_template,RecF16ToUI64,f16_to_ui64,-level2))
 $(eval $(call test_RecFNToUIN_template,RecF32ToUI32,f32_to_ui32,-level2))
 $(eval $(call test_RecFNToUIN_template,RecF32ToUI64,f32_to_ui64,-level2))
 $(eval $(call test_RecFNToUIN_template,RecF64ToUI32,f64_to_ui32,-level2))
 $(eval $(call test_RecFNToUIN_template,RecF64ToUI64,f64_to_ui64,-level2))
 
+$(eval $(call test_RecFNToIN_template,RecF16ToI32,f16_to_i32,-level2))
+$(eval $(call test_RecFNToIN_template,RecF16ToI64,f16_to_i64,-level2))
 $(eval $(call test_RecFNToIN_template,RecF32ToI32,f32_to_i32,-level2))
 $(eval $(call test_RecFNToIN_template,RecF32ToI64,f32_to_i64,-level2))
 $(eval $(call test_RecFNToIN_template,RecF64ToI32,f64_to_i32,-level2))
 $(eval $(call test_RecFNToIN_template,RecF64ToI64,f64_to_i64,-level2))
 
+$(eval $(call otherTest_template,RecF16ToRecF64,f16_to_f64,-level2))
+$(eval $(call otherTest_template,RecF16ToRecF32,f16_to_f32,-level2))
+$(eval $(call otherTest_template,RecF32ToRecF16,f32_to_f16,-level2))
 $(eval $(call otherTest_template,RecF32ToRecF64,f32_to_f64,-level2))
+$(eval $(call otherTest_template,RecF64ToRecF16,f64_to_f16,-level2))
 $(eval $(call otherTest_template,RecF64ToRecF32,f64_to_f32,-level2))
+$(eval $(call otherTest_template,MulAddRecF16_add,f16_add,))
+$(eval $(call otherTest_template,MulAddRecF16_mul,f16_mul,))
+$(eval $(call otherTest_template,MulAddRecF16,f16_mulAdd,))
 $(eval $(call otherTest_template,MulAddRecF32_add,f32_add,))
 $(eval $(call otherTest_template,MulAddRecF32_mul,f32_mul,))
 $(eval $(call otherTest_template,MulAddRecF32,f32_mulAdd,))
@@ -278,6 +313,9 @@ $(eval $(call otherTest_template,MulAddRecF64,f64_mulAdd,))
 $(eval $(call otherTest_template,DivSqrtRecF64_div,f64_div,))
 $(eval $(call otherTest_template,DivSqrtRecF64_sqrt,f64_sqrt,-level2))
 
+$(eval $(call test_CompareRecFN_template,CompareRecF16_lt,f16_lt,))
+$(eval $(call test_CompareRecFN_template,CompareRecF16_le,f16_le,))
+$(eval $(call test_CompareRecFN_template,CompareRecF16_eq,f16_eq,))
 $(eval $(call test_CompareRecFN_template,CompareRecF32_lt,f32_lt,))
 $(eval $(call test_CompareRecFN_template,CompareRecF32_le,f32_le,))
 $(eval $(call test_CompareRecFN_template,CompareRecF32_eq,f32_eq,))

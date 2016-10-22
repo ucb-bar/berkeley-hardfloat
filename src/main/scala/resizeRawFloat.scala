@@ -35,18 +35,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =============================================================================*/
 
-package hardfloat
+package HardFloat
 
 import Chisel._
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-object resizeRawFN
+object resizeRawFloat
 {
     def apply(expWidth: Int, sigWidth: Int, in: RawFloat): RawFloat =
     {
-        val sNewExp = in.sExp +& SInt((1<<expWidth) - (1<<in.expWidth))
+        val sAdjustedExp = in.sExp +& SInt((1<<expWidth) - (1<<in.expWidth))
 
         val out = Wire(new RawFloat(expWidth, sigWidth))
         out.sign   := in.sign
@@ -54,24 +54,22 @@ object resizeRawFN
         out.isInf  := in.isInf
         out.isZero := in.isZero
         out.sExp :=
-            (if (expWidth >= in.expWidth) {
-                 sNewExp
-             } else {
-                 Cat((sNewExp < SInt(0)),
-                     Mux(sNewExp(in.expWidth + 1, expWidth + 1).orR,
-                         Cat(Fill(expWidth - 1, Bits(1, 1)), Bits(0, 2)),
-                         sNewExp(expWidth, 0)
+            (if (in.expWidth <= expWidth)
+                 sAdjustedExp
+             else
+                 Cat((sAdjustedExp < SInt(0)),
+                     Mux(sAdjustedExp(in.expWidth + 1, expWidth + 1).orR,
+                         Cat(Fill(expWidth - 1, UInt(1, 1)), UInt(0, 2)),
+                         sAdjustedExp(expWidth, 0)
                      )
-                 ).asSInt
-             })
+                 ).asSInt)
         out.sig :=
-            (if (sigWidth >= in.sigWidth) {
+            (if (in.sigWidth <= sigWidth)
                  in.sig<<(sigWidth - in.sigWidth)
-             } else {
+             else
                  Cat(in.sig(in.sigWidth + 2, in.sigWidth - sigWidth + 1),
                      in.sig(in.sigWidth - sigWidth, 0).orR
-                 )
-             })
+                 ))
         out
     }
 }

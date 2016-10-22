@@ -35,43 +35,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =============================================================================*/
 
-package hardfloat
+package HardFloat
 
 import Chisel._
 
 object recFNFromFN
 {
-    def apply(expWidth: Int, sigWidth: Int, in: Bits) = {
-        val normWidth = 1<<log2Up(sigWidth - 1)
-
-        val sign = in(expWidth + sigWidth - 1)
-        val expIn = in(expWidth + sigWidth - 2, sigWidth - 1)
-        val fractIn = in(sigWidth - 2, 0)
-
-        val isZeroExpIn = (expIn === UInt(0))
-        val isZeroFractIn = (fractIn === UInt(0))
-        val isZero = isZeroExpIn && isZeroFractIn
-
-        val normCount =
-            ~Log2(fractIn<<(normWidth - sigWidth + 1), normWidth)
-        val normalizedFract =
-            Cat((fractIn<<normCount)(sigWidth - 3, 0), UInt(0, 1))
-
-        val adjustedExp =
-            Mux(isZeroExpIn,
-                normCount ^ Fill(expWidth + 1, Bool(true)),
-                expIn
-            ) + (UInt(1<<(expWidth - 1)) | Mux(isZeroExpIn, UInt(2), UInt(1)))
-
-        val isNaN =
-            (adjustedExp(expWidth, expWidth - 1) === UInt(3)) &&
-                ! isZeroFractIn
-
-        val expOut =
-            (adjustedExp & ~(Fill(3, isZero)<<(expWidth - 2))) |
-                isNaN<<(expWidth - 2)
-        val fractOut = Mux(isZeroExpIn, normalizedFract, fractIn)
-        Cat(sign, expOut, fractOut)
+    def apply(expWidth: Int, sigWidth: Int, in: Bits) =
+    {
+        val rawIn = rawFloatFromFN(expWidth, sigWidth, in)
+        Cat(rawIn.sign,
+            Mux(rawIn.isZero, Bits(0, 3), rawIn.sExp(expWidth, expWidth - 2)) |
+                Mux(rawIn.isNaN, UInt(1), UInt(0)),
+            rawIn.sExp(expWidth - 3, 0),
+            rawIn.sig(sigWidth - 2, 0)
+        )
     }
 }
 

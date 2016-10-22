@@ -37,7 +37,7 @@ int main (int argc, char* argv[])
         return -1;
     }
 
-    dat_t<2>* roundingMode;
+    dat_t<3>* roundingMode;
     dat_t<FLEN>* input;
     dat_t<ILEN>* expected_out;
     dat_t<5>* expected_exceptionFlags;
@@ -61,7 +61,7 @@ int main (int argc, char* argv[])
     check = SIGNAL(FLEN, ILEN, check);
     pass = SIGNAL(FLEN, ILEN, pass);
 
-    dat_from_hex<2>(argv[1], *roundingMode);
+    dat_from_hex<3>(argv[1], *roundingMode);
 
     // reset
     for (size_t i=0; i<10; i++) {

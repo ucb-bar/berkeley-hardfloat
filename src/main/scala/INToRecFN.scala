@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =============================================================================*/
 
-package hardfloat
+package HardFloat
 
 import Chisel._
 import consts._
@@ -45,81 +45,31 @@ class INToRecFN(intWidth: Int, expWidth: Int, sigWidth: Int) extends Module
     val io = new Bundle {
         val signedIn = Bool(INPUT)
         val in = Bits(INPUT, intWidth)
-        val roundingMode = Bits(INPUT, 2)
+        val roundingMode   = UInt(INPUT, 3)
+        val detectTininess = UInt(INPUT, 1)
         val out = Bits(OUTPUT, expWidth + sigWidth + 1)
         val exceptionFlags = Bits(OUTPUT, 5)
     }
 
-    val normWidth = 1<<log2Up(intWidth - 1)
+    //------------------------------------------------------------------------
+    //------------------------------------------------------------------------
+    val intAsRawFloat = rawFloatFromIN(io.signedIn, io.in);
 
-    val sign = io.signedIn && io.in(intWidth - 1)
-    val absIn = Mux(sign, -io.in, io.in)
-    val normCount = ~Log2(absIn<<(normWidth - intWidth), normWidth)
-    val normAbsIn = (absIn<<normCount)(intWidth - 1, 0)
-
-    var roundBits = UInt(0, 3)
-    if (intWidth - sigWidth >= 2)
-        roundBits =
-            Cat(normAbsIn(intWidth - sigWidth, intWidth - sigWidth - 1),
-                normAbsIn(intWidth - sigWidth - 2, 0).orR
-            )
-    else if (intWidth - sigWidth == 1)
-        roundBits =
-            Cat(normAbsIn(intWidth - sigWidth, intWidth - sigWidth - 1),
-                Bool(false)
-            )
-
-    val roundInexact = roundBits(1, 0).orR
-    val round =
-        Mux((io.roundingMode === round_nearest_even),
-            roundBits(2, 1).andR || roundBits(1, 0).andR,
-            Bool(false)
-        ) |
-        Mux((io.roundingMode === round_min),
-            sign && roundInexact,
-            Bool(false)
-        ) |
-        Mux((io.roundingMode === round_max),
-            ! sign && roundInexact,
-            Bool(false)
-        )
-
-    var unroundedNorm = UInt(0)
-    if (intWidth - sigWidth >= 0)
-        unroundedNorm = normAbsIn(intWidth - 1, intWidth - sigWidth)
-    else {
-        unroundedNorm = Cat(normAbsIn, UInt(0, sigWidth - intWidth))
-    }
-    unroundedNorm = Cat(UInt(0, 1), unroundedNorm)
-    val roundedNorm = Mux(round, unroundedNorm + UInt(1), unroundedNorm)
-
-    var overflow_unrounded = Bool(false)
-    var unroundedExp = ~normCount
-    if (log2Up(intWidth) > expWidth - 1) {
-        overflow_unrounded = (unroundedExp >= UInt(1<<(expWidth - 1)))
-        unroundedExp = unroundedExp(expWidth - 2, 0)
-    } else if (log2Up(intWidth) < expWidth - 1) {
-        unroundedExp =
-            Cat(UInt(0, expWidth - 1 - log2Up(intWidth)), unroundedExp)
-    }
-
-    val roundedExp = Cat(UInt(0, 1), unroundedExp) + roundedNorm(sigWidth)
-    var overflow_rounded = Bool(false)
-    if (intWidth >= (1<<(expWidth - 1))) {
-        overflow_rounded = roundedExp(expWidth - 1)
-    }
-    val expOut =
-        Cat(normAbsIn(intWidth - 1),
-            Mux(overflow_unrounded,
-                UInt(1<<(expWidth - 1)),
-                roundedExp(expWidth - 1, 0)
-            )
-        )
-
-    val overflow = overflow_unrounded || overflow_rounded
-    val inexact = roundInexact || overflow
-
-    io.out := Cat(sign, expOut, roundedNorm(sigWidth - 2, 0))
-    io.exceptionFlags := Cat(UInt(0, 2), overflow, UInt(0, 1), inexact)
+    val roundAnyRawFNToRecFN =
+        Module(
+            new RoundAnyRawFNToRecFN(
+                    intAsRawFloat.expWidth,
+                    intWidth,
+                    expWidth,
+                    sigWidth,
+                    flRoundOpt_sigMSBitAlwaysZero | flRoundOpt_neverUnderflows
+                ))
+    roundAnyRawFNToRecFN.io.invalidExc     := Bool(false)
+    roundAnyRawFNToRecFN.io.infiniteExc    := Bool(false)
+    roundAnyRawFNToRecFN.io.in             := intAsRawFloat
+    roundAnyRawFNToRecFN.io.roundingMode   := io.roundingMode
+    roundAnyRawFNToRecFN.io.detectTininess := io.detectTininess
+    io.out            := roundAnyRawFNToRecFN.io.out
+    io.exceptionFlags := roundAnyRawFNToRecFN.io.exceptionFlags
 }
 

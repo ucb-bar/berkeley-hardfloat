@@ -35,44 +35,33 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =============================================================================*/
 
-package hardfloat
+package HardFloat
 
 import Chisel._
 
 object fNFromRecFN
 {
-    def apply(expWidth: Int, sigWidth: Int, in: Bits) = {
-        val sign = in(expWidth + sigWidth)
-        val expIn = in(expWidth + sigWidth - 1, sigWidth - 1)
-        val fractIn = in(sigWidth - 2, 0)
+    def apply(expWidth: Int, sigWidth: Int, in: Bits) =
+    {
+        val minNormExp = (1<<(expWidth - 1)) + 2
 
-        val isHighSubnormalIn = (expIn(expWidth - 2, 0) < UInt(2))
-        val isSubnormal =
-            (expIn(expWidth, expWidth - 2) === UInt(1)) ||
-                ((expIn(expWidth, expWidth - 1) === UInt(1)) &&
-                     isHighSubnormalIn)
-        val isNormal =
-            ((expIn(expWidth, expWidth - 1) === UInt(1)) &&
-                 ! isHighSubnormalIn) ||
-                (expIn(expWidth, expWidth - 1) === UInt(2))
-        val isSpecial = expIn(expWidth, expWidth - 1) === UInt(3)
-        val isNaN = isSpecial && expIn(expWidth - 2)
+        val rawIn = rawFloatFromRecFN(expWidth, sigWidth, in)
 
-        val denormShiftDist = UInt(2) - expIn(log2Up(sigWidth - 1) - 1, 0)
-        val subnormal_fractOut =
-            (Cat(UInt(1), fractIn)>>denormShiftDist)(sigWidth - 2, 0)
-        val normal_expOut =
-            expIn(expWidth - 1, 0) - UInt((1<<(expWidth - 1)) + 1)
+        val isSubnormal = (rawIn.sExp < SInt(minNormExp))
+        val denormShiftDist = UInt(1) - rawIn.sExp(log2Up(sigWidth - 1) - 1, 0)
+        val denormFract = ((rawIn.sig>>1)>>denormShiftDist)(sigWidth - 2, 0)
 
         val expOut =
-            Mux(isNormal, normal_expOut, Fill(expWidth, isSpecial))
+            Mux(isSubnormal,
+                UInt(0),
+                rawIn.sExp(expWidth - 1, 0) - UInt((1<<(expWidth - 1)) + 1)
+            ) | Fill(expWidth, rawIn.isNaN || rawIn.isInf)
         val fractOut =
-            Mux(isNormal || isNaN,
-                fractIn,
-                Mux(isSubnormal, subnormal_fractOut, UInt(0))
+            Mux(isSubnormal,
+                denormFract,
+                Mux(rawIn.isInf, UInt(0), rawIn.sig(sigWidth - 2, 0))
             )
-
-        Cat(sign, expOut, fractOut)
+        Cat(rawIn.sign, expOut, fractOut)
     }
 }
 

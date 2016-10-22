@@ -5,8 +5,8 @@ This Chisel source file is part of a pre-release version of the HardFloat IEEE
 Floating-Point Arithmetic Package, by John R. Hauser (with contributions from
 Brian Richards, Yunsup Lee, and Andrew Waterman).
 
-Copyright 2010, 2011, 2012, 2013, 2014, 2015 The Regents of the University of
-California.  All rights reserved.
+Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016 The Regents of the
+University of California.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -35,14 +35,30 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =============================================================================*/
 
-package hardfloat
+package HardFloat
 
 import Chisel._
 
-object consts {
-    val round_nearest_even = UInt("b00", 2);
-    val round_minMag       = UInt("b01", 2);
-    val round_min          = UInt("b10", 2);
-    val round_max          = UInt("b11", 2);
+/*----------------------------------------------------------------------------
+| In the result, no more than one of 'isNaN', 'isInf', and 'isZero' will be
+| set.
+*----------------------------------------------------------------------------*/
+object rawFloatFromRecFN
+{
+    def apply(expWidth: Int, sigWidth: Int, in: Bits): RawFloat =
+    {
+        val exp = in(expWidth + sigWidth - 1, sigWidth - 1)
+        val isZero    = (exp(expWidth, expWidth - 2) === UInt(0))
+        val isSpecial = (exp(expWidth, expWidth - 1) === UInt(3))
+
+        val out = Wire(new RawFloat(expWidth, sigWidth))
+        out.isNaN  := isSpecial &&   exp(expWidth - 2)
+        out.isInf  := isSpecial && ! exp(expWidth - 2)
+        out.isZero := isZero
+        out.sign   := in(expWidth + sigWidth)
+        out.sExp   := exp.zext
+        out.sig    := Cat(UInt(0, 1), ! isZero, in(sigWidth - 2, 0))
+        out
+    }
 }
 

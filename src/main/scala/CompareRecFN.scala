@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =============================================================================*/
 
-package hardfloat
+package HardFloat
 
 import Chisel._
 
@@ -51,8 +51,8 @@ class CompareRecFN(expWidth: Int, sigWidth: Int) extends Module
         val exceptionFlags = Bits(OUTPUT, 5)
     }
 
-    val rawA = rawFNFromRecFN(expWidth, sigWidth, io.a)
-    val rawB = rawFNFromRecFN(expWidth, sigWidth, io.b)
+    val rawA = rawFloatFromRecFN(expWidth, sigWidth, io.a)
+    val rawB = rawFloatFromRecFN(expWidth, sigWidth, io.b)
 
     val ordered = ! rawA.isNaN && ! rawB.isNaN
     val bothInfs  = rawA.isInf  && rawB.isInf
@@ -72,13 +72,12 @@ class CompareRecFN(expWidth: Int, sigWidth: Int) extends Module
         bothZeros || ((rawA.sign === rawB.sign) && (bothInfs || common_eqMags))
 
     val invalid =
-        isSigNaNRawFN(rawA) || isSigNaNRawFN(rawB) ||
+        isSigNaNRawFloat(rawA) || isSigNaNRawFloat(rawB) ||
             (io.signaling && ! ordered)
 
     io.lt := ordered && ordered_lt
     io.eq := ordered && ordered_eq
     io.gt := ordered && ! ordered_lt && ! ordered_eq
-
     io.exceptionFlags := Cat(invalid, Bits(0, 4))
 }
 

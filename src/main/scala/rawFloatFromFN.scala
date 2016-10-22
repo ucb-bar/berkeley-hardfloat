@@ -38,52 +38,36 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package HardFloat
 
 import Chisel._
-import consts._
 
-class
-    RecFNToRecFN(
-        inExpWidth: Int, inSigWidth: Int, outExpWidth: Int, outSigWidth: Int)
-    extends Module
+object rawFloatFromFN
 {
-    val io = new Bundle {
-        val in = Bits(INPUT, inExpWidth + inSigWidth + 1)
-        val roundingMode   = UInt(INPUT, 3)
-        val detectTininess = UInt(INPUT, 1)
-        val out = Bits(OUTPUT, outExpWidth + outSigWidth + 1)
-        val exceptionFlags = Bits(OUTPUT, 5)
-    }
+    def apply(expWidth: Int, sigWidth: Int, in: Bits) =
+    {
+        val sign = in(expWidth + sigWidth - 1)
+        val expIn = in(expWidth + sigWidth - 2, sigWidth - 1)
+        val fractIn = in(sigWidth - 2, 0)
 
-    //------------------------------------------------------------------------
-    //------------------------------------------------------------------------
-    val rawIn = rawFloatFromRecFN(inExpWidth, inSigWidth, io.in);
+        val isZeroExpIn = (expIn === UInt(0))
+        val isZeroFractIn = (fractIn === UInt(0))
 
-    if ((inExpWidth == outExpWidth) && (inSigWidth <= outSigWidth)) {
+        val normDist = countLeadingZeros(fractIn)
+        val subnormFract = (fractIn<<normDist)(sigWidth - 3, 0)<<1
+        val adjustedExp =
+            Mux(isZeroExpIn, normDist ^ UInt((1<<(expWidth + 1)) - 1), expIn) +
+                (UInt(1<<(expWidth - 1)) | Mux(isZeroExpIn, UInt(2), UInt(1)))
 
-        //--------------------------------------------------------------------
-        //--------------------------------------------------------------------
-        io.out            := io.in<<(outSigWidth - inSigWidth)
-        io.exceptionFlags := Cat(isSigNaNRawFloat(rawIn), Bits(0, 4))
+        val isZero = isZeroExpIn && isZeroFractIn
+        val isSpecial = (adjustedExp(expWidth, expWidth - 1) === UInt(3))
 
-    } else {
-
-        //--------------------------------------------------------------------
-        //--------------------------------------------------------------------
-        val roundAnyRawFNToRecFN =
-            Module(
-                new RoundAnyRawFNToRecFN(
-                        inExpWidth,
-                        inSigWidth,
-                        outExpWidth,
-                        outSigWidth,
-                        flRoundOpt_sigMSBitAlwaysZero
-                    ))
-        roundAnyRawFNToRecFN.io.invalidExc     := isSigNaNRawFloat(rawIn)
-        roundAnyRawFNToRecFN.io.infiniteExc    := Bool(false)
-        roundAnyRawFNToRecFN.io.in             := rawIn
-        roundAnyRawFNToRecFN.io.roundingMode   := io.roundingMode
-        roundAnyRawFNToRecFN.io.detectTininess := io.detectTininess
-        io.out            := roundAnyRawFNToRecFN.io.out
-        io.exceptionFlags := roundAnyRawFNToRecFN.io.exceptionFlags
+        val out = Wire(new RawFloat(expWidth, sigWidth))
+        out.isNaN  := isSpecial && ! isZeroFractIn
+        out.isInf  := isSpecial &&   isZeroFractIn
+        out.isZero := isZero
+        out.sign   := sign
+        out.sExp   := adjustedExp(expWidth, 0).zext
+        out.sig :=
+            Cat(UInt(0, 1), ! isZero, Mux(isZeroExpIn, subnormFract, fractIn))
+        out
     }
 }
 
