@@ -249,7 +249,7 @@ class
             Mux(notNaN_isInfOut, UInt(outInfExp, outExpWidth + 1), UInt(0)) |
             Mux(isNaNOut,        UInt(outNaNExp, outExpWidth + 1), UInt(0))
     val fractOut =
-        Mux(common_totalUnderflow || isNaNOut,
+        Mux(isNaNOut || io.in.isZero || common_totalUnderflow,
             Mux(isNaNOut, UInt(1)<<(outSigWidth - 2), UInt(0)),
             common_fractOut
         ) |
