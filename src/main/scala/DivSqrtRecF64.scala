@@ -57,7 +57,7 @@ class DivSqrtRecF64 extends Module
         val exceptionFlags = Bits(OUTPUT, 5)
     }
 
-    val ds = Module(new DivSqrtRecF64_mulAddZ31)
+    val ds = Module(new DivSqrtRecF64_mulAddZ31(0))
 
     io.inReady_div    := ds.io.inReady_div
     io.inReady_sqrt   := ds.io.inReady_sqrt
