@@ -2,8 +2,8 @@
 /*============================================================================
 
 This Chisel source file is part of a pre-release version of the HardFloat IEEE
-Floating-Point Arithmetic Package, by John R. Hauser (with contributions from
-Brian Richards, Yunsup Lee, and Andrew Waterman).
+Floating-Point Arithmetic Package, by John R. Hauser (with some contributions
+from Yunsup Lee and Andrew Waterman, mainly concerning testing).
 
 Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016 The Regents of the
 University of California.  All rights reserved.
@@ -51,90 +51,94 @@ class RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int) extends Module
         val intExceptionFlags = Bits(OUTPUT, 3)
     }
 
-    val sign = io.in(expWidth + sigWidth)
-    val exp = io.in(expWidth + sigWidth - 1, sigWidth - 1)
-    val fract = io.in(sigWidth - 2, 0)
+    //------------------------------------------------------------------------
+    //------------------------------------------------------------------------
+    val rawIn = rawFloatFromRecFN(expWidth, sigWidth, io.in)
 
-    val isZero = (exp(expWidth, expWidth - 2) === UInt(0))
-    val isSpecial = (exp(expWidth, expWidth - 1) === UInt(3))
-    val isNaN = isSpecial && exp(expWidth - 2)
-    val notSpecial_magGeOne = exp(expWidth)
+    val magGeOne = rawIn.sExp(expWidth)
+    val posExp = rawIn.sExp(expWidth - 1, 0)
+    val magJustBelowOne = ! magGeOne && posExp.andR
+
+    //------------------------------------------------------------------------
+    //------------------------------------------------------------------------
+    val roundingMode_near_even   = (io.roundingMode === round_near_even)
+    val roundingMode_minMag      = (io.roundingMode === round_minMag)
+    val roundingMode_min         = (io.roundingMode === round_min)
+    val roundingMode_max         = (io.roundingMode === round_max)
+    val roundingMode_near_maxMag = (io.roundingMode === round_near_maxMag)
+    val roundingMode_odd         = (io.roundingMode === round_odd)
 
     /*------------------------------------------------------------------------
     | Assuming the input floating-point value is not a NaN, its magnitude is
     | at least 1, and it is not obviously so large as to lead to overflow,
     | convert its significand to fixed-point (i.e., with the binary point in a
     | fixed location).  For a non-NaN input with a magnitude less than 1, this
-    | expression contrives to ensure that the integer bits of 'shiftedSig'
+    | expression contrives to ensure that the integer bits of 'alignedSig'
     | will all be zeros.
     *------------------------------------------------------------------------*/
     val shiftedSig =
-        Cat(notSpecial_magGeOne, fract)<<
-            Mux(notSpecial_magGeOne,
-                exp(min(expWidth - 2, log2Up(intWidth) - 1), 0),
+        Cat(magGeOne, rawIn.sig(sigWidth - 2, 0))<<
+            Mux(magGeOne,
+                rawIn.sExp(min(expWidth - 2, log2Up(intWidth) - 1), 0),
                 UInt(0)
             )
-    val unroundedInt =
-        (if (shiftedSig.getWidth - (sigWidth - 1) < intWidth) {
-             UInt(0, intWidth) |
-                 shiftedSig(shiftedSig.getWidth - 1, sigWidth - 1)
-         } else {
-             shiftedSig(intWidth + sigWidth - 2, sigWidth - 1)
-         })
-    val roundBits =
-        Cat(shiftedSig(sigWidth - 1, sigWidth - 2),
-            shiftedSig(sigWidth - 3, 0).orR
-        )
-    val roundInexact = Mux(notSpecial_magGeOne, roundBits(1, 0).orR, ! isZero)
+    val alignedSig =
+        Cat(shiftedSig>>(sigWidth - 2), shiftedSig(sigWidth - 3, 0).orR)
+    val unroundedInt = UInt(0, intWidth) | alignedSig>>2
+
+    val common_inexact = Mux(magGeOne, alignedSig(1, 0).orR, ! rawIn.isZero)
     val roundIncr_near_even =
-        Mux(notSpecial_magGeOne,
-            roundBits(2, 1).andR || roundBits(1, 0).andR,
-            Mux(exp(expWidth - 1, 0).andR, roundBits(1, 0).orR, Bool(false))
-        )
+        (magGeOne       && (alignedSig(2, 1).andR || alignedSig(1, 0).andR)) ||
+        (magJustBelowOne && alignedSig(1, 0).orR)
+    val roundIncr_near_maxMag = (magGeOne && alignedSig(1)) || magJustBelowOne
     val roundIncr =
-        ((io.roundingMode === round_near_even) && roundIncr_near_even     ) ||
-        ((io.roundingMode === round_min)       && (  sign && roundInexact)) ||
-        ((io.roundingMode === round_max)       && (! sign && roundInexact))
-    val complUnroundedInt = Mux(sign, ~unroundedInt, unroundedInt)
+        (roundingMode_near_even   && roundIncr_near_even             ) ||
+        (roundingMode_near_maxMag && roundIncr_near_maxMag           ) ||
+        (roundingMode_min         && (  rawIn.sign && common_inexact)) ||
+        (roundingMode_max         && (! rawIn.sign && common_inexact))
+    val complUnroundedInt = Mux(rawIn.sign, ~unroundedInt, unroundedInt)
     val roundedInt =
-        Mux(roundIncr ^ sign, complUnroundedInt + UInt(1), complUnroundedInt)
+        Mux(roundIncr ^ rawIn.sign,
+            complUnroundedInt + UInt(1),
+            complUnroundedInt
+        ) | (roundingMode_odd && common_inexact)
 
-//*** CHANGE TO TAKE BITS FROM THE ORIGINAL 'fract' INSTEAD OF 'unroundedInt'?:
+    val magGeOne_atOverflowEdge = (posExp === UInt(intWidth - 1))
+//*** CHANGE TO TAKE BITS FROM THE ORIGINAL 'rawIn.sig' INSTEAD OF FROM
+//***  'unroundedInt'?:
     val roundCarryBut2 = unroundedInt(intWidth - 3, 0).andR && roundIncr
-    val posExp = exp(expWidth - 1, 0)
-
-    val overflow_signed =
-        Mux(notSpecial_magGeOne,
+    val common_overflow =
+        Mux(magGeOne,
             (posExp >= UInt(intWidth)) ||
-                ((posExp === UInt(intWidth - 1)) &&
-                     (! sign || unroundedInt(intWidth - 2, 0).orR
-                          || roundIncr)) ||
-                (! sign && (posExp === UInt(intWidth - 2)) && roundCarryBut2),
-            Bool(false)
+                Mux(io.signedOut, 
+                    Mux(rawIn.sign,
+                        magGeOne_atOverflowEdge &&
+                            (unroundedInt(intWidth - 2, 0).orR || roundIncr),
+                        magGeOne_atOverflowEdge ||
+                            ((posExp === UInt(intWidth - 2)) && roundCarryBut2)
+                    ),
+                    rawIn.sign ||
+                        (magGeOne_atOverflowEdge &&
+                             unroundedInt(intWidth - 2) && roundCarryBut2)
+                ),
+            ! io.signedOut && rawIn.sign && roundIncr
         )
-    val overflow_unsigned =
-        Mux(notSpecial_magGeOne,
-            sign || (posExp >= UInt(intWidth)) ||
-                ((posExp === UInt(intWidth - 1)) &&
-                     unroundedInt(intWidth - 2) && roundCarryBut2),
-            sign && roundIncr
-        )
-    val overflow = Mux(io.signedOut, overflow_signed, overflow_unsigned)
-    val invalid = isSpecial
-    val excSign = sign && ! isNaN
-    val excValue =
-        Mux(io.signedOut && excSign, UInt(1)<<(intWidth - 1), UInt(0)) |
-        Mux(io.signedOut && ! excSign,
-            UInt((BigInt(1)<<(intWidth - 1)) - 1),
+
+    //------------------------------------------------------------------------
+    //------------------------------------------------------------------------
+    val invalidExc = rawIn.isNaN || rawIn.isInf
+    val overflow = ! invalidExc && common_overflow
+    val inexact  = ! invalidExc && ! common_overflow && common_inexact
+
+    val excSign = ! rawIn.isNaN && rawIn.sign
+    val excOut =
+        Mux((io.signedOut === excSign),
+            UInt(BigInt(1)<<(intWidth - 1)),
             UInt(0)
         ) |
-        Mux(! io.signedOut && ! excSign,
-            UInt((BigInt(1)<<intWidth) - 1),
-            UInt(0)
-        )
-    val inexact = roundInexact && ! invalid && ! overflow
+        Mux(! excSign, UInt((BigInt(1)<<(intWidth - 1)) - 1), UInt(0))
 
-    io.out := Mux(invalid || overflow, excValue, roundedInt)
-    io.intExceptionFlags := Cat(invalid, overflow, inexact)
+    io.out := Mux(invalidExc || common_overflow, excOut, roundedInt)
+    io.intExceptionFlags := Cat(invalidExc, overflow, inexact)
 }
 

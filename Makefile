@@ -133,11 +133,15 @@ test-c-$(1).min.log: test-$(1)/dut $(TESTFLOAT_GEN)
 test-c-$(1).max.log: test-$(1)/dut $(TESTFLOAT_GEN)
 	{ $(TESTFLOAT_GEN) -rmax -exact $(3) $(2) | $$< 3 ; } > $$@ 2>&1
 
+test-c-$(1).near_maxMag.log: test-$(1)/dut $(TESTFLOAT_GEN)
+	{ $(TESTFLOAT_GEN) -rnear_maxMag -exact $(3) $(2) | $$< 4 ; } > $$@ 2>&1
+
 test-c-$(1): \
  test-c-$(1).near_even.log \
  test-c-$(1).minMag.log \
  test-c-$(1).min.log \
  test-c-$(1).max.log \
+ test-c-$(1).near_maxMag.log \
 
 .PHONY: test-c-$(1) test-v-$(1)
 
@@ -168,11 +172,15 @@ test-c-$(1).min.log: test-$(1)/dut $(TESTFLOAT_GEN)
 test-c-$(1).max.log: test-$(1)/dut $(TESTFLOAT_GEN)
 	{ $(TESTFLOAT_GEN) -rmax -exact $(3) $(2) | $$< 3 ; } > $$@ 2>&1
 
+test-c-$(1).near_maxMag.log: test-$(1)/dut $(TESTFLOAT_GEN)
+	{ $(TESTFLOAT_GEN) -rnear_maxMag -exact $(3) $(2) | $$< 4 ; } > $$@ 2>&1
+
 test-c-$(1): \
  test-c-$(1).near_even.log \
  test-c-$(1).minMag.log \
  test-c-$(1).min.log \
  test-c-$(1).max.log \
+ test-c-$(1).near_maxMag.log \
 
 .PHONY: test-c-$(1) test-v-$(1)
 
