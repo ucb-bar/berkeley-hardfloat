@@ -85,10 +85,12 @@ class
 
     //------------------------------------------------------------------------
     //------------------------------------------------------------------------
-    val roundingMode_near_even = (io.roundingMode === round_near_even)
-    val roundingMode_minMag    = (io.roundingMode === round_minMag)
-    val roundingMode_min       = (io.roundingMode === round_min)
-    val roundingMode_max       = (io.roundingMode === round_max)
+    val roundingMode_near_even   = (io.roundingMode === round_near_even)
+    val roundingMode_minMag      = (io.roundingMode === round_minMag)
+    val roundingMode_min         = (io.roundingMode === round_min)
+    val roundingMode_max         = (io.roundingMode === round_max)
+    val roundingMode_near_maxMag = (io.roundingMode === round_near_maxMag)
+    val roundingMode_odd         = (io.roundingMode === round_odd)
 
     val roundMagUp =
         (roundingMode_min && io.in.sign) || (roundingMode_max && ! io.in.sign)
@@ -113,7 +115,7 @@ class
     val doShiftSigDown1 =
         if (sigMSBitAlwaysZero) Bool(false) else adjustedSig(outSigWidth + 2)
 
-//*** TEMPORARILY TWEAK MODULE `RecFNToRecFN' TO TEST `doShiftSigDown1' CASE.
+//*** TEMPORARILY TWEAK MODULE 'RecFNToRecFN' TO TEST 'doShiftSigDown1' CASE.
 
     val common_expOut   = UInt(width = outExpWidth + 1)
     val common_fractOut = UInt(width = outSigWidth - 1)
@@ -130,7 +132,7 @@ class
         //--------------------------------------------------------------------
         //--------------------------------------------------------------------
         common_expOut := sAdjustedExp(outExpWidth, 0) + doShiftSigDown1
-        common_fractOut := 
+        common_fractOut :=
             Mux(doShiftSigDown1,
                 adjustedSig(outSigWidth + 1, 3),
                 adjustedSig(outSigWidth, 2)
@@ -164,16 +166,20 @@ class
         val anyRoundExtra = (adjustedSig & shiftedRoundMask).orR
         val anyRound = roundPosBit || anyRoundExtra
 
+        val roundIncr =
+            ((roundingMode_near_even || roundingMode_near_maxMag) &&
+                 roundPosBit) ||
+                (roundMagUp && anyRound)
         val roundedSig =
-            Mux((roundingMode_near_even && roundPosBit) ||
-                    (roundMagUp && anyRound),
+            Mux(roundIncr,
                 (((adjustedSig | roundMask)>>2) +& UInt(1)) &
                     ~Mux(roundingMode_near_even && roundPosBit &&
                              ! anyRoundExtra,
                          roundMask>>1,
                          UInt(0, outSigWidth + 2)
                      ),
-                (adjustedSig & ~roundMask)>>2
+                (adjustedSig & ~roundMask)>>2 |
+                    Mux(roundingMode_odd, roundPosMask>>1, UInt(0))
             )
 //*** NEED TO ACCOUNT FOR ROUND-EVEN ZEROING M.S. BIT OF SUBNORMAL SIG?
         val sRoundedExp = sAdjustedExp +& (roundedSig>>outSigWidth).zext
@@ -192,15 +198,34 @@ class
             (if (neverUnderflows) Bool(false) else
 //*** WOULD BE GOOD ENOUGH TO USE EXPONENT BEFORE ROUNDING?:
                  (sRoundedExp < SInt(outMinNonzeroExp)))
+
+        val unboundedRange_roundPosBit =
+            Mux(doShiftSigDown1, adjustedSig(2), adjustedSig(1))
+        val unboundedRange_anyRound =
+            (doShiftSigDown1 && adjustedSig(2)) || adjustedSig(1, 0).orR
+        val unboundedRange_roundIncr =
+            ((roundingMode_near_even || roundingMode_near_maxMag) &&
+                 unboundedRange_roundPosBit) ||
+                (roundMagUp && unboundedRange_anyRound)
+        val roundCarry =
+            Mux(doShiftSigDown1,
+                roundedSig(outSigWidth + 1),
+                roundedSig(outSigWidth)
+            )
         common_underflow :=
             (if (neverUnderflows) Bool(false) else
-//*** NEED TO ACCOUNT FOR ROUND-EVEN ZEROING M.S. BIT OF SUBNORMAL SIG?
-                 anyRound &&
-                     (sAdjustedExp <
-                          Mux(doShiftSigDown1,
-                              SInt(outMinNormExp - 1),
-                              SInt(outMinNormExp)
-                          )))
+//*** IF SIG WIDTH IS VERY NARROW, NEED TO ACCOUNT FOR ROUND-EVEN ZEROING
+//***  M.S. BIT OF SUBNORMAL SIG?
+                 anyRound && (sAdjustedExp>>outExpWidth <= SInt(0)) &&
+                     Mux(doShiftSigDown1, roundMask(3), roundMask(2)) &&
+                     ! ((io.detectTininess === tininess_afterRounding) &&
+                            ! Mux(doShiftSigDown1,
+                                  roundMask(4),
+                                  roundMask(3)
+                              ) &&
+                            roundCarry && roundPosBit &&
+                            unboundedRange_roundIncr))
+
         common_inexact := anyRound
     }
 
@@ -213,7 +238,8 @@ class
     val underflow = commonCase && common_underflow
     val inexact = overflow || (commonCase && common_inexact)
 
-    val overflow_roundMagUp = roundingMode_near_even || roundMagUp
+    val overflow_roundMagUp =
+        roundingMode_near_even || roundingMode_near_maxMag || roundMagUp
     val pegMinNonzeroMagOut = commonCase && common_totalUnderflow && roundMagUp
     val pegMaxFiniteMagOut = commonCase && overflow && ! overflow_roundMagUp
     val notNaN_isInfOut =

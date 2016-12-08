@@ -45,7 +45,7 @@ object consts {
     val round_min         = UInt("b010", 3)
     val round_max         = UInt("b011", 3)
     val round_near_maxMag = UInt("b100", 3)
-    val round_odd         = UInt("b101", 3)
+    val round_odd         = UInt("b101", 3)   //*** NOT YET TESTED.
     val tininess_beforeRounding = UInt(0, 1)
     val tininess_afterRounding  = UInt(1, 1)
     val flRoundOpt_sigMSBitAlwaysZero  = 1
@@ -67,6 +67,7 @@ class RawFloat(val expWidth: Int, val sigWidth: Int) extends Bundle
         new RawFloat(expWidth, sigWidth).asInstanceOf[this.type]
 }
 
+//*** CHANGE THIS INTO A '.isSigNaN' METHOD OF THE 'RawFloat' CLASS:
 object isSigNaNRawFloat
 {
     def apply(in: RawFloat): Bool = in.isNaN && ! in.sig(in.sigWidth - 2)
