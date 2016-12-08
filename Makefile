@@ -233,11 +233,35 @@ test-c-$(1).min.t-before.log: test-$(1)/dut $(TESTFLOAT_GEN)
 test-c-$(1).max.t-before.log: test-$(1)/dut $(TESTFLOAT_GEN)
 	{ $(TESTFLOAT_GEN) -rmax -tininessbefore $(3) $(2) | $$< 3 0 ; } > $$@ 2>&1
 
+test-c-$(1).near_maxMag.t-before.log: test-$(1)/dut $(TESTFLOAT_GEN)
+	{ $(TESTFLOAT_GEN) -rnear_maxMag -tininessbefore $(3) $(2) | $$< 4 0 ; } > $$@ 2>&1
+
+test-c-$(1).near_even.t-after.log: test-$(1)/dut $(TESTFLOAT_GEN)
+	{ $(TESTFLOAT_GEN) -rnear_even -tininessafter $(3) $(2) | $$< 0 1 ; } > $$@ 2>&1
+
+test-c-$(1).minMag.t-after.log: test-$(1)/dut $(TESTFLOAT_GEN)
+	{ $(TESTFLOAT_GEN) -rminMag -tininessafter $(3) $(2) | $$< 1 1 ; } > $$@ 2>&1
+
+test-c-$(1).min.t-after.log: test-$(1)/dut $(TESTFLOAT_GEN)
+	{ $(TESTFLOAT_GEN) -rmin -tininessafter $(3) $(2) | $$< 2 1 ; } > $$@ 2>&1
+
+test-c-$(1).max.t-after.log: test-$(1)/dut $(TESTFLOAT_GEN)
+	{ $(TESTFLOAT_GEN) -rmax -tininessafter $(3) $(2) | $$< 3 1 ; } > $$@ 2>&1
+
+test-c-$(1).near_maxMag.t-after.log: test-$(1)/dut $(TESTFLOAT_GEN)
+	{ $(TESTFLOAT_GEN) -rnear_maxMag -tininessafter $(3) $(2) | $$< 4 1 ; } > $$@ 2>&1
+
 test-c-$(1): \
  test-c-$(1).near_even.t-before.log \
  test-c-$(1).minMag.t-before.log \
  test-c-$(1).min.t-before.log \
  test-c-$(1).max.t-before.log \
+ test-c-$(1).near_maxMag.t-before.log \
+ test-c-$(1).near_even.t-after.log \
+ test-c-$(1).minMag.t-after.log \
+ test-c-$(1).min.t-after.log \
+ test-c-$(1).max.t-after.log \
+ test-c-$(1).near_maxMag.t-after.log \
 
 
 #*** FOR VERILOG TESTING:
