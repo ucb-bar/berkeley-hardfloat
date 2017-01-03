@@ -371,7 +371,7 @@ test-c: $(addprefix test-c-, $(tests))
 
 
 clean:
-	rm -rf test-* ucli.key
+	rm -rf test-* ucli.key berkeley-{test,soft}float-3
 
-.PHONY: test-c test-v clean
+.PHONY: test-c test-v clean distclean
 
