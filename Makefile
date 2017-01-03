@@ -4,10 +4,9 @@ CHISEL_VERSION = 2.2.32
 #default: test-c test-v
 default: test-c
 
-berkeley-softfloat-3/extract.stamp: patches/berkeley-softfloat-3/*
+berkeley-softfloat-3/extract.stamp:
 	rm -rf berkeley-softfloat-3
 	git clone git://github.com/ucb-bar/berkeley-softfloat-3.git
-	patch -p0 < patches/berkeley-softfloat-3/0001-specialize_riscv.patch
 	touch berkeley-softfloat-3/extract.stamp
 
 berkeley-testfloat-3/extract.stamp:
@@ -16,11 +15,11 @@ berkeley-testfloat-3/extract.stamp:
 	touch berkeley-testfloat-3/extract.stamp
 
 berkeley-softfloat-3/build/Linux-x86_64-GCC/softfloat.a: berkeley-softfloat-3/extract.stamp
-	$(MAKE) -C berkeley-softfloat-3/build/Linux-x86_64-GCC
+	$(MAKE) -C berkeley-softfloat-3/build/Linux-x86_64-GCC SPECIALIZE_TYPE=RISCV
 
 berkeley-testfloat-3/build/Linux-x86_64-GCC/testfloat_gen: berkeley-testfloat-3/extract.stamp \
                                                            berkeley-softfloat-3/build/Linux-x86_64-GCC/softfloat.a
-	$(MAKE) -C berkeley-testfloat-3/build/Linux-x86_64-GCC
+	$(MAKE) -C berkeley-testfloat-3/build/Linux-x86_64-GCC SPECIALIZE_TYPE=RISCV
 
 ./testfloat_gen: berkeley-testfloat-3/build/Linux-x86_64-GCC/testfloat_gen
 	cp berkeley-testfloat-3/build/Linux-x86_64-GCC/testfloat_gen .
