@@ -115,8 +115,6 @@ class
     val doShiftSigDown1 =
         if (sigMSBitAlwaysZero) Bool(false) else adjustedSig(outSigWidth + 2)
 
-//*** TEMPORARILY TWEAK MODULE 'RecFNToRecFN' TO TEST 'doShiftSigDown1' CASE.
-
     val common_expOut   = UInt(width = outExpWidth + 1)
     val common_fractOut = UInt(width = outSigWidth - 1)
     val common_overflow       = Bool()
@@ -181,7 +179,8 @@ class
                 (adjustedSig & ~roundMask)>>2 |
                     Mux(roundingMode_odd, roundPosMask>>1, UInt(0))
             )
-//*** NEED TO ACCOUNT FOR ROUND-EVEN ZEROING M.S. BIT OF SUBNORMAL SIG?
+//*** IF SIG WIDTH IS VERY NARROW, NEED TO ACCOUNT FOR ROUND-EVEN ZEROING
+//***  M.S. BIT OF SUBNORMAL SIG?
         val sRoundedExp = sAdjustedExp +& (roundedSig>>outSigWidth).zext
 
         common_expOut := sRoundedExp(outExpWidth, 0)
@@ -241,7 +240,7 @@ class
     val overflow_roundMagUp =
         roundingMode_near_even || roundingMode_near_maxMag || roundMagUp
     val pegMinNonzeroMagOut = commonCase && common_totalUnderflow && roundMagUp
-    val pegMaxFiniteMagOut = commonCase && overflow && ! overflow_roundMagUp
+    val pegMaxFiniteMagOut = overflow && ! overflow_roundMagUp
     val notNaN_isInfOut =
         notNaN_isSpecialInfOut || (overflow && overflow_roundMagUp)
 
