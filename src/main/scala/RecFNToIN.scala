@@ -5,7 +5,7 @@ This Chisel source file is part of a pre-release version of the HardFloat IEEE
 Floating-Point Arithmetic Package, by John R. Hauser (with some contributions
 from Yunsup Lee and Andrew Waterman, mainly concerning testing).
 
-Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016 The Regents of the
+Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 The Regents of the
 University of California.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -62,11 +62,11 @@ class RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int) extends Module
     //------------------------------------------------------------------------
     //------------------------------------------------------------------------
     val roundingMode_near_even   = (io.roundingMode === round_near_even)
-    val roundingMode_minMag      = (io.roundingMode === round_minMag)
+    val roundingMode_minMag =
+        (io.roundingMode === round_minMag) || (io.roundingMode === round_odd)
     val roundingMode_min         = (io.roundingMode === round_min)
     val roundingMode_max         = (io.roundingMode === round_max)
     val roundingMode_near_maxMag = (io.roundingMode === round_near_maxMag)
-    val roundingMode_odd         = (io.roundingMode === round_odd)
 
     /*------------------------------------------------------------------------
     | Assuming the input floating-point value is not a NaN, its magnitude is
@@ -101,7 +101,7 @@ class RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int) extends Module
         Mux(roundIncr ^ rawIn.sign,
             complUnroundedInt + UInt(1),
             complUnroundedInt
-        ) | (roundingMode_odd && common_inexact)
+        )
 
     val magGeOne_atOverflowEdge = (posExp === UInt(intWidth - 1))
 //*** CHANGE TO TAKE BITS FROM THE ORIGINAL 'rawIn.sig' INSTEAD OF FROM

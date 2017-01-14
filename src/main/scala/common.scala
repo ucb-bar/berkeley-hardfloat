@@ -5,7 +5,7 @@ This Chisel source file is part of a pre-release version of the HardFloat IEEE
 Floating-Point Arithmetic Package, by John R. Hauser (with some contributions
 from Yunsup Lee and Andrew Waterman, mainly concerning testing).
 
-Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016 The Regents of the
+Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 The Regents of the
 University of California.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -40,14 +40,22 @@ package hardfloat
 import Chisel._
 
 object consts {
+    /*------------------------------------------------------------------------
+    | For rounding to integer values, rounding mode 'odd' rounds to minimum
+    | magnitude instead, same as 'minMag'.
+    *------------------------------------------------------------------------*/
     val round_near_even   = UInt("b000", 3)
     val round_minMag      = UInt("b001", 3)
     val round_min         = UInt("b010", 3)
     val round_max         = UInt("b011", 3)
     val round_near_maxMag = UInt("b100", 3)
-    val round_odd         = UInt("b101", 3)   //*** NOT YET TESTED.
+    val round_odd         = UInt("b101", 3)
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
     val tininess_beforeRounding = UInt(0, 1)
     val tininess_afterRounding  = UInt(1, 1)
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
     val flRoundOpt_sigMSBitAlwaysZero  = 1
     val flRoundOpt_subnormsAlwaysExact = 2
     val flRoundOpt_neverUnderflows     = 4
