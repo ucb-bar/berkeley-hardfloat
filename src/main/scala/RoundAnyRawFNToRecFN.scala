@@ -5,7 +5,7 @@ This Chisel source file is part of a pre-release version of the HardFloat IEEE
 Floating-Point Arithmetic Package, by John R. Hauser (with some contributions
 from Yunsup Lee and Andrew Waterman, mainly concerning testing).
 
-Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016 The Regents of the
+Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 The Regents of the
 University of California.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -177,7 +177,7 @@ class
                          UInt(0, outSigWidth + 2)
                      ),
                 (adjustedSig & ~roundMask)>>2 |
-                    Mux(roundingMode_odd, roundPosMask>>1, UInt(0))
+                    Mux(roundingMode_odd && anyRound, roundPosMask>>1, UInt(0))
             )
 //*** IF SIG WIDTH IS VERY NARROW, NEED TO ACCOUNT FOR ROUND-EVEN ZEROING
 //***  M.S. BIT OF SUBNORMAL SIG?
@@ -239,7 +239,8 @@ class
 
     val overflow_roundMagUp =
         roundingMode_near_even || roundingMode_near_maxMag || roundMagUp
-    val pegMinNonzeroMagOut = commonCase && common_totalUnderflow && roundMagUp
+    val pegMinNonzeroMagOut =
+        commonCase && common_totalUnderflow && (roundMagUp || roundingMode_odd)
     val pegMaxFiniteMagOut = overflow && ! overflow_roundMagUp
     val notNaN_isInfOut =
         notNaN_isSpecialInfOut || (overflow && overflow_roundMagUp)
