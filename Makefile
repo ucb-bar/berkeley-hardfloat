@@ -135,12 +135,16 @@ test-c-$(1).max.log: test-$(1)/dut $(TESTFLOAT_GEN)
 test-c-$(1).near_maxMag.log: test-$(1)/dut $(TESTFLOAT_GEN)
 	{ $(TESTFLOAT_GEN) -rnear_maxMag -exact $(3) $(2) | $$< 4 ; } > $$@ 2>&1
 
+test-c-$(1).odd.log: test-$(1)/dut $(TESTFLOAT_GEN)
+	{ $(TESTFLOAT_GEN) -rodd -exact $(3) $(2) | $$< 5 ; } > $$@ 2>&1
+
 test-c-$(1): \
  test-c-$(1).near_even.log \
  test-c-$(1).minMag.log \
  test-c-$(1).min.log \
  test-c-$(1).max.log \
  test-c-$(1).near_maxMag.log \
+ test-c-$(1).odd.log \
 
 .PHONY: test-c-$(1) test-v-$(1)
 
@@ -174,12 +178,16 @@ test-c-$(1).max.log: test-$(1)/dut $(TESTFLOAT_GEN)
 test-c-$(1).near_maxMag.log: test-$(1)/dut $(TESTFLOAT_GEN)
 	{ $(TESTFLOAT_GEN) -rnear_maxMag -exact $(3) $(2) | $$< 4 ; } > $$@ 2>&1
 
+test-c-$(1).odd.log: test-$(1)/dut $(TESTFLOAT_GEN)
+	{ $(TESTFLOAT_GEN) -rodd -exact $(3) $(2) | $$< 5 ; } > $$@ 2>&1
+
 test-c-$(1): \
  test-c-$(1).near_even.log \
  test-c-$(1).minMag.log \
  test-c-$(1).min.log \
  test-c-$(1).max.log \
  test-c-$(1).near_maxMag.log \
+ test-c-$(1).odd.log \
 
 .PHONY: test-c-$(1) test-v-$(1)
 
@@ -235,6 +243,9 @@ test-c-$(1).max.t-before.log: test-$(1)/dut $(TESTFLOAT_GEN)
 test-c-$(1).near_maxMag.t-before.log: test-$(1)/dut $(TESTFLOAT_GEN)
 	{ $(TESTFLOAT_GEN) -rnear_maxMag -tininessbefore $(3) $(2) | $$< 4 0 ; } > $$@ 2>&1
 
+test-c-$(1).odd.t-before.log: test-$(1)/dut $(TESTFLOAT_GEN)
+	{ $(TESTFLOAT_GEN) -rodd -tininessbefore $(3) $(2) | $$< 5 0 ; } > $$@ 2>&1
+
 test-c-$(1).near_even.t-after.log: test-$(1)/dut $(TESTFLOAT_GEN)
 	{ $(TESTFLOAT_GEN) -rnear_even -tininessafter $(3) $(2) | $$< 0 1 ; } > $$@ 2>&1
 
@@ -250,17 +261,22 @@ test-c-$(1).max.t-after.log: test-$(1)/dut $(TESTFLOAT_GEN)
 test-c-$(1).near_maxMag.t-after.log: test-$(1)/dut $(TESTFLOAT_GEN)
 	{ $(TESTFLOAT_GEN) -rnear_maxMag -tininessafter $(3) $(2) | $$< 4 1 ; } > $$@ 2>&1
 
+test-c-$(1).odd.t-after.log: test-$(1)/dut $(TESTFLOAT_GEN)
+	{ $(TESTFLOAT_GEN) -rodd -tininessafter $(3) $(2) | $$< 5 1 ; } > $$@ 2>&1
+
 test-c-$(1): \
  test-c-$(1).near_even.t-before.log \
  test-c-$(1).minMag.t-before.log \
  test-c-$(1).min.t-before.log \
  test-c-$(1).max.t-before.log \
  test-c-$(1).near_maxMag.t-before.log \
+ test-c-$(1).odd.t-before.log \
  test-c-$(1).near_even.t-after.log \
  test-c-$(1).minMag.t-after.log \
  test-c-$(1).min.t-after.log \
  test-c-$(1).max.t-after.log \
  test-c-$(1).near_maxMag.t-after.log \
+ test-c-$(1).odd.t-after.log \
 
 
 #*** FOR VERILOG TESTING:
