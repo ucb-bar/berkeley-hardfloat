@@ -44,12 +44,12 @@ object consts {
     | For rounding to integer values, rounding mode 'odd' rounds to minimum
     | magnitude instead, same as 'minMag'.
     *------------------------------------------------------------------------*/
-    val round_near_even   = UInt("b000", 3)
-    val round_minMag      = UInt("b001", 3)
-    val round_min         = UInt("b010", 3)
-    val round_max         = UInt("b011", 3)
-    val round_near_maxMag = UInt("b100", 3)
-    val round_odd         = UInt("b101", 3)
+    def round_near_even   = UInt("b000", 3)
+    def round_minMag      = UInt("b001", 3)
+    def round_min         = UInt("b010", 3)
+    def round_max         = UInt("b011", 3)
+    def round_near_maxMag = UInt("b100", 3)
+    def round_odd         = UInt("b101", 3)
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
     val tininess_beforeRounding = UInt(0, 1)
