@@ -52,14 +52,14 @@ object consts {
     def round_odd         = UInt("b101", 3)
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-    val tininess_beforeRounding = UInt(0, 1)
-    val tininess_afterRounding  = UInt(1, 1)
+    def tininess_beforeRounding = UInt(0, 1)
+    def tininess_afterRounding  = UInt(1, 1)
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-    val flRoundOpt_sigMSBitAlwaysZero  = 1
-    val flRoundOpt_subnormsAlwaysExact = 2
-    val flRoundOpt_neverUnderflows     = 4
-    val flRoundOpt_neverOverflows      = 8
+    def flRoundOpt_sigMSBitAlwaysZero  = 1
+    def flRoundOpt_subnormsAlwaysExact = 2
+    def flRoundOpt_neverUnderflows     = 4
+    def flRoundOpt_neverOverflows      = 8
 }
 
 class RawFloat(val expWidth: Int, val sigWidth: Int) extends Bundle
