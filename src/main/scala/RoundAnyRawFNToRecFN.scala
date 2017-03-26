@@ -115,12 +115,12 @@ class
     val doShiftSigDown1 =
         if (sigMSBitAlwaysZero) Bool(false) else adjustedSig(outSigWidth + 2)
 
-    val common_expOut   = UInt(width = outExpWidth + 1)
-    val common_fractOut = UInt(width = outSigWidth - 1)
-    val common_overflow       = Bool()
-    val common_totalUnderflow = Bool()
-    val common_underflow      = Bool()
-    val common_inexact        = Bool()
+    val common_expOut   = Wire(UInt(width = outExpWidth + 1))
+    val common_fractOut = Wire(UInt(width = outSigWidth - 1))
+    val common_overflow       = Wire(Bool())
+    val common_totalUnderflow = Wire(Bool())
+    val common_underflow      = Wire(Bool())
+    val common_inexact        = Wire(Bool())
 
     if (
         neverOverflows && neverUnderflows
