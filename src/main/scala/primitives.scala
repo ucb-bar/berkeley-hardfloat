@@ -94,13 +94,13 @@ object orReduceBy2
     def apply(in: UInt): UInt =
     {
         val reducedWidth = (in.getWidth + 1)>>1
-        val reducedVec = Vec(Seq.fill(reducedWidth)(Bool()))
+        val reducedVec = Wire(Vec(reducedWidth, Bool()))
         for (ix <- 0 until reducedWidth - 1) {
             reducedVec(ix) := in(ix * 2 + 1, ix * 2).orR
         }
         reducedVec(reducedWidth - 1) :=
             in(in.getWidth - 1, (reducedWidth - 1) * 2).orR
-        reducedVec.toBits
+        reducedVec.asUInt
     }
 }
 
@@ -111,13 +111,13 @@ object orReduceBy4
     def apply(in: UInt): UInt =
     {
         val reducedWidth = (in.getWidth + 3)>>2
-        val reducedVec = Vec(Seq.fill(reducedWidth)(Bool()))
+        val reducedVec = Wire(Vec(reducedWidth, Bool()))
         for (ix <- 0 until reducedWidth - 1) {
             reducedVec(ix) := in(ix * 4 + 3, ix * 4).orR
         }
         reducedVec(reducedWidth - 1) :=
             in(in.getWidth - 1, (reducedWidth - 1) * 4).orR
-        reducedVec.toBits
+        reducedVec.asUInt
     }
 }
 
