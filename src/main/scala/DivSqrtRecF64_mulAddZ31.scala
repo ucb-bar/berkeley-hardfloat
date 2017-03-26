@@ -335,7 +335,7 @@ class DivSqrtRecF64ToRaw_mulAddZ31(options: Int) extends Module
         sign_PA     := sign_S
     }
     when (entering_PA_normalCase) {
-        sExp_PA := Mux(io.sqrtOp, rawB_S.sExp, sSatExpQuot_S_div)
+        sExp_PA := Mux(io.sqrtOp, rawB_S.sExp, sSatExpQuot_S_div).asUInt
         fractB_PA := rawB_S.sig(51, 0)
         roundingMode_PA := io.roundingMode
     }
@@ -705,9 +705,10 @@ class DivSqrtRecF64ToRaw_mulAddZ31(options: Int) extends Module
     io.rawOut.isZero := isZero_PC
     io.rawOut.sign := sign_PC
     io.rawOut.sExp :=
-        Mux(! sqrtOp_PC &&   E_E_div, sExp_PC,                     UInt(0)) |
-        Mux(! sqrtOp_PC && ! E_E_div, sExpP1_PC,                   UInt(0)) |
-        Mux(  sqrtOp_PC,              (sExp_PC>>1) + UInt("h400"), UInt(0))
+        ( Mux(! sqrtOp_PC &&   E_E_div, sExp_PC,                     UInt(0)) |
+          Mux(! sqrtOp_PC && ! E_E_div, sExpP1_PC,                   UInt(0)) |
+          Mux(  sqrtOp_PC,              (sExp_PC>>1) + UInt("h400"), UInt(0))
+        ).asSInt
     io.rawOut.sig := Cat(Mux(trueLtX_E1, sigT_E, sigTP1_E), ! trueEqX_E1)
 
 }
