@@ -144,21 +144,18 @@ class
 
         //--------------------------------------------------------------------
         //--------------------------------------------------------------------
-        val isNegExp =
-            if (neverUnderflows) Bool(false) else (sAdjustedExp < SInt(0))
         val roundMask =
             if (neverUnderflows)
                 Cat(UInt(0, outSigWidth), doShiftSigDown1, UInt(3, 2))
             else
-                Cat(Fill(outSigWidth + 1, isNegExp) |
-                        lowMask(
-                            sAdjustedExp(outExpWidth, 0),
-                            outMinNormExp - outSigWidth - 1,
-                            outMinNormExp
-                        ) | doShiftSigDown1,
+                Cat(lowMask(
+                        sAdjustedExp(outExpWidth, 0),
+                        outMinNormExp - outSigWidth - 1,
+                        outMinNormExp
+                    ) | doShiftSigDown1,
                     UInt(3, 2)
                 )
-        val shiftedRoundMask = Cat(isNegExp, roundMask)>>1
+        val shiftedRoundMask = Cat(UInt(0, 1), roundMask>>1)
         val roundPosMask = ~shiftedRoundMask & roundMask
         val roundPosBit = (adjustedSig & roundPosMask).orR
         val anyRoundExtra = (adjustedSig & shiftedRoundMask).orR
@@ -213,19 +210,20 @@ class
             )
         common_underflow :=
             (if (neverUnderflows) Bool(false) else
+                 common_totalUnderflow ||
 //*** IF SIG WIDTH IS VERY NARROW, NEED TO ACCOUNT FOR ROUND-EVEN ZEROING
 //***  M.S. BIT OF SUBNORMAL SIG?
-                 anyRound && (sAdjustedExp>>outExpWidth <= SInt(0)) &&
-                     Mux(doShiftSigDown1, roundMask(3), roundMask(2)) &&
-                     ! ((io.detectTininess === tininess_afterRounding) &&
-                            ! Mux(doShiftSigDown1,
-                                  roundMask(4),
-                                  roundMask(3)
-                              ) &&
-                            roundCarry && roundPosBit &&
-                            unboundedRange_roundIncr))
+                     (anyRound && (sAdjustedExp>>outExpWidth <= SInt(0)) &&
+                          Mux(doShiftSigDown1, roundMask(3), roundMask(2)) &&
+                          ! ((io.detectTininess === tininess_afterRounding) &&
+                                 ! Mux(doShiftSigDown1,
+                                       roundMask(4),
+                                       roundMask(3)
+                                   ) &&
+                                 roundCarry && roundPosBit &&
+                                 unboundedRange_roundIncr)))
 
-        common_inexact := anyRound
+        common_inexact := common_totalUnderflow || anyRound
     }
 
     //------------------------------------------------------------------------
