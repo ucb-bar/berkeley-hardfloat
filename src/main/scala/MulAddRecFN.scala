@@ -5,7 +5,7 @@ This Chisel source file is part of a pre-release version of the HardFloat IEEE
 Floating-Point Arithmetic Package, by John R. Hauser (with some contributions
 from Yunsup Lee and Andrew Waterman, mainly concerning testing).
 
-Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016 The Regents of the
+Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 The Regents of the
 University of California.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -202,7 +202,7 @@ class MulAddRecFNToRaw_postMul(expWidth: Int, sigWidth: Int) extends Module
     //------------------------------------------------------------------------
     //------------------------------------------------------------------------
     val CDom_sign = opSignC
-    val CDom_sExp = io.fromPreMul.sExpSum - io.fromPreMul.doSubMags
+    val CDom_sExp = io.fromPreMul.sExpSum - io.fromPreMul.doSubMags.zext
     val CDom_absSigSum =
         Mux(io.fromPreMul.doSubMags,
             ~sigSum(sigSumWidth - 1, sigWidth + 1),
@@ -240,7 +240,7 @@ class MulAddRecFNToRaw_postMul(expWidth: Int, sigWidth: Int) extends Module
     val notCDom_reduced2AbsSigSum = orReduceBy2(notCDom_absSigSum)
     val notCDom_normDistReduced2 = countLeadingZeros(notCDom_reduced2AbsSigSum)
     val notCDom_nearNormDist = notCDom_normDistReduced2<<1
-    val notCDom_sExp = io.fromPreMul.sExpSum - notCDom_nearNormDist
+    val notCDom_sExp = io.fromPreMul.sExpSum - notCDom_nearNormDist.zext
     val notCDom_mainSig =
         (notCDom_absSigSum<<notCDom_nearNormDist)(
             sigWidth * 2 + 3, sigWidth - 1)

@@ -5,7 +5,7 @@ This Chisel source file is part of a pre-release version of the HardFloat IEEE
 Floating-Point Arithmetic Package, by John R. Hauser (with some contributions
 from Yunsup Lee and Andrew Waterman, mainly concerning testing).
 
-Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016 The Regents of the
+Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 The Regents of the
 University of California.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -94,13 +94,13 @@ object orReduceBy2
     def apply(in: UInt): UInt =
     {
         val reducedWidth = (in.getWidth + 1)>>1
-        val reducedVec = Vec(Seq.fill(reducedWidth)(Bool()))
+        val reducedVec = Wire(Vec(reducedWidth, Bool()))
         for (ix <- 0 until reducedWidth - 1) {
             reducedVec(ix) := in(ix * 2 + 1, ix * 2).orR
         }
         reducedVec(reducedWidth - 1) :=
             in(in.getWidth - 1, (reducedWidth - 1) * 2).orR
-        reducedVec.toBits
+        reducedVec.asUInt
     }
 }
 
@@ -111,13 +111,13 @@ object orReduceBy4
     def apply(in: UInt): UInt =
     {
         val reducedWidth = (in.getWidth + 3)>>2
-        val reducedVec = Vec(Seq.fill(reducedWidth)(Bool()))
+        val reducedVec = Wire(Vec(reducedWidth, Bool()))
         for (ix <- 0 until reducedWidth - 1) {
             reducedVec(ix) := in(ix * 4 + 3, ix * 4).orR
         }
         reducedVec(reducedWidth - 1) :=
             in(in.getWidth - 1, (reducedWidth - 1) * 4).orR
-        reducedVec.toBits
+        reducedVec.asUInt
     }
 }
 

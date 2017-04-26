@@ -5,7 +5,7 @@ This Chisel source file is part of a pre-release version of the HardFloat IEEE
 Floating-Point Arithmetic Package, by John R. Hauser (with some contributions
 from Yunsup Lee and Andrew Waterman, mainly concerning testing).
 
-Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016 The Regents of the
+Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 The Regents of the
 University of California.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -95,7 +95,7 @@ class DivSqrtRecF64ToRaw_mulAddZ31(options: Int) extends Module
     val isInf_PA        = Reg(Bool())
     val isZero_PA       = Reg(Bool())
     val sign_PA         = Reg(Bool())
-    val sExp_PA         = Reg(UInt(width = 13))
+    val sExp_PA         = Reg(SInt(width = 13))
     val fractB_PA       = Reg(UInt(width = 52))
     val fractA_PA       = Reg(UInt(width = 52))
     val roundingMode_PA = Reg(UInt(width = 3))
@@ -108,7 +108,7 @@ class DivSqrtRecF64ToRaw_mulAddZ31(options: Int) extends Module
     val isInf_PB        = Reg(Bool())
     val isZero_PB       = Reg(Bool())
     val sign_PB         = Reg(Bool())
-    val sExp_PB         = Reg(UInt(width = 13))
+    val sExp_PB         = Reg(SInt(width = 13))
     val bit0FractA_PB   = Reg(UInt(width = 1))
     val fractB_PB       = Reg(UInt(width = 52))
     val roundingMode_PB = Reg(UInt(width = 3))
@@ -121,7 +121,7 @@ class DivSqrtRecF64ToRaw_mulAddZ31(options: Int) extends Module
     val isInf_PC        = Reg(Bool())
     val isZero_PC       = Reg(Bool())
     val sign_PC         = Reg(Bool())
-    val sExp_PC         = Reg(UInt(width = 13))
+    val sExp_PC         = Reg(SInt(width = 13))
     val bit0FractA_PC   = Reg(UInt(width = 1))
     val fractB_PC       = Reg(UInt(width = 52))
     val roundingMode_PC = Reg(UInt(width = 3))
@@ -690,7 +690,7 @@ class DivSqrtRecF64ToRaw_mulAddZ31(options: Int) extends Module
     | advance, so the circuitry can be minimized at the expense of speed.
 *** ANY WAY TO TELL THIS TO THE TOOLS?
     *------------------------------------------------------------------------*/
-    val sExpP1_PC = sExp_PC + UInt(1)
+    val sExpP1_PC = sExp_PC + SInt(1)
     val sigTP1_E = sigT_E +& UInt(1)
 
     /*------------------------------------------------------------------------
@@ -705,9 +705,9 @@ class DivSqrtRecF64ToRaw_mulAddZ31(options: Int) extends Module
     io.rawOut.isZero := isZero_PC
     io.rawOut.sign := sign_PC
     io.rawOut.sExp :=
-        Mux(! sqrtOp_PC &&   E_E_div, sExp_PC,                     UInt(0)) |
-        Mux(! sqrtOp_PC && ! E_E_div, sExpP1_PC,                   UInt(0)) |
-        Mux(  sqrtOp_PC,              (sExp_PC>>1) + UInt("h400"), UInt(0))
+        Mux(! sqrtOp_PC &&   E_E_div, sExp_PC,                    SInt(0)) |
+        Mux(! sqrtOp_PC && ! E_E_div, sExpP1_PC,                  SInt(0)) |
+        Mux(  sqrtOp_PC,              (sExp_PC>>1) +& SInt(1024), SInt(0))
     io.rawOut.sig := Cat(Mux(trueLtX_E1, sigT_E, sigTP1_E), ! trueEqX_E1)
 
 }
