@@ -5,7 +5,7 @@ This Chisel source file is part of a pre-release version of the HardFloat IEEE
 Floating-Point Arithmetic Package, by John R. Hauser (with some contributions
 from Yunsup Lee and Andrew Waterman, mainly concerning testing).
 
-Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016 The Regents of the
+Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 The Regents of the
 University of California.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -46,7 +46,8 @@ object resizeRawFloat
 {
     def apply(expWidth: Int, sigWidth: Int, in: RawFloat): RawFloat =
     {
-        val sAdjustedExp = in.sExp +& SInt((1<<expWidth) - (1<<in.expWidth))
+        val sAdjustedExp =
+            in.sExp +& SInt((BigInt(1)<<expWidth) - (BigInt(1)<<in.expWidth))
 
         val out = Wire(new RawFloat(expWidth, sigWidth))
         out.sign   := in.sign

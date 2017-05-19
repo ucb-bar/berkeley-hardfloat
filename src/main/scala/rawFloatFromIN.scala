@@ -5,7 +5,7 @@ This Chisel source file is part of a pre-release version of the HardFloat IEEE
 Floating-Point Arithmetic Package, by John R. Hauser (with some contributions
 from Yunsup Lee and Andrew Waterman, mainly concerning testing).
 
-Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016 The Regents of the
+Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 The Regents of the
 University of California.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -44,6 +44,7 @@ object rawFloatFromIN
     def apply(signedIn: Bool, in: Bits): RawFloat =
     {
         val expWidth = log2Up(in.getWidth)
+//*** CHANGE THIS; CAN BE VERY LARGE:
         val extIntWidth = 1<<expWidth
 
         val sign = signedIn && in(in.getWidth - 1)

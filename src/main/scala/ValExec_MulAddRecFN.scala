@@ -5,7 +5,7 @@ This Chisel source file is part of a pre-release version of the HardFloat IEEE
 Floating-Point Arithmetic Package, by John R. Hauser (with some contributions
 from Yunsup Lee and Andrew Waterman, mainly concerning testing).
 
-Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016 The Regents of the
+Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 The Regents of the
 University of California.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -112,7 +112,7 @@ class ValExec_MulAddRecFN_add(expWidth: Int, sigWidth: Int) extends Module
     val mulAddRecFN = Module(new MulAddRecFN(expWidth, sigWidth))
     mulAddRecFN.io.op := UInt(0)
     mulAddRecFN.io.a := recFNFromFN(expWidth, sigWidth, io.a)
-    mulAddRecFN.io.b := UInt(1)<<(expWidth + sigWidth - 1)
+    mulAddRecFN.io.b := UInt(BigInt(1)<<(expWidth + sigWidth - 1))
     mulAddRecFN.io.c := recFNFromFN(expWidth, sigWidth, io.b)
     mulAddRecFN.io.roundingMode   := io.roundingMode
     mulAddRecFN.io.detectTininess := io.detectTininess
@@ -159,7 +159,8 @@ class ValExec_MulAddRecFN_mul(expWidth: Int, sigWidth: Int) extends Module
     mulAddRecFN.io.op := UInt(0)
     mulAddRecFN.io.a := recFNFromFN(expWidth, sigWidth, io.a)
     mulAddRecFN.io.b := recFNFromFN(expWidth, sigWidth, io.b)
-    mulAddRecFN.io.c := ((io.a ^ io.b) & UInt(1)<<(expWidth + sigWidth - 1))<<1
+    mulAddRecFN.io.c :=
+        ((io.a ^ io.b) & UInt(BigInt(1)<<(expWidth + sigWidth - 1)))<<1
     mulAddRecFN.io.roundingMode   := io.roundingMode
     mulAddRecFN.io.detectTininess := io.detectTininess
 

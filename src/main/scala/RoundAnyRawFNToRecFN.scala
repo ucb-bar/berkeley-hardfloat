@@ -77,10 +77,10 @@ class
     val neverOverflows =
         ((options & flRoundOpt_neverOverflows) != 0) ||
             (inExpWidth < outExpWidth)
-    val outNaNExp = 7<<(outExpWidth - 2)
-    val outInfExp = 6<<(outExpWidth - 2)
+    val outNaNExp = BigInt(7)<<(outExpWidth - 2)
+    val outInfExp = BigInt(6)<<(outExpWidth - 2)
     val outMaxFiniteExp = outInfExp - 1
-    val outMinNormExp = (1<<(outExpWidth - 1)) + 2
+    val outMinNormExp = (BigInt(1)<<(outExpWidth - 1)) + 2
     val outMinNonzeroExp = outMinNormExp - outSigWidth + 1
 
     //------------------------------------------------------------------------
@@ -99,12 +99,14 @@ class
     //------------------------------------------------------------------------
     val sAdjustedExp =
         if (inExpWidth < outExpWidth)
-            (io.in.sExp +& SInt((1<<outExpWidth) - (1<<inExpWidth))
+            (io.in.sExp +&
+                 SInt((BigInt(1)<<outExpWidth) - (BigInt(1)<<inExpWidth))
             )(outExpWidth, 0).zext
         else if (inExpWidth == outExpWidth)
             io.in.sExp
         else
-            io.in.sExp +& SInt((1<<outExpWidth) - (1<<inExpWidth))
+            io.in.sExp +&
+                SInt((BigInt(1)<<outExpWidth) - (BigInt(1)<<inExpWidth))
     val adjustedSig =
         if (inSigWidth <= outSigWidth + 2)
             io.in.sig<<(outSigWidth - inSigWidth + 2)
@@ -247,7 +249,7 @@ class
     val expOut =
         (common_expOut &
              ~Mux(io.in.isZero || common_totalUnderflow,
-                  UInt(7<<(outExpWidth - 2), outExpWidth + 1),
+                  UInt(BigInt(7)<<(outExpWidth - 2), outExpWidth + 1),
                   UInt(0)
               ) &
              ~Mux(pegMinNonzeroMagOut,
@@ -255,11 +257,11 @@ class
                   UInt(0)
               ) &
              ~Mux(pegMaxFiniteMagOut,
-                  UInt(1<<(outExpWidth - 1), outExpWidth + 1),
+                  UInt(BigInt(1)<<(outExpWidth - 1), outExpWidth + 1),
                   UInt(0)
               ) &
              ~Mux(notNaN_isInfOut,
-                  UInt(1<<(outExpWidth - 2), outExpWidth + 1),
+                  UInt(BigInt(1)<<(outExpWidth - 2), outExpWidth + 1),
                   UInt(0)
               )) |
             Mux(pegMinNonzeroMagOut,
@@ -274,7 +276,7 @@ class
             Mux(isNaNOut,        UInt(outNaNExp, outExpWidth + 1), UInt(0))
     val fractOut =
         Mux(isNaNOut || io.in.isZero || common_totalUnderflow,
-            Mux(isNaNOut, UInt(1)<<(outSigWidth - 2), UInt(0)),
+            Mux(isNaNOut, UInt(BigInt(1)<<(outSigWidth - 2)), UInt(0)),
             common_fractOut
         ) |
         Fill(outSigWidth - 1, pegMaxFiniteMagOut)

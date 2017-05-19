@@ -43,10 +43,10 @@ import Chisel._
 //----------------------------------------------------------------------------
 object lowMask
 {
-    def apply(in: UInt, topBound: Int, bottomBound: Int): UInt =
+    def apply(in: UInt, topBound: BigInt, bottomBound: BigInt): UInt =
     {
         require(topBound != bottomBound)
-        val numInVals = 1<<in.getWidth
+        val numInVals = BigInt(1)<<in.getWidth
         if (topBound < bottomBound) {
             lowMask(~in, numInVals - 1 - topBound, numInVals - 1 - bottomBound)
         } else if (numInVals > 64 /* Empirical */) {
@@ -65,7 +65,7 @@ object lowMask
                 } else {
                     Mux(msb,
                         Cat(lowMask(lsbs, topBound - mid, 0),
-                            UInt((BigInt(1)<<(mid - bottomBound)) - 1)
+                            UInt((BigInt(1)<<(mid - bottomBound).toInt) - 1)
                         ),
                         lowMask(lsbs, mid, bottomBound)
                     )
@@ -74,8 +74,13 @@ object lowMask
                 ~Mux(msb, UInt(0), ~lowMask(lsbs, topBound, bottomBound))
             }
         } else {
-            val shift = SInt(BigInt(-1)<<numInVals)>>in
-            Reverse(shift(numInVals - 1 - bottomBound, numInVals - topBound))
+            val shift = SInt(BigInt(-1)<<numInVals.toInt)>>in
+            Reverse(
+                shift(
+                    (numInVals - 1 - bottomBound).toInt,
+                    (numInVals - topBound).toInt
+                )
+            )
         }
     }
 }
