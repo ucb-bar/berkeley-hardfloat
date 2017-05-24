@@ -5,7 +5,7 @@ This Chisel source file is part of a pre-release version of the HardFloat IEEE
 Floating-Point Arithmetic Package, by John R. Hauser (with some contributions
 from Yunsup Lee and Andrew Waterman, mainly concerning testing).
 
-Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016 The Regents of the
+Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 The Regents of the
 University of California.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -148,6 +148,33 @@ object FMATest {
                     testArgs, () => Module(new ValExec_MulAddRecF64_mul))
             case "MulAddRecF64" =>
                 chiselMain(testArgs, () => Module(new ValExec_MulAddRecF64))
+            case "DivSqrtRecF16_small_div" =>
+                chiselMain(
+                    testArgs, () => Module(new ValExec_DivSqrtRecF16_small_div)
+                )
+            case "DivSqrtRecF16_small_sqrt" =>
+                chiselMain(
+                    testArgs,
+                    () => Module(new ValExec_DivSqrtRecF16_small_sqrt)
+                )
+            case "DivSqrtRecF32_small_div" =>
+                chiselMain(
+                    testArgs, () => Module(new ValExec_DivSqrtRecF32_small_div)
+                )
+            case "DivSqrtRecF32_small_sqrt" =>
+                chiselMain(
+                    testArgs,
+                    () => Module(new ValExec_DivSqrtRecF32_small_sqrt)
+                )
+            case "DivSqrtRecF64_small_div" =>
+                chiselMain(
+                    testArgs, () => Module(new ValExec_DivSqrtRecF64_small_div)
+                )
+            case "DivSqrtRecF64_small_sqrt" =>
+                chiselMain(
+                    testArgs,
+                    () => Module(new ValExec_DivSqrtRecF64_small_sqrt)
+                )
             case "DivSqrtRecF64_div" =>
                 chiselMain(
                     testArgs, () => Module(new ValExec_DivSqrtRecF64_div))
