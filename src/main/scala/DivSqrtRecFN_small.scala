@@ -207,10 +207,10 @@ class
     val newBit = (SInt(0) <= trialRem)
 
     when (entering_normalCase || (cycleNum > UInt(2))) {
-        rem_Z := Mux(newBit, trialRem, rem)
+        rem_Z := Mux(newBit, trialRem.asUInt, rem)
     }
     when (entering_normalCase || (! inReady && newBit)) {
-        notZeroRem_Z := (trialRem =/= UInt(0))
+        notZeroRem_Z := (trialRem =/= SInt(0))
         sigX_Z :=
             Mux(inReady && ! io.sqrtOp, newBit<<(sigWidth + 1),    UInt(0)) |
             Mux(inReady &&   io.sqrtOp, UInt(BigInt(1)<<sigWidth), UInt(0)) |
