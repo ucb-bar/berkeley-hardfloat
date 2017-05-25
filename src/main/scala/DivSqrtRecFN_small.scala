@@ -149,7 +149,7 @@ class
 
     when (! idle || io.inValid) {
         cycleNum :=
-            Mux(inReady & ! normalCase_S, UInt(1), UInt(0)) |
+            Mux(entering & ! normalCase_S, UInt(1), UInt(0)) |
             Mux(entering_normalCase,
                 Mux(io.sqrtOp,
                     Mux(rawA_S.sExp(0), UInt(sigWidth), UInt(sigWidth + 1)),
