@@ -61,7 +61,7 @@ To compile and publish the project locally using chisel3:
 
     sbt -DchiselVersion="latest.release" publish-local
 
-This will locall publish the hardfloat library. To use hardfloat in your chisel3 project, simply add the following:
+This will locally publish the hardfloat library. To use hardfloat in your chisel3 project, simply add the following:
 
     import chisel3._
     import hardfloat._
