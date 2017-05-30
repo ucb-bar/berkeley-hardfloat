@@ -73,6 +73,12 @@ tests = \
  MulAddRecF64_add \
  MulAddRecF64_mul \
  MulAddRecF64 \
+ DivSqrtRecF16_small_div \
+ DivSqrtRecF16_small_sqrt \
+ DivSqrtRecF32_small_div \
+ DivSqrtRecF32_small_sqrt \
+ DivSqrtRecF64_small_div \
+ DivSqrtRecF64_small_sqrt \
  DivSqrtRecF64_div \
  DivSqrtRecF64_sqrt \
  CompareRecF16_lt \
@@ -357,6 +363,12 @@ $(eval $(call otherTest_template,MulAddRecF32,f32_mulAdd,))
 $(eval $(call otherTest_template,MulAddRecF64_add,f64_add,))
 $(eval $(call otherTest_template,MulAddRecF64_mul,f64_mul,))
 $(eval $(call otherTest_template,MulAddRecF64,f64_mulAdd,))
+$(eval $(call otherTest_template,DivSqrtRecF16_small_div,f16_div,))
+$(eval $(call otherTest_template,DivSqrtRecF16_small_sqrt,f16_sqrt,-level2))
+$(eval $(call otherTest_template,DivSqrtRecF32_small_div,f32_div,))
+$(eval $(call otherTest_template,DivSqrtRecF32_small_sqrt,f32_sqrt,-level2))
+$(eval $(call otherTest_template,DivSqrtRecF64_small_div,f64_div,))
+$(eval $(call otherTest_template,DivSqrtRecF64_small_sqrt,f64_sqrt,-level2))
 $(eval $(call otherTest_template,DivSqrtRecF64_div,f64_div,))
 $(eval $(call otherTest_template,DivSqrtRecF64_sqrt,f64_sqrt,-level2))
 
