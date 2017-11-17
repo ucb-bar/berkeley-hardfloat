@@ -44,25 +44,25 @@ class
         inExpWidth: Int, inSigWidth: Int, outExpWidth: Int, outSigWidth: Int)
     extends Module
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         val in = Bits(INPUT, inExpWidth + inSigWidth)
         val roundingMode   = UInt(INPUT, 3)
         val detectTininess = UInt(INPUT, 1)
 
-        val expected = new Bundle {
+        val expected = IO(new Bundle {
             val out = Bits(INPUT, outExpWidth + outSigWidth)
             val exceptionFlags = Bits(INPUT, 5)
             val recOut = Bits(OUTPUT, outExpWidth + outSigWidth + 1)
-        }
+        })
 
-        val actual = new Bundle {
+        val actual = IO(new Bundle {
             val out = Bits(OUTPUT, outExpWidth + outSigWidth + 1)
             val exceptionFlags = Bits(OUTPUT, 5)
-        }
+        })
 
         val check = Bool(OUTPUT)
         val pass = Bool(OUTPUT)
-    }
+    })
 
     val recFNToRecFN =
         Module(

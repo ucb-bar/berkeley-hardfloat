@@ -49,7 +49,7 @@ class
     DivSqrtRecFNToRaw_small(expWidth: Int, sigWidth: Int, options: Int)
     extends Module
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         /*--------------------------------------------------------------------
         *--------------------------------------------------------------------*/
         val inReady        = Bool(OUTPUT)
@@ -66,7 +66,7 @@ class
         val invalidExc       = Bool(OUTPUT)
         val infiniteExc      = Bool(OUTPUT)
         val rawOut = new RawFloat(expWidth, sigWidth + 2).asOutput
-    }
+    })
 
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
@@ -243,7 +243,7 @@ class
     DivSqrtRecFN_small(expWidth: Int, sigWidth: Int, options: Int)
     extends Module
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         /*--------------------------------------------------------------------
         *--------------------------------------------------------------------*/
         val inReady        = Bool(OUTPUT)
@@ -259,7 +259,7 @@ class
         val outValid_sqrt  = Bool(OUTPUT)
         val out            = Bits(OUTPUT, expWidth + sigWidth + 1)
         val exceptionFlags = Bits(OUTPUT, 5)
-    }
+    })
 
     //------------------------------------------------------------------------
     //------------------------------------------------------------------------

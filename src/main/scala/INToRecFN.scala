@@ -42,14 +42,14 @@ import consts._
 
 class INToRecFN(intWidth: Int, expWidth: Int, sigWidth: Int) extends Module
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         val signedIn = Bool(INPUT)
         val in = Bits(INPUT, intWidth)
         val roundingMode   = UInt(INPUT, 3)
         val detectTininess = UInt(INPUT, 1)
         val out = Bits(OUTPUT, expWidth + sigWidth + 1)
         val exceptionFlags = Bits(OUTPUT, 5)
-    }
+    })
 
     //------------------------------------------------------------------------
     //------------------------------------------------------------------------

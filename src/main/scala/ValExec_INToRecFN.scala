@@ -43,25 +43,25 @@ class
     ValExec_UINToRecFN(intWidth: Int, expWidth: Int, sigWidth: Int)
     extends Module
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         val in = Bits(INPUT, intWidth)
         val roundingMode   = UInt(INPUT, 3)
         val detectTininess = UInt(INPUT, 1)
 
-        val expected = new Bundle {
+        val expected = IO(new Bundle {
             val out = Bits(INPUT, expWidth + sigWidth)
             val exceptionFlags = Bits(INPUT, 5)
             val recOut = Bits(OUTPUT, expWidth + sigWidth + 1)
-        }
+        })
 
-        val actual = new Bundle {
+        val actual = IO(new Bundle {
             val out = Bits(OUTPUT, expWidth + sigWidth + 1)
             val exceptionFlags = Bits(OUTPUT, 5)
-        }
+        })
 
         val check = Bool(OUTPUT)
         val pass = Bool(OUTPUT)
-    }
+    })
 
     val iNToRecFN = Module(new INToRecFN(intWidth, expWidth, sigWidth))
     iNToRecFN.io.signedIn := Bool(false)
@@ -91,25 +91,25 @@ class
     ValExec_INToRecFN(intWidth: Int, expWidth: Int, sigWidth: Int)
     extends Module
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         val in = Bits(INPUT, intWidth)
         val roundingMode   = UInt(INPUT, 3)
         val detectTininess = UInt(INPUT, 1)
 
-        val expected = new Bundle {
+        val expected = IO(new Bundle {
             val out = Bits(INPUT, expWidth + sigWidth)
             val exceptionFlags = Bits(INPUT, 5)
             val recOut = Bits(OUTPUT, expWidth + sigWidth + 1)
-        }
+        })
 
-        val actual = new Bundle {
+        val actual = IO(new Bundle {
             val out = Bits(OUTPUT, expWidth + sigWidth + 1)
             val exceptionFlags = Bits(OUTPUT, 5)
-        }
+        })
 
         val check = Bool(OUTPUT)
         val pass = Bool(OUTPUT)
-    }
+    })
 
     val iNToRecFN = Module(new INToRecFN(intWidth, expWidth, sigWidth))
     iNToRecFN.io.signedIn := Bool(true)
