@@ -5,8 +5,8 @@ This Chisel source file is part of a pre-release version of the HardFloat IEEE
 Floating-Point Arithmetic Package, by John R. Hauser (with some contributions
 from Yunsup Lee and Andrew Waterman, mainly concerning testing).
 
-Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 The Regents of the
-University of California.  All rights reserved.
+Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 The Regents of
+the University of California.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -49,7 +49,7 @@ object consts {
     def round_min         = UInt("b010", 3)
     def round_max         = UInt("b011", 3)
     def round_near_maxMag = UInt("b100", 3)
-    def round_odd         = UInt("b101", 3)
+    def round_odd         = UInt("b110", 3)
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
     def tininess_beforeRounding = UInt(0, 1)
@@ -78,6 +78,6 @@ class RawFloat(val expWidth: Int, val sigWidth: Int) extends Bundle
 //*** CHANGE THIS INTO A '.isSigNaN' METHOD OF THE 'RawFloat' CLASS:
 object isSigNaNRawFloat
 {
-    def apply(in: RawFloat): Bool = in.isNaN && ! in.sig(in.sigWidth - 2)
+    def apply(in: RawFloat): Bool = in.isNaN && !in.sig(in.sigWidth - 2)
 }
 
