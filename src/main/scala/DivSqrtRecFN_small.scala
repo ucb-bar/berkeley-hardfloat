@@ -85,7 +85,7 @@ sig_{s+1} = x_{s+1} * b_{s+1} * pow2(s+2) = x_{s+1} * pow2((s-1)/2) // Shifting 
 
 Hauser's for odd exp:
 ---------------------
-actualInp = 1x.xxxxxxxxxx (width s+1, i.e. s-1 mantissa, 2 rest)
+actualInp = 2*inp (as the remainder for the odd exponent when divided by 2 is observed by the mantissa)
 
 bit_1 = pow2(s-1)
 c_1 = {inp[s-1:s-2]-1, inp[s-3:0], 3'b0} >= {3'b101, (s-1)'b0} <-> {inp, 3'b0} >= {4'b1001, (s-1)'b0}
