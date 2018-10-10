@@ -34,6 +34,104 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =============================================================================*/
 
+/*
+
+Square root:
+
+s = sigWidth
+c_i = newBit
+
+
+Normal
+------
+(x + b)^2 <= inp
+x^2 + b * (2x + b) <= inp
+-------------------------
+x_1^2 <= inp //x_1 <= pow2((s-1)/2)
+b_1 = pow2((s-1)/2)/2
+r_1 = inp - pow2(s-1)
+c_i = bi * (2*x_i + b_i) <= ri
+x_{i+1} = x_i + c_i * b_i
+r_{i+1} = r_i - b_i * (2*x_i + b_i)
+b_{i+1} = b_i/2 = b_1/pow2(i) = pow2((s-1)/2)/pow2(i+1)
+-----------------------------
+i = 1 to inf
+------------
+
+
+Hauser's for even exp:
+----------------------
+inp = 1.xxxxxxxxx
+
+sig_i = x_i * b_i * pow2(i+1)
+bit_i = b_i^2 * (pow2(i+1))
+rem_i = r_i * pow2(i)
+---------------------
+sig_1 <= pow2(s)
+bit_1 = pow2(s-1)
+rem_1 = 2*inp-pow2(s)
+---------------------
+c_i = 2*sig_i + bit_i <= 2*rem_i
+sig_{i+1} = sig_i + c_i * bit_i
+rem_{i+1} = 2*rem_i - c_i*(2*sig_i + bit_i)
+bit_{i+1} = bit_i/2 = bit_1/pow2(i) = b_1^2*pow2(2)/pow2(i) = pow2((s-1)/2)/pow2(i)
+-------------------------------------------------------------------------
+i = 1 to (s+1)
+--------------
+At {s+1}
+sig_{s+1} = x_{s+1} * b_{s+1} * pow2(s+2) = x_{s+1} * pow2((s-1)/2) // Shifting by (s-1)/2 bits
+
+
+
+Hauser's for odd exp:
+---------------------
+actualInp = 1x.xxxxxxxxxx (width s+1, i.e. s-1 mantissa, 2 rest)
+
+bit_1 = pow2(s-1)
+c_1 = {inp[s-1:s-2]-1, inp[s-3:0], 3'b0} >= {3'b101, (s-1)'b0} <-> {inp, 3'b0} >= {4'b1001, (s-1)'b0}
+sig_2 = {1'b1, c_1, (s-1)'b0}
+rem_2 = {inp[s-1:s-2]-1, inp[s-3:0], 3'b0} - c_1 * {3'b101, (s-1)'b0}
+---------------------------------------------------------------------
+i = 2 to s+1
+
+// One extra step is done in the beginning, that's all.
+
+----------------------------------
+sig_2 = sig_1 + c_1 * bit_1
+rem_2 = 2*rem_1 - c_1 * (2*sig_1 + bit_1)
+
+
+c_1 = 2*pow2(s) + pow2(s-1) <= 2*(2*(2*inp) - pow2(s)) <-> 4*pow2(s) + pow2(s-1) <= 4*(2*inp) <-> 9*pow2(s-1) <= 4*(2*inp) <-> {4'b1001, (s-1)'b0} <= 4*(inp * 2)
+sig_1 = pow2(s)
+rem_1 = 2*(2*inp) - pow2(s)
+bit_1 = pow2(s-1)
+
+sig_2 = pow2(s) + c_1 * pow2(s-1) = {1'b1, c_1, (s-1)'b0}
+rem_2 = 2*(2*(2*inp) - pow2(s)) - c_1 * (2*pow2(s) + pow2(s-1))
+      = 8*inp - 4*pow2(s-1) - c_1*(5*pow2(s-1))
+      = {inp[s-1:s-2]-1, inp[s-3:0], 3'b0} - c_1*{3'b101, (s-1)'b0}
+
+// Again, odd just does two steps instead of 1 in the beginning
+
+
+notZeroRem_Z is enough for rounding because Hauser calculates one extra bit and saves the rest, if non-zero, as 1 (using notZeroRem_Z). It works for every rounding mode.
+
+Note that all registers are updated normally until cycleNum == 2.
+At cycleNum == 2, rem_Z is not updated, but all other registers are updated normally.
+But, cycleNum == 1 does not read rem_Z to calculate anything, including notZeroRem_Z. So everything is fine.
+
+*/
+
+
+
+
+
+
+
+
+
+
+
 package hardfloat
 
 import Chisel._
