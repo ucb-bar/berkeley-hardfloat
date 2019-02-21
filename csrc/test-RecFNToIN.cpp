@@ -1,31 +1,29 @@
+#include "dut.h"
 
 // include files are part of the g++ command line
 
-#define _SIGNAL(fw, iw, s) (&module->ValExec_RecF##fw##ToI##iw##__io_##s)
-#define SIGNAL(fw, iw, s) _SIGNAL(fw, iw, s)
-
-static int process_inputs(dat_t<FLEN>* input)
+static int process_inputs(dut& m)
 {
     char value[64];
 
     if (scanf("%s", value) != 1) return 0;
-    dat_from_hex<FLEN>(value, *input);
+    m.io_in = strtoll(value, NULL, 16);
     return 1;
 }
 
 static
- int
-  process_outputs(dat_t<ILEN>* expected_out, dat_t<5>* expected_exceptionFlags)
+int
+process_outputs(dut& m)
 {
     char value[64];
 
     // output
     if (scanf("%s", value) != 1) return 0;
-    dat_from_hex<ILEN>(value, *expected_out);
+    m.io_expected_out = strtoll(value, NULL, 16);
 
     // exception flags
     if (scanf("%s", value) != 1) return 0;
-    dat_from_hex<5>(value, *expected_exceptionFlags);
+    m.io_expected_exceptionFlags = strtoll(value, NULL, 16);
 
     return 1;
 }
@@ -37,63 +35,48 @@ int main (int argc, char* argv[])
         return -1;
     }
 
-    dat_t<3>* roundingMode;
-    dat_t<FLEN>* input;
-    dat_t<ILEN>* expected_out;
-    dat_t<5>* expected_exceptionFlags;
-    dat_t<ILEN>* actual_out;
-    dat_t<5>* actual_exceptionFlags;
-    dat_t<1>* check;
-    dat_t<1>* pass;
-    dut_t* module = new dut_t();
+    dut module;
     size_t cnt = 0;
     size_t error = 0;
     char value[64];
 
-    module->init();
-
-    roundingMode = SIGNAL(FLEN, ILEN, roundingMode);
-    input = SIGNAL(FLEN, ILEN, in);
-    expected_out = SIGNAL(FLEN, ILEN, expected_out);
-    expected_exceptionFlags = SIGNAL(FLEN, ILEN, expected_exceptionFlags);
-    actual_out = SIGNAL(FLEN, ILEN, actual_out);
-    actual_exceptionFlags = SIGNAL(FLEN, ILEN, actual_exceptionFlags);
-    check = SIGNAL(FLEN, ILEN, check);
-    pass = SIGNAL(FLEN, ILEN, pass);
-
-    dat_from_hex<3>(argv[1], *roundingMode);
+    module.io_roundingMode = strtoll(argv[1], NULL, 16);
 
     // reset
     for (size_t i=0; i<10; i++) {
-        module->clock_lo(LIT<1>(1));
-        module->clock_hi(LIT<1>(1));
+        module.reset = 1;
+        module.clock = 0;
+        module.eval();
+        module.clock = 1;
+        module.eval();
     }
 
     // main operation
     for (;;) {
         if (
-               ! process_inputs(input)
-            || ! process_outputs(expected_out, expected_exceptionFlags)
+               ! process_inputs(module)
+            || ! process_outputs(module)
         ) {
             printf("Ran %ld tests.\n", cnt);
             if (!error) fputs("No errors found.\n", stdout);
             break;
         }
 
-        module->clock_lo(LIT<1>(0));
+        module.clock = 0;
+        module.eval();
 
-        if (check->to_bool()) {
+        if (module.io_check) {
             if ((cnt % 10000 == 0) && cnt) printf("Ran %ld tests.\n", cnt);
-            if (!pass->to_bool()) {
+            if (!module.io_pass) {
                 error++;
                 printf("[%07ld]", cnt);
-                printf(" %s", input->to_str().c_str());
+                printf(" %#x", module.io_in);
                 printf(
-                    "\n\t=> %s %s   expected: %s %s\n",
-                    actual_out->to_str().c_str(),
-                    actual_exceptionFlags->to_str().c_str(),
-                    expected_out->to_str().c_str(),
-                    expected_exceptionFlags->to_str().c_str()
+                    "\n\t=> %#x %#x   expected: %#x %#x\n",
+                    module.io_actual_out,
+                    module.io_actual_exceptionFlags,
+                    module.io_expected_out,
+                    module.io_expected_exceptionFlags
                 );
                 if (error == 20) {
                     printf("Reached %ld errors. Aborting.\n", error);
@@ -103,7 +86,8 @@ int main (int argc, char* argv[])
             cnt++;
         }
 
-        module->clock_hi(LIT<1>(0));
+        module.clock = 1;
+        module.eval();
     }
 
     return 0;
