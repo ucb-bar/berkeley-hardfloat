@@ -34,6 +34,155 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =============================================================================*/
 
+
+
+
+/*
+
+s = sigWidth
+c_i = newBit
+
+Division:
+width of a is (s+2)
+
+Normal
+------
+
+(qi + ci * 2^(-i))*b <= a
+q0 = 0
+r0 = a
+
+q(i+1) = qi + ci*2^(-i)
+ri = a - qi*b
+r(i+1) = a - q(i+1)*b
+       = a - qi*b - ci*2^(-i)*b
+r(i+1) = ri - ci*2^(-i)*b
+ci = ri >= 2^(-i)*b
+summary_i = ri != 0
+
+i = 0 to s+1
+
+(s+1)th bit plus summary_(i+1) gives enough information for rounding
+If (a < b), then we need to calculate (s+2)th bit and summary_(i+1)
+because we need s bits ignoring the leading zero. (This is skipCycle2
+part of Hauser's code.)
+
+Hauser
+------
+sig_i = qi
+rem_i = 2^(i-2)*ri
+cycle_i = s+3-i
+
+sig_0 = 0
+rem_0 = a/4
+cycle_0 = s+3
+bit_0 = 2^0 (= 2^(s+1), since we represent a, b and q with (s+2) bits)
+
+sig(i+1) = sig(i) + ci*bit_i
+rem(i+1) = 2rem_i - ci*b/2
+ci = 2rem_i >= b/2
+bit_i = 2^-i (=2^(cycle_i-2), since we represent a, b and q with (s+2) bits)
+cycle(i+1) = cycle_i-1
+summary_1 = a <> b
+summary(i+1) = if ci then 2rem_i-b/2 <> 0 else summary_i, i <> 0
+
+Proof:
+2^i*r(i+1) = 2^i*ri - ci*b. Qed
+
+ci = 2^i*ri >= b. Qed
+
+summary(i+1) = if ci then rem(i+1) else summary_i, i <> 0
+Now, note that all of ck's cannot be 0, since that means
+a is 0. So when you traverse through a chain of 0 ck's,
+from the end,
+eventually, you reach a non-zero cj. That is exactly the
+value of ri as the reminder remains the same. When all ck's
+are 0 except c0 (which must be 1) then summary_1 is set
+correctly according
+to r1 = a-b != 0. So summary(i+1) is always set correctly
+according to r(i+1)
+
+
+
+Square root:
+width of a is (s+1)
+
+Normal
+------
+(xi + ci*2^(-i))^2 <= a
+xi^2 + ci*2^(-i)*(2xi+ci*2^(-i)) <= a
+
+x0 = 0
+x(i+1) = xi + ci*2^(-i)
+ri = a - xi^2
+r(i+1) = a - x(i+1)^2
+       = a - (xi^2 + ci*2^(-i)*(2xi+ci*2^(-i)))
+       = ri - ci*2^(-i)*(2xi+ci*2^(-i))
+       = ri - ci*2^(-i)*(2xi+2^(-i))  // ci is always 0 or 1
+ci = ri >= 2^(-i)*(2xi + 2^(-i))
+summary_i = ri != 0
+
+
+i = 0 to s+1
+
+For odd expression, do 2 steps initially.
+
+(s+1)th bit plus summary_(i+1) gives enough information for rounding.
+
+Hauser
+------
+
+sig_i = xi
+rem_i = ri*2^(i-1)
+cycle_i = s+2-i
+bit_i = 2^(-i) (= 2^(s-i) = 2^(cycle_i-2) in terms of bit representation)
+
+sig_0 = 0
+rem_0 = a/2
+cycle_0 = s+2
+bit_0 = 1 (= 2^s in terms of bit representation)
+
+sig(i+1) = sig_i + ci * bit_i
+rem(i+1) = 2rem_i - ci*(2sig_i + bit_i)
+ci = 2*sig_i + bit_i <= 2*rem_i
+bit_i = 2^(cycle_i-2) (in terms of bit representation)
+cycle(i+1) = cycle_i-1
+summary_1 = a - (2^s) (in terms of bit representation) 
+summary(i+1) = if ci then rem(i+1) <> 0 else summary_i, i <> 0
+
+
+Proof:
+ci = 2*sig_i + bit_i <= 2*rem_i
+ci = 2xi + 2^(-i) <= ri*2^i. Qed
+
+sig(i+1) = sig_i + ci * bit_i
+x(i+1) = xi + ci*2^(-i). Qed
+
+rem(i+1) = 2rem_i - ci*(2sig_i + bit_i)
+r(i+1)*2^i = ri*2^i - ci*(2xi + 2^(-i))
+r(i+1) = ri - ci*2^(-i)*(2xi + 2^(-i)). Qed
+
+Same argument as before for summary.
+
+
+------------------------------
+Note that all registers are updated normally until cycle == 2.
+At cycle == 2, rem is not updated, but all other registers are updated normally.
+But, cycle == 1 does not read rem to calculate anything (note that final summary
+is calculated using the values at cycle = 2).
+
+*/
+
+
+
+
+
+
+
+
+
+
+
 package hardfloat
 
 import Chisel._
