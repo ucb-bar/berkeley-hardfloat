@@ -7,7 +7,7 @@ static int process_inputs(dut& m)
     char value[64];
 
     if (scanf("%s", value) != 1) return 0;
-    m.io_in = strtoll(value, NULL, 16);
+    m.io_in = strtoull(value, NULL, 16);
     return 1;
 }
 
@@ -19,11 +19,11 @@ process_outputs(dut& m)
 
     // output
     if (scanf("%s", value) != 1) return 0;
-    m.io_expected_out = strtoll(value, NULL, 16);
+    m.io_expected_out = strtoull(value, NULL, 16);
 
     // exception flags
     if (scanf("%s", value) != 1) return 0;
-    m.io_expected_exceptionFlags = strtoll(value, NULL, 16);
+    m.io_expected_exceptionFlags = strtoull(value, NULL, 16);
 
     return 1;
 }
@@ -40,7 +40,7 @@ int main (int argc, char* argv[])
     size_t error = 0;
     char value[64];
 
-    module.io_roundingMode = strtoll(argv[1], NULL, 16);
+    module.io_roundingMode = strtoull(argv[1], NULL, 16);
 
     // reset
     for (size_t i=0; i<10; i++) {

@@ -5,9 +5,10 @@ static int process_inputs(dut& m)
     char value[64];
 
     if (scanf("%s", value) != 1) return 0;
-    m.io_a = strtoll(value, NULL, 16);
+    m.io_a = strtoull(value, NULL, 16);
     if (scanf("%s", value) != 1) return 0;
-    m.io_b = strtoll(value, NULL, 16);
+    m.io_b = strtoull(value, NULL, 16);
+
     return 1;
 }
 
@@ -18,11 +19,11 @@ int process_outputs(dut& m)
 
     // output
     if (scanf("%s", value) != 1) return 0;
-    m.io_expected_out = strtoll(value, NULL, 16);
+    m.io_expected_out = strtoull(value, NULL, 16);
 
     // exception flags
     if (scanf("%s", value) != 1) return 0;
-    m.io_expected_exceptionFlags = strtoll(value, NULL, 16);
+    m.io_expected_exceptionFlags = strtoull(value, NULL, 16);
 
     return 1;
 }

@@ -10,8 +10,8 @@ int main (int argc, char* argv[])
 
     dut module;
     initialize_dut(module);
-    module.ROUNDING_MODE = strtoll(argv[1], NULL, 16);
-    module.DETECT_TININESS = strtoll(argv[2], NULL, 16);
+    module.ROUNDING_MODE = strtoull(argv[1], NULL, 16);
+    module.DETECT_TININESS = strtoull(argv[2], NULL, 16);
 
     size_t error = 0;
     size_t cnt = 0;

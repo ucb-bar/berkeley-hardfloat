@@ -28,7 +28,7 @@ int main (int argc, char* argv[])
             if (!error) fputs("No errors found.\n", stdout);
             break;
         }
-        module.io_a = strtoll(value, NULL, 16);
+        module.io_a = strtoull(value, NULL, 16);
         // dat_from_hex<FLEN>(value, *input);
 
         module.clock = 0;
