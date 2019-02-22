@@ -41,13 +41,13 @@ static int process_outputs(dut& m)
   if (scanf("%s", value) != 1) {
     return 0;
   }
-  m.io_expected_out = strtoull(value, NULL, 16);
+  m.io_input_bits_out = strtoull(value, NULL, 16);
 
   // exception flags
   if (scanf("%s", value) != 1) {
     return 0;
   }
-  m.io_expected_exceptionFlags = strtoull(value, NULL, 16);
+  m.io_input_bits_exceptionFlags = strtoull(value, NULL, 16);
 
   return 1;
 }
