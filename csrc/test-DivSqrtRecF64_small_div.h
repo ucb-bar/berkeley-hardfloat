@@ -1,7 +1,5 @@
-
-#include "ValExec_DivSqrtRecF64_small_div.h"
-
-#define dut_t ValExec_DivSqrtRecF64_small_div_t
 #define FLEN 64
 #include "test-DivSqrtRecFN_small_div.h"
 
+#define ROUNDING_MODE io_input_bits_roundingMode
+#define DETECT_TININESS io_input_bits_detectTininess

@@ -8,45 +8,49 @@ int main (int argc, char* argv[])
         return -1;
     }
 
-    dut_t* module = new dut_t();
-    module->init();
-    initialize_dat_pointers(module);
-    dat_from_hex<3>(argv[1], *roundingMode);
-    dat_from_hex<1>(argv[2], *detectTininess);
+    dut module;
+    initialize_dut(module);
+    module.ROUNDING_MODE = strtoull(argv[1], NULL, 16);
+    module.DETECT_TININESS = strtoull(argv[2], NULL, 16);
 
     size_t error = 0;
     size_t cnt = 0;
 
     // reset
     for (size_t i=0; i<10; i++) {
-        module->clock_lo(LIT<1>(1));
-        module->clock_hi(LIT<1>(1));
+        module.reset = 1;
+        module.clock = 0;
+        module.eval();
+        module.clock = 1;
+        module.eval();
     }
+    module.reset = 0;
 
     // main operation
     for (;;) {
-        if (!process_inputs() || !process_outputs()) {
+        if (!process_inputs(module) || !process_outputs(module)) {
             printf("Ran %ld tests.\n", cnt);
             if (!error) fputs("No errors found.\n", stdout);
             break;
         }
 
-        module->clock_lo(LIT<1>(0));
+        module.clock = 0;
+        module.eval();
 
-        if (check->to_bool()) {
+        if (module.io_check) {
             if ((cnt % 10000 == 0) && cnt) printf("Ran %ld tests.\n", cnt);
-            if (!pass->to_bool()) {
+            if (!module.io_pass) {
                 error++;
                 printf("[%07ld]", cnt);
-                for (size_t i=0; i<inputs.size(); i++) {
-                    printf(" %s", inputs[i]->to_str().c_str());
-                }
+                // for (size_t i=0; i<inputs.size(); i++) {
+                //    printf(" %s", inputs[i]->to_str().c_str());
+                // }
                 printf(
-                    "\n\t=> %s %s   expected: %s %s\n",
-                    actual_out->to_str().c_str(),
-                    actual_exceptionFlags->to_str().c_str(),
-                    expected_recOut->to_str().c_str(),
-                    expected_exceptionFlags->to_str().c_str()
+                    "\n\t=> %#x %#x   expected: %#x %#x\n",
+                    module.io_actual_out,
+                    module.io_actual_exceptionFlags,
+                    module.io_expected_recOut,
+                    module.io_expected_exceptionFlags
                 );
                 if (error == 20) {
                     printf("Reached %ld errors. Aborting.\n", error);
@@ -56,7 +60,8 @@ int main (int argc, char* argv[])
             cnt++;
         }
 
-        module->clock_hi(LIT<1>(0));
+        module.clock = 1;
+        module.eval();
     }
 
     return 0;

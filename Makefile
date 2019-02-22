@@ -1,5 +1,4 @@
-
-CHISEL_VERSION = 2.2.38
+CHISEL_VERSION = 3.2-SNAPSHOT
 
 #default: test-c test-v
 default: test-c
@@ -89,20 +88,21 @@ tests = \
  CompareRecF32_eq \
  CompareRecF64_lt \
  CompareRecF64_le \
- CompareRecF64_eq \
+ CompareRecF64_eq
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 
 define test_fNFromRecFN_template
 
-test-$(1)/ValExec_$(1).cpp: src/main/scala/*.scala
-	sbt -DchiselVersion=$(CHISEL_VERSION) "run $(1) --targetDir test-$(1)"
+test-$(1)/ValExec_$(1).v: src/main/scala/*.scala
+	sbt -Dchisel3Version=$(CHISEL_VERSION) "run $(1) -td test-$(1)"
 
-test-$(1)/dut: test-$(1)/ValExec_$(1).cpp csrc/*.h csrc/*.cpp
-	g++ -c -o test-$(1)/test.o -Icsrc -Itest-$(1) -include csrc/test-$(1).h csrc/test-fNFromRecFN.cpp
-	g++ -c -o test-$(1)/ValExec_$(1).o $$<
-	g++ -o $$@ test-$(1)/ValExec_$(1).o test-$(1)/test.o
+test-$(1)/dut.mk: test-$(1)/ValExec_$(1).v
+	verilator -cc --prefix dut --Mdir test-$(1) -CFLAGS "-Icsrc/ -include ../csrc/test-$(1).h" test-$(1)/ValExec_$(1).v --exe csrc/test-fNFromRecFN.cpp
+
+test-$(1)/dut: test-$(1)/dut.mk
+	cd test-$(1) && make -f dut.mk dut
 
 test-c-$(1).log: test-$(1)/dut $(TESTFLOAT_GEN)
 	{ $(TESTFLOAT_GEN) $(3) $(2) | $$< ; } > $$@ 2>&1
@@ -118,13 +118,14 @@ endef
 
 define test_RecFNToUIN_template
 
-test-$(1)/ValExec_$(1).cpp: src/main/scala/*.scala
-	sbt -DchiselVersion=$(CHISEL_VERSION) "run $(1) --targetDir test-$(1)"
+test-$(1)/ValExec_$(1).v: src/main/scala/*.scala
+	sbt -Dchisel3Version=$(CHISEL_VERSION) "run $(1) -td test-$(1)"
 
-test-$(1)/dut: test-$(1)/ValExec_$(1).cpp csrc/*.h csrc/*.cpp
-	g++ -c -o test-$(1)/test.o -Icsrc -Itest-$(1) -include csrc/test-$(1).h csrc/test-RecFNToUIN.cpp
-	g++ -c -o test-$(1)/ValExec_$(1).o $$<
-	g++ -o $$@ test-$(1)/ValExec_$(1).o test-$(1)/test.o
+test-$(1)/dut.mk: test-$(1)/ValExec_$(1).v
+	verilator -cc --prefix dut --Mdir test-$(1) -CFLAGS "-Icsrc/ -include ../csrc/test-$(1).h" test-$(1)/ValExec_$(1).v --exe csrc/test-RecFNToUIN.cpp
+
+test-$(1)/dut: test-$(1)/dut.mk
+	cd test-$(1) && make -f dut.mk dut
 
 test-c-$(1).near_even.log: test-$(1)/dut $(TESTFLOAT_GEN)
 	{ $(TESTFLOAT_GEN) -rnear_even -exact $(3) $(2) | $$< 0 ; } > $$@ 2>&1
@@ -161,13 +162,14 @@ endef
 
 define test_RecFNToIN_template
 
-test-$(1)/ValExec_$(1).cpp: src/main/scala/*.scala
-	sbt -DchiselVersion=$(CHISEL_VERSION) "run $(1) --targetDir test-$(1)"
+test-$(1)/ValExec_$(1).v: src/main/scala/*.scala
+	sbt -Dchisel3Version=$(CHISEL_VERSION) "run $(1) -td test-$(1)"
 
-test-$(1)/dut: test-$(1)/ValExec_$(1).cpp csrc/*.h csrc/*.cpp
-	g++ -c -o test-$(1)/test.o -Icsrc -Itest-$(1) -include csrc/test-$(1).h csrc/test-RecFNToIN.cpp
-	g++ -c -o test-$(1)/ValExec_$(1).o $$<
-	g++ -o $$@ test-$(1)/ValExec_$(1).o test-$(1)/test.o
+test-$(1)/dut.mk: test-$(1)/ValExec_$(1).v
+	verilator -cc --prefix dut --Mdir test-$(1) -CFLAGS "-Icsrc/ -include ../csrc/test-$(1).h" test-$(1)/ValExec_$(1).v --exe csrc/test-RecFNToIN.cpp
+
+test-$(1)/dut: test-$(1)/dut.mk
+	cd test-$(1) && make -f dut.mk dut
 
 test-c-$(1).near_even.log: test-$(1)/dut $(TESTFLOAT_GEN)
 	{ $(TESTFLOAT_GEN) -rnear_even -exact $(3) $(2) | $$< 0 ; } > $$@ 2>&1
@@ -204,13 +206,14 @@ endef
 
 define test_CompareRecFN_template
 
-test-$(1)/ValExec_$(1).cpp: src/main/scala/*.scala
-	sbt -DchiselVersion=$(CHISEL_VERSION) "run $(1) --targetDir test-$(1)"
+test-$(1)/ValExec_$(1).v: src/main/scala/*.scala
+	sbt -Dchisel3Version=$(CHISEL_VERSION) "run $(1) -td test-$(1)"
 
-test-$(1)/dut: test-$(1)/ValExec_$(1).cpp csrc/*.h csrc/*.cpp
-	g++ -c -o test-$(1)/test.o -Icsrc -Itest-$(1) -include csrc/test-$(1).h csrc/test-CompareRecFN.cpp
-	g++ -c -o test-$(1)/ValExec_$(1).o $$<
-	g++ -o $$@ test-$(1)/ValExec_$(1).o test-$(1)/test.o
+test-$(1)/dut.mk: test-$(1)/ValExec_$(1).v
+	verilator -cc --prefix dut --Mdir test-$(1) -CFLAGS "-Icsrc/ -include ../csrc/test-$(1).h" test-$(1)/ValExec_$(1).v --exe csrc/test-CompareRecFN.cpp
+
+test-$(1)/dut: test-$(1)/dut.mk
+	cd test-$(1) && make -f dut.mk dut
 
 test-c-$(1).log: test-$(1)/dut $(TESTFLOAT_GEN)
 	{ $(TESTFLOAT_GEN) $(3) $(2) | $$< ; } > $$@ 2>&1
@@ -226,13 +229,14 @@ endef
 
 define otherTest_template
 
-test-$(1)/ValExec_$(1).cpp: src/main/scala/*.scala
-	sbt -DchiselVersion=$(CHISEL_VERSION) "run $(1) --targetDir test-$(1)"
+test-$(1)/ValExec_$(1).v: src/main/scala/*.scala
+	sbt -Dchisel3Version=$(CHISEL_VERSION) "run $(1) -td test-$(1)"
 
-test-$(1)/dut: test-$(1)/ValExec_$(1).cpp csrc/*.h csrc/*.cpp
-	g++ -c -o test-$(1)/test.o -Icsrc -Itest-$(1) -include csrc/test-$(1).h csrc/test.cpp
-	g++ -c -o test-$(1)/ValExec_$(1).o $$<
-	g++ -o $$@ test-$(1)/ValExec_$(1).o test-$(1)/test.o
+test-$(1)/dut.mk: test-$(1)/ValExec_$(1).v
+	verilator -cc --prefix dut --Mdir test-$(1) -CFLAGS "-Icsrc/ -include ../csrc/test-$(1).h" test-$(1)/ValExec_$(1).v --exe csrc/test.cpp
+
+test-$(1)/dut: test-$(1)/dut.mk
+	cd test-$(1) && make -f dut.mk dut
 
 test-c-$(1).near_even.t-before.log: test-$(1)/dut $(TESTFLOAT_GEN)
 	{ $(TESTFLOAT_GEN) -rnear_even -tininessbefore $(3) $(2) | $$< 0 0 ; } > $$@ 2>&1
@@ -287,7 +291,7 @@ test-c-$(1): \
 
 #*** FOR VERILOG TESTING:
 #test-$(1)/ValExec_$(1).v: src/main/scala/*.scala
-#	sbt -DchiselVersion=$(CHISEL_VERSION) "run $(1) --targetDir test-$(1) --backend v"
+#	sbt -Dchisel3Version=$(CHISEL_VERSION) "run $(1) --targetDir test-$(1) --backend v"
 #
 #test-$(1)/simv: test-$(1)/ValExec_$(1).v
 #	cd test-$(1) && vcs -full64 -timescale=1ns/10ps +define+EXPERIMENT=\"emulator-$(1).vh\" +incdir+../vsrc +rad $$(notdir $$<) ../vsrc/emulator.v -o $$(notdir $$@)

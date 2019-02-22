@@ -1,32 +1,25 @@
 
 // include files are part of the g++ command line
 
-#define _SIGNAL(w, s) (&module->ValExec_f##w##FromRecF##w##__io_##s)
-#define SIGNAL(w, s) _SIGNAL(w, s)
+#include "dut.h"
+#include "verilated.h"
 
 int main (int argc, char* argv[])
 {
-    dat_t<FLEN>* input;
-    dat_t<FLEN>* output;
-    dat_t<1>* check;
-    dat_t<1>* pass;
-    dut_t* module = new dut_t();
+    dut module;
     size_t cnt = 0;
     size_t error = 0;
     char value[64];
 
-    module->init();
-
-    input = SIGNAL(FLEN, a);
-    output = SIGNAL(FLEN, out);
-    check = SIGNAL(FLEN, check);
-    pass = SIGNAL(FLEN, pass);
-
     // reset
     for (size_t i=0; i<10; i++) {
-        module->clock_lo(LIT<1>(1));
-        module->clock_hi(LIT<1>(1));
+        module.reset = 1;
+        module.clock = 0;
+        module.eval();
+        module.clock = 1;
+        module.eval();
     }
+    module.reset = 0;
 
     // main operation
     for (;;) {
@@ -35,19 +28,21 @@ int main (int argc, char* argv[])
             if (!error) fputs("No errors found.\n", stdout);
             break;
         }
-        dat_from_hex<FLEN>(value, *input);
+        module.io_a = strtoull(value, NULL, 16);
+        // dat_from_hex<FLEN>(value, *input);
 
-        module->clock_lo(LIT<1>(0));
+        module.clock = 0;
+        module.eval();
 
-        if (check->to_bool()) {
+        if (module.io_check) {
             if ((cnt % 10000 == 0) && cnt) printf("Ran %ld tests.\n", cnt);
-            if (!pass->to_bool()) {
+            if (!module.io_pass) {
                 error++;
                 printf(
-                    "[%07ld] %s => %s\n",
+                    "[%07ld] %#x => %#x\n",
                     cnt,
-                    input->to_str().c_str(),
-                    output->to_str().c_str()
+                    module.io_a,
+                    module.io_out
                 );
                 if (error == 20) {
                     printf("Reached %ld errors. Aborting.\n", error);
@@ -57,7 +52,8 @@ int main (int argc, char* argv[])
             cnt++;
         }
 
-        module->clock_hi(LIT<1>(0));
+        module.clock = 1;
+        module.eval();
     }
 
     return 0;

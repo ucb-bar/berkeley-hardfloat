@@ -1,97 +1,79 @@
+#include "dut.h"
 
-// include files are part of the g++ command line
-
-#define _SIGNAL(fw, op, s) (&module->ValExec_CompareRecF##fw##_##op##__io_##s)
-#define SIGNAL(fw, op, s) _SIGNAL(fw, op, s)
-
-static int process_inputs(dat_t<FLEN>* inputA, dat_t<FLEN>* inputB)
+static int process_inputs(dut& m)
 {
     char value[64];
 
     if (scanf("%s", value) != 1) return 0;
-    dat_from_hex<FLEN>(value, *inputA);
+    m.io_a = strtoull(value, NULL, 16);
     if (scanf("%s", value) != 1) return 0;
-    dat_from_hex<FLEN>(value, *inputB);
+    m.io_b = strtoull(value, NULL, 16);
+
     return 1;
 }
 
 static
- int
-  process_outputs(dat_t<1>* expected_out, dat_t<5>* expected_exceptionFlags)
+int process_outputs(dut& m)
 {
     char value[64];
 
     // output
     if (scanf("%s", value) != 1) return 0;
-    dat_from_hex<1>(value, *expected_out);
+    m.io_expected_out = strtoull(value, NULL, 16);
 
     // exception flags
     if (scanf("%s", value) != 1) return 0;
-    dat_from_hex<5>(value, *expected_exceptionFlags);
+    m.io_expected_exceptionFlags = strtoull(value, NULL, 16);
 
     return 1;
 }
 
 int main (int argc, char* argv[])
 {
-    dat_t<FLEN>* inputA;
-    dat_t<FLEN>* inputB;
-    dat_t<1>* expected_out;
-    dat_t<5>* expected_exceptionFlags;
-    dat_t<1>* actual_out;
-    dat_t<5>* actual_exceptionFlags;
-    dat_t<1>* check;
-    dat_t<1>* pass;
-    dut_t* module = new dut_t();
+    dut module;
     size_t cnt = 0;
     size_t error = 0;
 
-    module->init();
-
-    inputA = SIGNAL(FLEN, compareOp, a);
-    inputB = SIGNAL(FLEN, compareOp, b);
-    expected_out = SIGNAL(FLEN, compareOp, expected_out);
-    expected_exceptionFlags = SIGNAL(FLEN, compareOp, expected_exceptionFlags);
-    actual_out = SIGNAL(FLEN, compareOp, actual_out);
-    actual_exceptionFlags = SIGNAL(FLEN, compareOp, actual_exceptionFlags);
-    check = SIGNAL(FLEN, compareOp, check);
-    pass = SIGNAL(FLEN, compareOp, pass);
-
     // reset
     for (size_t i=0; i<10; i++) {
-        module->clock_lo(LIT<1>(1));
-        module->clock_hi(LIT<1>(1));
+        module.reset = 1;
+        module.clock = 0;
+        module.eval();
+        module.clock = 1;
+        module.eval();
     }
+    module.reset = 0;
 
     // main operation
     for (;;) {
         if (
-               ! process_inputs(inputA, inputB)
-            || ! process_outputs(expected_out, expected_exceptionFlags)
+               ! process_inputs(module)
+            || ! process_outputs(module)
         ) {
             printf("Ran %ld tests.\n", cnt);
             if (!error) fputs("No errors found.\n", stdout);
             break;
         }
 
-        module->clock_lo(LIT<1>(0));
+        module.clock = 0;
+        module.eval();
 
-        if (check->to_bool()) {
+        if (module.io_check) {
             if ((cnt % 10000 == 0) && cnt) printf("Ran %ld tests.\n", cnt);
-            if (!pass->to_bool()) {
+            if (!module.io_pass) {
                 error++;
                 printf("[%07ld]", cnt);
                 printf(
-                    " %s %s",
-                    inputA->to_str().c_str(),
-                    inputB->to_str().c_str()
+                    " %#x %#x",
+                    module.io_a,
+                    module.io_b
                 );
                 printf(
-                    " => %s %s   expected: %s %s\n",
-                    actual_out->to_str().c_str(),
-                    actual_exceptionFlags->to_str().c_str(),
-                    expected_out->to_str().c_str(),
-                    expected_exceptionFlags->to_str().c_str()
+                    " => %#x %#x   expected: %#x %#x\n",
+                    module.io_actual_out,
+                    module.io_actual_exceptionFlags,
+                    module.io_expected_out,
+                    module.io_expected_exceptionFlags
                 );
                 if (error == 20) {
                     printf("Reached %ld errors. Aborting.\n", error);
@@ -101,7 +83,8 @@ int main (int argc, char* argv[])
             cnt++;
         }
 
-        module->clock_hi(LIT<1>(0));
+        module.clock = 1;
+        module.eval();
     }
 
     return 0;

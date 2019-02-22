@@ -1,45 +1,25 @@
+#include "dut.h"
 
-static dat_t<3>* roundingMode;
-static dat_t<1>* detectTininess;
-static std::vector<dat_t<ILEN>*> inputs;
-static dat_t<FLEN>* expected_out;
-static dat_t<FLEN+1>* expected_recOut;
-static dat_t<5>* expected_exceptionFlags;
-static dat_t<FLEN+1>* actual_out;
-static dat_t<5>* actual_exceptionFlags;
-static dat_t<1>* check;
-static dat_t<1>* pass;
+#define ROUNDING_MODE io_roundingMode
+#define DETECT_TININESS io_detectTininess
 
-#define _SIGNAL(iw, fw, s) (&m->ValExec_I##iw##ToRecF##fw##__io_##s)
-#define SIGNAL(iw, fw, s) _SIGNAL(iw, fw, s)
-
-static void initialize_dat_pointers(dut_t* m)
+static void initialize_dut(dut& m)
 {
-  roundingMode   = SIGNAL(ILEN, FLEN, roundingMode);
-  detectTininess = SIGNAL(ILEN, FLEN, detectTininess);
-  inputs.push_back(SIGNAL(ILEN, FLEN, in));
-  expected_out = SIGNAL(ILEN, FLEN, expected_out);
-  expected_recOut = SIGNAL(ILEN, FLEN, expected_recOut);
-  expected_exceptionFlags = SIGNAL(ILEN, FLEN, expected_exceptionFlags);
-  actual_out = SIGNAL(ILEN, FLEN, actual_out);
-  actual_exceptionFlags = SIGNAL(ILEN, FLEN, actual_exceptionFlags);
-  check = SIGNAL(ILEN, FLEN, check);
-  pass = SIGNAL(ILEN, FLEN, pass);
 }
 
-static int process_inputs(void)
+static int process_inputs(dut& m)
 {
   char value[64];
 
   if (scanf("%s", value) != 1) {
     return 0;
   }
-  dat_from_hex<ILEN>(value, *inputs[0]);
+  m.io_in = strtoull(value, NULL, 16);
 
   return 1;
 }
 
-static int process_outputs(void)
+static int process_outputs(dut& m)
 {
   char value[64];
 
@@ -47,13 +27,13 @@ static int process_outputs(void)
   if (scanf("%s", value) != 1) {
     return 0;
   }
-  dat_from_hex<FLEN>(value, *expected_out);
+  m.io_expected_out = strtoull(value, NULL, 16);
 
   // exception flags
   if (scanf("%s", value) != 1) {
     return 0;
   }
-  dat_from_hex<5>(value, *expected_exceptionFlags);
+  m.io_expected_exceptionFlags = strtoull(value, NULL, 16);
 
   return 1;
 }

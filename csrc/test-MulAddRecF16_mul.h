@@ -1,7 +1,5 @@
-
-#include "ValExec_MulAddRecF16_mul.h"
-
-#define dut_t ValExec_MulAddRecF16_mul_t
 #define FLEN 16
 #include "test-MulAddRecFN_mul.h"
 
+#define ROUNDING_MODE io_roundingMode
+#define DETECT_TININESS io_detectTininess
