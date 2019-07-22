@@ -89,7 +89,7 @@ object lowMask
 //----------------------------------------------------------------------------
 object countLeadingZeros
 {
-    def apply(in: UInt): UInt = PriorityEncoder(Reverse(in))
+    def apply(in: UInt): UInt = PriorityEncoder(in.asBools.reverse)
 }
 
 //----------------------------------------------------------------------------
