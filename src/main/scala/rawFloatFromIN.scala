@@ -43,9 +43,9 @@ object rawFloatFromIN
 {
     def apply(signedIn: Bool, in: Bits): RawFloat =
     {
-        val expWidth = log2Up(in.getWidth)
+        val expWidth = log2Up(in.getWidth) + 1
 //*** CHANGE THIS; CAN BE VERY LARGE:
-        val extIntWidth = 1<<expWidth
+        val extIntWidth = 1<<(expWidth - 1)
 
         val sign = signedIn && in(in.getWidth - 1)
         val absIn = Mux(sign, -in.asUInt, in.asUInt)
@@ -60,7 +60,7 @@ object rawFloatFromIN
         out.isInf  := Bool(false)
         out.isZero := ! sig(in.getWidth - 1)
         out.sign   := sign
-        out.sExp   := Cat(UInt(1, 1), ~adjustedNormDist(expWidth - 1, 0)).zext
+        out.sExp   := Cat(UInt(2, 2), ~adjustedNormDist(expWidth - 2, 0)).zext
         out.sig    := sig
         out
     }
