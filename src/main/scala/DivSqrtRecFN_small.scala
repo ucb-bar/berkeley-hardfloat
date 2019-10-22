@@ -195,7 +195,7 @@ import consts._
 *----------------------------------------------------------------------------*/
 
 class
-    DivSqrtRecFNToRaw_small(expWidth: Int, sigWidth: Int, options: Int)
+    DivSqrtRawFN_small(expWidth: Int, sigWidth: Int, options: Int)
     extends Module
 {
     val io = new Bundle {
@@ -204,8 +204,8 @@ class
         val inReady        = Bool(OUTPUT)
         val inValid        = Bool(INPUT)
         val sqrtOp         = Bool(INPUT)
-        val a              = Bits(INPUT, expWidth + sigWidth + 1)
-        val b              = Bits(INPUT, expWidth + sigWidth + 1)
+        val a              = new RawFloat(expWidth, sigWidth).asInput
+        val b              = new RawFloat(expWidth, sigWidth).asInput
         val roundingMode   = UInt(INPUT, 3)
         /*--------------------------------------------------------------------
         *--------------------------------------------------------------------*/
@@ -242,8 +242,8 @@ class
 
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-    val rawA_S = rawFloatFromRecFN(expWidth, sigWidth, io.a)
-    val rawB_S = rawFloatFromRecFN(expWidth, sigWidth, io.b)
+    val rawA_S = io.a
+    val rawB_S = io.b
 
 //*** IMPROVE THESE:
     val notSigNaNIn_invalidExc_S_div =
@@ -382,6 +382,51 @@ class
     io.rawOut.sign   := sign_Z
     io.rawOut.sExp   := sExp_Z
     io.rawOut.sig    := sigX_Z<<1 | notZeroRem_Z
+
+}
+
+/*----------------------------------------------------------------------------
+*----------------------------------------------------------------------------*/
+
+class
+    DivSqrtRecFNToRaw_small(expWidth: Int, sigWidth: Int, options: Int)
+    extends Module
+{
+    val io = new Bundle {
+        /*--------------------------------------------------------------------
+        *--------------------------------------------------------------------*/
+        val inReady        = Bool(OUTPUT)
+        val inValid        = Bool(INPUT)
+        val sqrtOp         = Bool(INPUT)
+        val a              = Bits(INPUT, expWidth + sigWidth + 1)
+        val b              = Bits(INPUT, expWidth + sigWidth + 1)
+        val roundingMode   = UInt(INPUT, 3)
+        /*--------------------------------------------------------------------
+        *--------------------------------------------------------------------*/
+        val rawOutValid_div  = Bool(OUTPUT)
+        val rawOutValid_sqrt = Bool(OUTPUT)
+        val roundingModeOut  = UInt(OUTPUT, 3)
+        val invalidExc       = Bool(OUTPUT)
+        val infiniteExc      = Bool(OUTPUT)
+        val rawOut = new RawFloat(expWidth, sigWidth + 2).asOutput
+    }
+
+    val divSqrtRawFN =
+        Module(new DivSqrtRawFN_small(expWidth, sigWidth, options))
+
+    io.inReady := divSqrtRawFN.io.inReady
+    divSqrtRawFN.io.inValid      := io.inValid
+    divSqrtRawFN.io.sqrtOp       := io.sqrtOp
+    divSqrtRawFN.io.a            := rawFloatFromRecFN(expWidth, sigWidth, io.a)
+    divSqrtRawFN.io.b            := rawFloatFromRecFN(expWidth, sigWidth, io.b)
+    divSqrtRawFN.io.roundingMode := io.roundingMode
+
+    io.rawOutValid_div  := divSqrtRawFN.io.rawOutValid_div
+    io.rawOutValid_sqrt := divSqrtRawFN.io.rawOutValid_sqrt
+    io.roundingModeOut  := divSqrtRawFN.io.roundingModeOut
+    io.invalidExc       := divSqrtRawFN.io.invalidExc
+    io.infiniteExc      := divSqrtRawFN.io.infiniteExc
+    io.rawOut           := divSqrtRawFN.io.rawOut
 
 }
 
