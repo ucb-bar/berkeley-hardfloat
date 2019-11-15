@@ -49,7 +49,7 @@ import consts._
 
 class DivSqrtRecF64ToRaw_mulAddZ31(options: Int) extends Module
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         /*--------------------------------------------------------------------
         *--------------------------------------------------------------------*/
         val inReady_div    = Bool(OUTPUT)
@@ -78,7 +78,7 @@ class DivSqrtRecF64ToRaw_mulAddZ31(options: Int) extends Module
         val invalidExc       = Bool(OUTPUT)
         val infiniteExc      = Bool(OUTPUT)
         val rawOut = new RawFloat(11, 55).asOutput
-    }
+    })
 
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
@@ -717,7 +717,7 @@ class DivSqrtRecF64ToRaw_mulAddZ31(options: Int) extends Module
 
 class DivSqrtRecF64_mulAddZ31(options: Int) extends Module
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         /*--------------------------------------------------------------------
         *--------------------------------------------------------------------*/
         val inReady_div    = Bool(OUTPUT)
@@ -743,7 +743,7 @@ class DivSqrtRecF64_mulAddZ31(options: Int) extends Module
         val outValid_sqrt  = Bool(OUTPUT)
         val out            = Bits(OUTPUT, 65)
         val exceptionFlags = Bits(OUTPUT, 5)
-    }
+    })
 
     //------------------------------------------------------------------------
     //------------------------------------------------------------------------

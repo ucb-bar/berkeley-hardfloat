@@ -43,13 +43,13 @@ import consts._
 
 class RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int) extends Module
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         val in = Bits(INPUT, expWidth + sigWidth + 1)
         val roundingMode = UInt(INPUT, 3)
         val signedOut = Bool(INPUT)
         val out = Bits(OUTPUT, intWidth)
         val intExceptionFlags = Bits(OUTPUT, 3)
-    }
+    })
 
     //------------------------------------------------------------------------
     //------------------------------------------------------------------------

@@ -41,27 +41,27 @@ import Chisel._
 
 class ValExec_MulAddRecFN(expWidth: Int, sigWidth: Int) extends Module
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         val a = Bits(INPUT, expWidth + sigWidth)
         val b = Bits(INPUT, expWidth + sigWidth)
         val c = Bits(INPUT, expWidth + sigWidth)
         val roundingMode   = UInt(INPUT, 3)
         val detectTininess = UInt(INPUT, 1)
 
-        val expected = new Bundle {
+        val expected = IO(new Bundle {
             val out = Bits(INPUT, expWidth + sigWidth)
             val exceptionFlags = Bits(INPUT, 5)
             val recOut = Bits(OUTPUT, expWidth + sigWidth + 1)
-        }
+        })
 
-        val actual = new Bundle {
+        val actual = IO(new Bundle {
             val out = Bits(OUTPUT, expWidth + sigWidth + 1)
             val exceptionFlags = Bits(OUTPUT, 5)
-        }
+        })
 
         val check = Bool(OUTPUT)
         val pass = Bool(OUTPUT)
-    }
+    })
 
     val mulAddRecFN = Module(new MulAddRecFN(expWidth, sigWidth))
     mulAddRecFN.io.op := UInt(0)
@@ -88,26 +88,26 @@ class ValExec_MulAddRecF64 extends ValExec_MulAddRecFN(11, 53)
 
 class ValExec_MulAddRecFN_add(expWidth: Int, sigWidth: Int) extends Module
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         val a = Bits(INPUT, expWidth + sigWidth)
         val b = Bits(INPUT, expWidth + sigWidth)
         val roundingMode   = UInt(INPUT, 3)
         val detectTininess = UInt(INPUT, 1)
 
-        val expected = new Bundle {
+        val expected = IO(new Bundle {
             val out = Bits(INPUT, expWidth + sigWidth)
             val exceptionFlags = Bits(INPUT, 5)
             val recOut = Bits(OUTPUT, expWidth + sigWidth + 1)
-        }
+        })
 
-        val actual = new Bundle {
+        val actual = IO(new Bundle {
             val out = Bits(OUTPUT, expWidth + sigWidth + 1)
             val exceptionFlags = Bits(OUTPUT, 5)
-        }
+        })
 
         val check = Bool(OUTPUT)
         val pass = Bool(OUTPUT)
-    }
+    })
 
     val mulAddRecFN = Module(new MulAddRecFN(expWidth, sigWidth))
     mulAddRecFN.io.op := UInt(0)
@@ -134,26 +134,26 @@ class ValExec_MulAddRecF64_add extends ValExec_MulAddRecFN_add(11, 53)
 
 class ValExec_MulAddRecFN_mul(expWidth: Int, sigWidth: Int) extends Module
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         val a = Bits(INPUT, expWidth + sigWidth)
         val b = Bits(INPUT, expWidth + sigWidth)
         val roundingMode   = UInt(INPUT, 3)
         val detectTininess = UInt(INPUT, 1)
 
-        val expected = new Bundle {
+        val expected = IO(new Bundle {
             val out = Bits(INPUT, expWidth + sigWidth)
             val exceptionFlags = Bits(INPUT, 5)
             val recOut = Bits(OUTPUT, expWidth + sigWidth + 1)
-        }
+        })
 
-        val actual = new Bundle {
+        val actual = IO(new Bundle {
             val out = Bits(OUTPUT, expWidth + sigWidth + 1)
             val exceptionFlags = Bits(OUTPUT, 5)
-        }
+        })
 
         val check = Bool(OUTPUT)
         val pass = Bool(OUTPUT)
-    }
+    })
 
     val mulAddRecFN = Module(new MulAddRecFN(expWidth, sigWidth))
     mulAddRecFN.io.op := UInt(0)

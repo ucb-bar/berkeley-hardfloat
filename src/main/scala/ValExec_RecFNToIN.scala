@@ -43,23 +43,23 @@ class
     ValExec_RecFNToUIN(expWidth: Int, sigWidth: Int, intWidth: Int)
     extends Module
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         val in = Bits(INPUT, expWidth + sigWidth)
         val roundingMode = UInt(INPUT, 3)
 
-        val expected = new Bundle {
+        val expected = IO(new Bundle {
             val out = Bits(INPUT, intWidth)
             val exceptionFlags = Bits(INPUT, 5)
-        }
+        })
 
-        val actual = new Bundle {
+        val actual = IO(new Bundle {
             val out = Bits(OUTPUT, intWidth)
             val exceptionFlags = Bits(OUTPUT, 5)
-        }
+        })
 
         val check = Bool(OUTPUT)
         val pass = Bool(OUTPUT)
-    }
+    })
 
     val recFNToIN = Module(new RecFNToIN(expWidth, sigWidth, intWidth))
     recFNToIN.io.in := recFNFromFN(expWidth, sigWidth, io.in)
@@ -90,23 +90,23 @@ class
     ValExec_RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int)
     extends Module
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         val in = Bits(INPUT, expWidth + sigWidth)
         val roundingMode = UInt(INPUT, 3)
 
-        val expected = new Bundle {
+        val expected = IO(new Bundle {
             val out = Bits(INPUT, intWidth)
             val exceptionFlags = Bits(INPUT, 5)
-        }
+        })
 
-        val actual = new Bundle {
+        val actual = IO(new Bundle {
             val out = Bits(OUTPUT, intWidth)
             val exceptionFlags = Bits(OUTPUT, 5)
-        }
+        })
 
         val check = Bool(OUTPUT)
         val pass = Bool(OUTPUT)
-    }
+    })
 
     val recFNToIN = Module(new RecFNToIN(expWidth, sigWidth, intWidth))
     recFNToIN.io.in := recFNFromFN(expWidth, sigWidth, io.in)

@@ -49,30 +49,30 @@ class DivRecF64_io extends Bundle {
 }
 
 class ValExec_DivSqrtRecF64_div extends Module {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         val input = Decoupled(new DivRecF64_io).flip
 
-        val output = new Bundle {
+        val output = IO(new Bundle {
             val a = Bits(OUTPUT, 64)
             val b = Bits(OUTPUT, 64)
             val roundingMode   = UInt(OUTPUT, 3)
             val detectTininess = UInt(OUTPUT, 1)
-        }
+        })
 
-        val expected = new Bundle {
+        val expected = IO(new Bundle {
             val out = Bits(OUTPUT, 64)
             val exceptionFlags = Bits(OUTPUT, 5)
             val recOut = Bits(OUTPUT, 65)
-        }
+        })
 
-        val actual = new Bundle {
+        val actual = IO(new Bundle {
             val out = Bits(OUTPUT, 65)
             val exceptionFlags = Bits(OUTPUT, 5)
-        }
+        })
 
         val check = Bool(OUTPUT)
         val pass = Bool(OUTPUT)
-    }
+    })
 
     val ds = Module(new DivSqrtRecF64)
     val cq = Module(new Queue(new DivRecF64_io, 5))
@@ -118,29 +118,29 @@ class SqrtRecF64_io extends Bundle {
 }
 
 class ValExec_DivSqrtRecF64_sqrt extends Module {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         val input = Decoupled(new SqrtRecF64_io).flip
 
-        val output = new Bundle {
+        val output = IO(new Bundle {
             val b = Bits(OUTPUT, 64)
             val roundingMode   = UInt(OUTPUT, 3)
             val detectTininess = UInt(OUTPUT, 1)
-        }
+        })
 
-        val expected = new Bundle {
+        val expected = IO(new Bundle {
             val out = Bits(OUTPUT, 64)
             val exceptionFlags = Bits(OUTPUT, 5)
             val recOut = Bits(OUTPUT, 65)
-        }
+        })
 
-        val actual = new Bundle {
+        val actual = IO(new Bundle {
             val out = Bits(OUTPUT, 65)
             val exceptionFlags = Bits(OUTPUT, 5)
-        }
+        })
 
         val check = Bool(OUTPUT)
         val pass = Bool(OUTPUT)
-    }
+    })
 
     val ds = Module(new DivSqrtRecF64)
     val cq = Module(new Queue(new SqrtRecF64_io, 5))

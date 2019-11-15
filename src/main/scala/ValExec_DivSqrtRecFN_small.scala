@@ -53,30 +53,30 @@ class DivRecFN_io(expWidth: Int, sigWidth: Int) extends Bundle {
 class
     ValExec_DivSqrtRecFN_small_div(expWidth: Int, sigWidth: Int) extends Module
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         val input = Decoupled(new DivRecFN_io(expWidth, sigWidth)).flip
 
-        val output = new Bundle {
+        val output = IO(new Bundle {
             val a = Bits(OUTPUT, expWidth + sigWidth)
             val b = Bits(OUTPUT, expWidth + sigWidth)
             val roundingMode   = UInt(OUTPUT, 3)
             val detectTininess = UInt(OUTPUT, 1)
-        }
+        })
 
-        val expected = new Bundle {
+        val expected = IO(new Bundle {
             val out = Bits(OUTPUT, expWidth + sigWidth)
             val exceptionFlags = Bits(OUTPUT, 5)
             val recOut = Bits(OUTPUT, expWidth + sigWidth + 1)
-        }
+        })
 
-        val actual = new Bundle {
+        val actual = IO(new Bundle {
             val out = Bits(OUTPUT, expWidth + sigWidth + 1)
             val exceptionFlags = Bits(OUTPUT, 5)
-        }
+        })
 
         val check = Bool(OUTPUT)
         val pass = Bool(OUTPUT)
-    }
+    })
 
     val ds = Module(new DivSqrtRecFN_small(expWidth, sigWidth, 0))
     val cq = Module(new Queue(new DivRecFN_io(expWidth, sigWidth), 5))
@@ -138,29 +138,29 @@ class
     ValExec_DivSqrtRecFN_small_sqrt(expWidth: Int, sigWidth: Int)
     extends Module
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         val input = Decoupled(new SqrtRecFN_io(expWidth, sigWidth)).flip
 
-        val output = new Bundle {
+        val output = IO(new Bundle {
             val a = Bits(OUTPUT, expWidth + sigWidth)
             val roundingMode   = UInt(OUTPUT, 3)
             val detectTininess = UInt(OUTPUT, 1)
-        }
+        })
 
-        val expected = new Bundle {
+        val expected = IO(new Bundle {
             val out = Bits(OUTPUT, expWidth + sigWidth)
             val exceptionFlags = Bits(OUTPUT, 5)
             val recOut = Bits(OUTPUT, expWidth + sigWidth + 1)
-        }
+        })
 
-        val actual = new Bundle {
+        val actual = IO(new Bundle {
             val out = Bits(OUTPUT, expWidth + sigWidth + 1)
             val exceptionFlags = Bits(OUTPUT, 5)
-        }
+        })
 
         val check = Bool(OUTPUT)
         val pass = Bool(OUTPUT)
-    }
+    })
 
     val ds = Module(new DivSqrtRecFN_small(expWidth, sigWidth, 0))
     val cq = Module(new Queue(new SqrtRecFN_io(expWidth, sigWidth), 5))
