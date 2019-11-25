@@ -185,8 +185,9 @@ is calculated using the values at cycle = 2).
 
 package hardfloat
 
-import Chisel._
-import consts._
+import chisel3._
+import chisel3.util._
+import hardfloat.consts._
 
 /*----------------------------------------------------------------------------
 | Computes a division or square root for floating-point in recoded form.
@@ -195,31 +196,31 @@ import consts._
 *----------------------------------------------------------------------------*/
 
 class
-    DivSqrtRecFNToRaw_small(expWidth: Int, sigWidth: Int, options: Int)
+    DivSqrtRawFN_small(expWidth: Int, sigWidth: Int, options: Int)
     extends Module
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         /*--------------------------------------------------------------------
         *--------------------------------------------------------------------*/
-        val inReady        = Bool(OUTPUT)
-        val inValid        = Bool(INPUT)
-        val sqrtOp         = Bool(INPUT)
-        val a              = Bits(INPUT, expWidth + sigWidth + 1)
-        val b              = Bits(INPUT, expWidth + sigWidth + 1)
-        val roundingMode   = UInt(INPUT, 3)
+        val inReady        = Output(Bool())
+        val inValid        = Input(Bool())
+        val sqrtOp         = Input(Bool())
+        val a              = Input(new RawFloat(expWidth, sigWidth))
+        val b              = Input(new RawFloat(expWidth, sigWidth))
+        val roundingMode   = Input(UInt(3.W))
         /*--------------------------------------------------------------------
         *--------------------------------------------------------------------*/
-        val rawOutValid_div  = Bool(OUTPUT)
-        val rawOutValid_sqrt = Bool(OUTPUT)
-        val roundingModeOut  = UInt(OUTPUT, 3)
-        val invalidExc       = Bool(OUTPUT)
-        val infiniteExc      = Bool(OUTPUT)
-        val rawOut = new RawFloat(expWidth, sigWidth + 2).asOutput
-    }
+        val rawOutValid_div  = Output(Bool())
+        val rawOutValid_sqrt = Output(Bool())
+        val roundingModeOut  = Output(UInt(3.W))
+        val invalidExc       = Output(Bool())
+        val infiniteExc      = Output(Bool())
+        val rawOut = Output(new RawFloat(expWidth, sigWidth + 2))
+    })
 
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-    val cycleNum       = Reg(init = UInt(0, log2Up(sigWidth + 3)))
+    val cycleNum       = RegInit(0.U(log2Ceil(sigWidth + 3).W))
 
     val sqrtOp_Z       = Reg(Bool())
     val majorExc_Z     = Reg(Bool())
@@ -228,22 +229,22 @@ class
     val isInf_Z        = Reg(Bool())
     val isZero_Z       = Reg(Bool())
     val sign_Z         = Reg(Bool())
-    val sExp_Z         = Reg(SInt(width = expWidth + 2))
-    val fractB_Z       = Reg(UInt(width = sigWidth - 1))
-    val roundingMode_Z = Reg(UInt(width = 3))
+    val sExp_Z         = Reg(SInt((expWidth + 2).W))
+    val fractB_Z       = Reg(UInt((sigWidth - 1).W))
+    val roundingMode_Z = Reg(UInt(3.W))
 
     /*------------------------------------------------------------------------
     | (The most-significant and least-significant bits of 'rem_Z' are needed
     | only for square roots.)
     *------------------------------------------------------------------------*/
-    val rem_Z          = Reg(UInt(width = sigWidth + 2))
+    val rem_Z          = Reg(UInt((sigWidth + 2).W))
     val notZeroRem_Z   = Reg(Bool())
-    val sigX_Z         = Reg(UInt(width = sigWidth + 2))
+    val sigX_Z         = Reg(UInt((sigWidth + 2).W))
 
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-    val rawA_S = rawFloatFromRecFN(expWidth, sigWidth, io.a)
-    val rawB_S = rawFloatFromRecFN(expWidth, sigWidth, io.b)
+    val rawA_S = io.a
+    val rawB_S = io.b
 
 //*** IMPROVE THESE:
     val notSigNaNIn_invalidExc_S_div =
@@ -277,8 +278,8 @@ class
             Cat(rawB_S.sExp(expWidth), ~rawB_S.sExp(expWidth - 1, 0)).asSInt
 //*** IS THIS OPTIMAL?:
     val sSatExpQuot_S_div =
-        Cat(Mux((SInt(BigInt(7)<<(expWidth - 2)) <= sExpQuot_S_div),
-                UInt(6),
+        Cat(Mux(((BigInt(7)<<(expWidth - 2)).S <= sExpQuot_S_div),
+                6.U,
                 sExpQuot_S_div(expWidth + 1, expWidth - 2)
             ),
             sExpQuot_S_div(expWidth - 3, 0)
@@ -289,25 +290,25 @@ class
 
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-    val idle = (cycleNum === UInt(0))
-    val inReady = (cycleNum <= UInt(1))
+    val idle = (cycleNum === 0.U)
+    val inReady = (cycleNum <= 1.U)
     val entering = inReady && io.inValid
     val entering_normalCase = entering && normalCase_S
 
-    val skipCycle2 = (cycleNum === UInt(3)) && sigX_Z(sigWidth + 1)
+    val skipCycle2 = (cycleNum === 3.U) && sigX_Z(sigWidth + 1)
 
     when (! idle || io.inValid) {
         cycleNum :=
-            Mux(entering & ! normalCase_S, UInt(1), UInt(0)) |
+            Mux(entering & ! normalCase_S, 1.U, 0.U) |
             Mux(entering_normalCase,
                 Mux(io.sqrtOp,
-                    Mux(rawA_S.sExp(0), UInt(sigWidth), UInt(sigWidth + 1)),
-                    UInt(sigWidth + 2)
+                    Mux(rawA_S.sExp(0), sigWidth.U, (sigWidth + 1).U),
+                    (sigWidth + 2).U
                 ),
-                UInt(0)
+                0.U
             ) |
-            Mux(! idle && ! skipCycle2, cycleNum - UInt(1), UInt(0)) |
-            Mux(! idle &&   skipCycle2, UInt(1),            UInt(0))
+            Mux(! idle && ! skipCycle2, cycleNum - 1.U, 0.U) |
+            Mux(! idle &&   skipCycle2, 1.U,            0.U)
     }
 
     io.inReady := inReady
@@ -325,7 +326,7 @@ class
     when (entering_normalCase) {
         sExp_Z :=
             Mux(io.sqrtOp,
-                (rawA_S.sExp>>1) +& SInt(BigInt(1)<<(expWidth - 1)),
+                (rawA_S.sExp>>1) +& (BigInt(1)<<(expWidth - 1)).S,
                 sSatExpQuot_S_div
             )
         roundingMode_Z := io.roundingMode
@@ -337,39 +338,39 @@ class
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
     val rem =
-        Mux(inReady && ! oddSqrt_S, rawA_S.sig<<1, UInt(0)) |
+        Mux(inReady && ! oddSqrt_S, rawA_S.sig<<1, 0.U) |
         Mux(inReady && oddSqrt_S,
-            Cat(rawA_S.sig(sigWidth - 1, sigWidth - 2) - UInt(1),
+            Cat(rawA_S.sig(sigWidth - 1, sigWidth - 2) - 1.U,
                 rawA_S.sig(sigWidth - 3, 0)<<3
             ),
-            UInt(0)
+            0.U
         ) |
-        Mux(! inReady, rem_Z<<1, UInt(0))
-    val bitMask = (UInt(1)<<cycleNum)>>2
+        Mux(! inReady, rem_Z<<1, 0.U)
+    val bitMask = (1.U<<cycleNum)>>2
     val trialTerm =
-        Mux(inReady && ! io.sqrtOp, rawB_S.sig<<1,                   UInt(0)) |
-        Mux(inReady && evenSqrt_S,  UInt(BigInt(1)<<sigWidth),       UInt(0)) |
-        Mux(inReady && oddSqrt_S,   UInt(BigInt(5)<<(sigWidth - 1)), UInt(0)) |
-        Mux(! inReady && ! sqrtOp_Z, Cat(UInt(1, 1), fractB_Z)<<1,   UInt(0)) |
-        Mux(! inReady &&   sqrtOp_Z, sigX_Z<<1 | bitMask,            UInt(0))
+        Mux(inReady && ! io.sqrtOp, rawB_S.sig<<1,                 0.U) |
+        Mux(inReady && evenSqrt_S,  (BigInt(1)<<sigWidth).U,       0.U) |
+        Mux(inReady && oddSqrt_S,   (BigInt(5)<<(sigWidth - 1)).U, 0.U) |
+        Mux(! inReady && ! sqrtOp_Z, Cat(1.U, fractB_Z)<<1,        0.U) |
+        Mux(! inReady &&   sqrtOp_Z, sigX_Z<<1 | bitMask,          0.U)
     val trialRem = rem.zext - trialTerm.zext
-    val newBit = (SInt(0) <= trialRem)
+    val newBit = (0.S <= trialRem)
 
-    when (entering_normalCase || (cycleNum > UInt(2))) {
+    when (entering_normalCase || (cycleNum > 2.U)) {
         rem_Z := Mux(newBit, trialRem.asUInt, rem)
     }
     when (entering_normalCase || (! inReady && newBit)) {
-        notZeroRem_Z := (trialRem =/= SInt(0))
+        notZeroRem_Z := (trialRem =/= 0.S)
         sigX_Z :=
-            Mux(inReady && ! io.sqrtOp, newBit<<(sigWidth + 1),    UInt(0)) |
-            Mux(inReady &&   io.sqrtOp, UInt(BigInt(1)<<sigWidth), UInt(0)) |
-            Mux(inReady && oddSqrt_S,   newBit<<(sigWidth - 1),    UInt(0)) |
-            Mux(! inReady,              sigX_Z | bitMask,          UInt(0))
+            Mux(inReady && ! io.sqrtOp, newBit<<(sigWidth + 1),  0.U) |
+            Mux(inReady &&   io.sqrtOp, (BigInt(1)<<sigWidth).U, 0.U) |
+            Mux(inReady && oddSqrt_S,   newBit<<(sigWidth - 1),  0.U) |
+            Mux(! inReady,              sigX_Z | bitMask,        0.U)
     }
 
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-    val rawOutValid = (cycleNum === UInt(1))
+    val rawOutValid = (cycleNum === 1.U)
 
     io.rawOutValid_div  := rawOutValid && ! sqrtOp_Z
     io.rawOutValid_sqrt := rawOutValid &&   sqrtOp_Z
@@ -389,26 +390,71 @@ class
 *----------------------------------------------------------------------------*/
 
 class
+    DivSqrtRecFNToRaw_small(expWidth: Int, sigWidth: Int, options: Int)
+    extends Module
+{
+    val io = IO(new Bundle {
+        /*--------------------------------------------------------------------
+        *--------------------------------------------------------------------*/
+        val inReady        = Output(Bool())
+        val inValid        = Input(Bool())
+        val sqrtOp         = Input(Bool())
+        val a              = Input(UInt((expWidth + sigWidth + 1).W))
+        val b              = Input(UInt((expWidth + sigWidth + 1).W))
+        val roundingMode   = Input(UInt(3.W))
+        /*--------------------------------------------------------------------
+        *--------------------------------------------------------------------*/
+        val rawOutValid_div  = Output(Bool())
+        val rawOutValid_sqrt = Output(Bool())
+        val roundingModeOut  = Output(UInt(3.W))
+        val invalidExc       = Output(Bool())
+        val infiniteExc      = Output(Bool())
+        val rawOut = Output(new RawFloat(expWidth, sigWidth + 2))
+    })
+
+    val divSqrtRawFN =
+        Module(new DivSqrtRawFN_small(expWidth, sigWidth, options))
+
+    io.inReady := divSqrtRawFN.io.inReady
+    divSqrtRawFN.io.inValid      := io.inValid
+    divSqrtRawFN.io.sqrtOp       := io.sqrtOp
+    divSqrtRawFN.io.a            := rawFloatFromRecFN(expWidth, sigWidth, io.a)
+    divSqrtRawFN.io.b            := rawFloatFromRecFN(expWidth, sigWidth, io.b)
+    divSqrtRawFN.io.roundingMode := io.roundingMode
+
+    io.rawOutValid_div  := divSqrtRawFN.io.rawOutValid_div
+    io.rawOutValid_sqrt := divSqrtRawFN.io.rawOutValid_sqrt
+    io.roundingModeOut  := divSqrtRawFN.io.roundingModeOut
+    io.invalidExc       := divSqrtRawFN.io.invalidExc
+    io.infiniteExc      := divSqrtRawFN.io.infiniteExc
+    io.rawOut           := divSqrtRawFN.io.rawOut
+
+}
+
+/*----------------------------------------------------------------------------
+*----------------------------------------------------------------------------*/
+
+class
     DivSqrtRecFN_small(expWidth: Int, sigWidth: Int, options: Int)
     extends Module
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         /*--------------------------------------------------------------------
         *--------------------------------------------------------------------*/
-        val inReady        = Bool(OUTPUT)
-        val inValid        = Bool(INPUT)
-        val sqrtOp         = Bool(INPUT)
-        val a              = Bits(INPUT, expWidth + sigWidth + 1)
-        val b              = Bits(INPUT, expWidth + sigWidth + 1)
-        val roundingMode   = UInt(INPUT, 3)
-        val detectTininess = UInt(INPUT, 1)
+        val inReady        = Output(Bool())
+        val inValid        = Input(Bool())
+        val sqrtOp         = Input(Bool())
+        val a              = Input(UInt((expWidth + sigWidth + 1).W))
+        val b              = Input(UInt((expWidth + sigWidth + 1).W))
+        val roundingMode   = Input(UInt(3.W))
+        val detectTininess = Input(UInt(1.W))
         /*--------------------------------------------------------------------
         *--------------------------------------------------------------------*/
-        val outValid_div   = Bool(OUTPUT)
-        val outValid_sqrt  = Bool(OUTPUT)
-        val out            = Bits(OUTPUT, expWidth + sigWidth + 1)
-        val exceptionFlags = Bits(OUTPUT, 5)
-    }
+        val outValid_div   = Output(Bool())
+        val outValid_sqrt  = Output(Bool())
+        val out            = Output(UInt((expWidth + sigWidth + 1).W))
+        val exceptionFlags = Output(UInt(5.W))
+    })
 
     //------------------------------------------------------------------------
     //------------------------------------------------------------------------
