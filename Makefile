@@ -29,6 +29,18 @@ else
 TESTFLOAT_GEN = ./testfloat_gen
 endif
 
+ifeq (,$(VCD))
+STDERR_VCD =
+VERILATOR_TRACE =
+else
+STDERR_VCD = 2> $$@.vcd
+VERILATOR_TRACE = --trace
+endif
+
+VERILATOR = verilator $(VERILATOR_TRACE)
+
+VERILATOR_CFLAGS = -std=c++11 -Icsrc/
+
 tests = \
  f16FromRecF16 \
  f32FromRecF32 \
@@ -99,13 +111,13 @@ test-$(1)/ValExec_$(1).v: src/main/scala/*.scala
 	sbt -Dchisel3Version=$(CHISEL_VERSION) "run $(1) -td test-$(1)"
 
 test-$(1)/dut.mk: test-$(1)/ValExec_$(1).v
-	verilator -cc --prefix dut --Mdir test-$(1) -CFLAGS "-Icsrc/ -include ../csrc/test-$(1).h" test-$(1)/ValExec_$(1).v --exe csrc/test-fNFromRecFN.cpp
+	$(VERILATOR) -cc --prefix dut --Mdir test-$(1) -CFLAGS "$(VERILATOR_CFLAGS) -include ../csrc/test-$(1).h" test-$(1)/ValExec_$(1).v --exe csrc/test-fNFromRecFN.cpp
 
 test-$(1)/dut: test-$(1)/dut.mk
 	cd test-$(1) && make -f dut.mk dut
 
 test-c-$(1).log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) $(3) $(2) | $$< ; } > $$@ 2>&1
+	{ $(TESTFLOAT_GEN) $(3) $(2) | $$< ; } > $$@ $(STDERR_VCD)
 
 test-c-$(1): test-c-$(1).log
 
@@ -122,28 +134,28 @@ test-$(1)/ValExec_$(1).v: src/main/scala/*.scala
 	sbt -Dchisel3Version=$(CHISEL_VERSION) "run $(1) -td test-$(1)"
 
 test-$(1)/dut.mk: test-$(1)/ValExec_$(1).v
-	verilator -cc --prefix dut --Mdir test-$(1) -CFLAGS "-Icsrc/ -include ../csrc/test-$(1).h" test-$(1)/ValExec_$(1).v --exe csrc/test-RecFNToUIN.cpp
+	$(VERILATOR) -cc --prefix dut --Mdir test-$(1) -CFLAGS "$(VERILATOR_CFLAGS) -include ../csrc/test-$(1).h" test-$(1)/ValExec_$(1).v --exe csrc/test-RecFNToUIN.cpp
 
 test-$(1)/dut: test-$(1)/dut.mk
 	cd test-$(1) && make -f dut.mk dut
 
 test-c-$(1).near_even.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rnear_even -exact $(3) $(2) | $$< 0 ; } > $$@ 2>&1
+	{ $(TESTFLOAT_GEN) -rnear_even -exact $(3) $(2) | $$< 0 ; } > $$@ $(STDERR_VCD)
 
 test-c-$(1).minMag.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rminMag -exact $(3) $(2) | $$< 1 ; } > $$@ 2>&1
+	{ $(TESTFLOAT_GEN) -rminMag -exact $(3) $(2) | $$< 1 ; } > $$@ $(STDERR_VCD)
 
 test-c-$(1).min.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rmin -exact $(3) $(2) | $$< 2 ; } > $$@ 2>&1
+	{ $(TESTFLOAT_GEN) -rmin -exact $(3) $(2) | $$< 2 ; } > $$@ $(STDERR_VCD)
 
 test-c-$(1).max.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rmax -exact $(3) $(2) | $$< 3 ; } > $$@ 2>&1
+	{ $(TESTFLOAT_GEN) -rmax -exact $(3) $(2) | $$< 3 ; } > $$@ $(STDERR_VCD)
 
 test-c-$(1).near_maxMag.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rnear_maxMag -exact $(3) $(2) | $$< 4 ; } > $$@ 2>&1
+	{ $(TESTFLOAT_GEN) -rnear_maxMag -exact $(3) $(2) | $$< 4 ; } > $$@ $(STDERR_VCD)
 
 test-c-$(1).odd.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rodd -exact $(3) $(2) | $$< 6 ; } > $$@ 2>&1
+	{ $(TESTFLOAT_GEN) -rodd -exact $(3) $(2) | $$< 6 ; } > $$@ $(STDERR_VCD)
 
 test-c-$(1): \
  test-c-$(1).near_even.log \
@@ -166,28 +178,28 @@ test-$(1)/ValExec_$(1).v: src/main/scala/*.scala
 	sbt -Dchisel3Version=$(CHISEL_VERSION) "run $(1) -td test-$(1)"
 
 test-$(1)/dut.mk: test-$(1)/ValExec_$(1).v
-	verilator -cc --prefix dut --Mdir test-$(1) -CFLAGS "-Icsrc/ -include ../csrc/test-$(1).h" test-$(1)/ValExec_$(1).v --exe csrc/test-RecFNToIN.cpp
+	$(VERILATOR) -cc --prefix dut --Mdir test-$(1) -CFLAGS "$(VERILATOR_CFLAGS) -include ../csrc/test-$(1).h" test-$(1)/ValExec_$(1).v --exe csrc/test-RecFNToIN.cpp
 
 test-$(1)/dut: test-$(1)/dut.mk
 	cd test-$(1) && make -f dut.mk dut
 
 test-c-$(1).near_even.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rnear_even -exact $(3) $(2) | $$< 0 ; } > $$@ 2>&1
+	{ $(TESTFLOAT_GEN) -rnear_even -exact $(3) $(2) | $$< 0 ; } > $$@ $(STDERR_VCD)
 
 test-c-$(1).minMag.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rminMag -exact $(3) $(2) | $$< 1 ; } > $$@ 2>&1
+	{ $(TESTFLOAT_GEN) -rminMag -exact $(3) $(2) | $$< 1 ; } > $$@ $(STDERR_VCD)
 
 test-c-$(1).min.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rmin -exact $(3) $(2) | $$< 2 ; } > $$@ 2>&1
+	{ $(TESTFLOAT_GEN) -rmin -exact $(3) $(2) | $$< 2 ; } > $$@ $(STDERR_VCD)
 
 test-c-$(1).max.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rmax -exact $(3) $(2) | $$< 3 ; } > $$@ 2>&1
+	{ $(TESTFLOAT_GEN) -rmax -exact $(3) $(2) | $$< 3 ; } > $$@ $(STDERR_VCD)
 
 test-c-$(1).near_maxMag.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rnear_maxMag -exact $(3) $(2) | $$< 4 ; } > $$@ 2>&1
+	{ $(TESTFLOAT_GEN) -rnear_maxMag -exact $(3) $(2) | $$< 4 ; } > $$@ $(STDERR_VCD)
 
 test-c-$(1).odd.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rodd -exact $(3) $(2) | $$< 6 ; } > $$@ 2>&1
+	{ $(TESTFLOAT_GEN) -rodd -exact $(3) $(2) | $$< 6 ; } > $$@ $(STDERR_VCD)
 
 test-c-$(1): \
  test-c-$(1).near_even.log \
@@ -210,13 +222,13 @@ test-$(1)/ValExec_$(1).v: src/main/scala/*.scala
 	sbt -Dchisel3Version=$(CHISEL_VERSION) "run $(1) -td test-$(1)"
 
 test-$(1)/dut.mk: test-$(1)/ValExec_$(1).v
-	verilator -cc --prefix dut --Mdir test-$(1) -CFLAGS "-Icsrc/ -include ../csrc/test-$(1).h" test-$(1)/ValExec_$(1).v --exe csrc/test-CompareRecFN.cpp
+	$(VERILATOR) -cc --prefix dut --Mdir test-$(1) -CFLAGS "$(VERILATOR_CFLAGS) -include ../csrc/test-$(1).h" test-$(1)/ValExec_$(1).v --exe csrc/test-CompareRecFN.cpp
 
 test-$(1)/dut: test-$(1)/dut.mk
 	cd test-$(1) && make -f dut.mk dut
 
 test-c-$(1).log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) $(3) $(2) | $$< ; } > $$@ 2>&1
+	{ $(TESTFLOAT_GEN) $(3) $(2) | $$< ; } > $$@ $(STDERR_VCD)
 
 test-c-$(1): test-c-$(1).log
 
@@ -233,46 +245,46 @@ test-$(1)/ValExec_$(1).v: src/main/scala/*.scala
 	sbt -Dchisel3Version=$(CHISEL_VERSION) "run $(1) -td test-$(1)"
 
 test-$(1)/dut.mk: test-$(1)/ValExec_$(1).v
-	verilator -cc --prefix dut --Mdir test-$(1) -CFLAGS "-Icsrc/ -include ../csrc/test-$(1).h" test-$(1)/ValExec_$(1).v --exe csrc/test.cpp
+	$(VERILATOR) -cc --prefix dut --Mdir test-$(1) -CFLAGS "$(VERILATOR_CFLAGS) -include ../csrc/test-$(1).h" test-$(1)/ValExec_$(1).v --exe csrc/test.cpp
 
 test-$(1)/dut: test-$(1)/dut.mk
 	cd test-$(1) && make -f dut.mk dut
 
 test-c-$(1).near_even.t-before.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rnear_even -tininessbefore $(3) $(2) | $$< 0 0 ; } > $$@ 2>&1
+	{ $(TESTFLOAT_GEN) -rnear_even -tininessbefore $(3) $(2) | $$< 0 0 ; } > $$@ $(STDERR_VCD)
 
 test-c-$(1).minMag.t-before.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rminMag -tininessbefore $(3) $(2) | $$< 1 0 ; } > $$@ 2>&1
+	{ $(TESTFLOAT_GEN) -rminMag -tininessbefore $(3) $(2) | $$< 1 0 ; } > $$@ $(STDERR_VCD)
 
 test-c-$(1).min.t-before.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rmin -tininessbefore $(3) $(2) | $$< 2 0 ; } > $$@ 2>&1
+	{ $(TESTFLOAT_GEN) -rmin -tininessbefore $(3) $(2) | $$< 2 0 ; } > $$@ $(STDERR_VCD)
 
 test-c-$(1).max.t-before.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rmax -tininessbefore $(3) $(2) | $$< 3 0 ; } > $$@ 2>&1
+	{ $(TESTFLOAT_GEN) -rmax -tininessbefore $(3) $(2) | $$< 3 0 ; } > $$@ $(STDERR_VCD)
 
 test-c-$(1).near_maxMag.t-before.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rnear_maxMag -tininessbefore $(3) $(2) | $$< 4 0 ; } > $$@ 2>&1
+	{ $(TESTFLOAT_GEN) -rnear_maxMag -tininessbefore $(3) $(2) | $$< 4 0 ; } > $$@ $(STDERR_VCD)
 
 test-c-$(1).odd.t-before.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rodd -tininessbefore $(3) $(2) | $$< 6 0 ; } > $$@ 2>&1
+	{ $(TESTFLOAT_GEN) -rodd -tininessbefore $(3) $(2) | $$< 6 0 ; } > $$@ $(STDERR_VCD)
 
 test-c-$(1).near_even.t-after.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rnear_even -tininessafter $(3) $(2) | $$< 0 1 ; } > $$@ 2>&1
+	{ $(TESTFLOAT_GEN) -rnear_even -tininessafter $(3) $(2) | $$< 0 1 ; } > $$@ $(STDERR_VCD)
 
 test-c-$(1).minMag.t-after.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rminMag -tininessafter $(3) $(2) | $$< 1 1 ; } > $$@ 2>&1
+	{ $(TESTFLOAT_GEN) -rminMag -tininessafter $(3) $(2) | $$< 1 1 ; } > $$@ $(STDERR_VCD)
 
 test-c-$(1).min.t-after.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rmin -tininessafter $(3) $(2) | $$< 2 1 ; } > $$@ 2>&1
+	{ $(TESTFLOAT_GEN) -rmin -tininessafter $(3) $(2) | $$< 2 1 ; } > $$@ $(STDERR_VCD)
 
 test-c-$(1).max.t-after.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rmax -tininessafter $(3) $(2) | $$< 3 1 ; } > $$@ 2>&1
+	{ $(TESTFLOAT_GEN) -rmax -tininessafter $(3) $(2) | $$< 3 1 ; } > $$@ $(STDERR_VCD)
 
 test-c-$(1).near_maxMag.t-after.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rnear_maxMag -tininessafter $(3) $(2) | $$< 4 1 ; } > $$@ 2>&1
+	{ $(TESTFLOAT_GEN) -rnear_maxMag -tininessafter $(3) $(2) | $$< 4 1 ; } > $$@ $(STDERR_VCD)
 
 test-c-$(1).odd.t-after.log: test-$(1)/dut $(TESTFLOAT_GEN)
-	{ $(TESTFLOAT_GEN) -rodd -tininessafter $(3) $(2) | $$< 6 1 ; } > $$@ 2>&1
+	{ $(TESTFLOAT_GEN) -rodd -tininessafter $(3) $(2) | $$< 6 1 ; } > $$@ $(STDERR_VCD)
 
 test-c-$(1): \
  test-c-$(1).near_even.t-before.log \
@@ -300,16 +312,16 @@ test-c-$(1): \
 #	cd test-$(1) && vcs -full64 -timescale=1ns/10ps +define+EXPERIMENT=\"emulator-$(1).vh\" +incdir+../vsrc +define+DEBUG -debug_pp $$(notdir $$<) ../vsrc/emulator.v -o $$(notdir $$@)
 #
 #test-v-$(1).near_even.log: test-$(1)/simv $(TESTFLOAT_GEN)
-#	{ time $(TESTFLOAT_GEN) -rnear_even $(1) | $$< +rm=0 ; } > $$@ 2>&1
+#	{ time $(TESTFLOAT_GEN) -rnear_even $(1) | $$< +rm=0 ; } > $$@ $(STDERR_VCD)
 #
 #test-v-$(1).minMag.log: test-$(1)/simv $(TESTFLOAT_GEN)
-#	{ time $(TESTFLOAT_GEN) -rminMag $(1) | $$< +rm=1 ; } > $$@ 2>&1
+#	{ time $(TESTFLOAT_GEN) -rminMag $(1) | $$< +rm=1 ; } > $$@ $(STDERR_VCD)
 #
 #test-v-$(1).min.log: test-$(1)/simv $(TESTFLOAT_GEN)
-#	{ time $(TESTFLOAT_GEN) -rmin $(1) | $$< +rm=2 ; } > $$@ 2>&1
+#	{ time $(TESTFLOAT_GEN) -rmin $(1) | $$< +rm=2 ; } > $$@ $(STDERR_VCD)
 #
 #test-v-$(1).max.log: test-$(1)/simv $(TESTFLOAT_GEN)
-#	{ time $(TESTFLOAT_GEN) -rmax $(1) | $$< +rm=3 ; } > $$@ 2>&1
+#	{ time $(TESTFLOAT_GEN) -rmax $(1) | $$< +rm=3 ; } > $$@ $(STDERR_VCD)
 #
 #$(1)-v: $$(addsuffix .log, $$(addprefix test-v-$(1)., near_even minMag min max))
 

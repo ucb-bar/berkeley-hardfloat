@@ -1,3 +1,6 @@
+#if VM_TRACE
+# include "verilator.h"
+#endif
 
 // include files are part of the g++ command line
 
@@ -9,6 +12,15 @@ int main (int argc, char* argv[])
     }
 
     dut module;
+
+#if VM_TRACE
+    VerilatedVcdFILE vcdfd(stderr);
+    VerilatedVcdC tfp(&vcdfd);
+    Verilated::traceEverOn(true);
+    module.trace(&tfp, 99);
+    tfp.open("");
+#endif
+
     initialize_dut(module);
     module.ROUNDING_MODE = strtoull(argv[1], NULL, 16);
     module.DETECT_TININESS = strtoull(argv[2], NULL, 16);
@@ -27,7 +39,7 @@ int main (int argc, char* argv[])
     module.reset = 0;
 
     // main operation
-    for (;;) {
+    for (size_t cycle = 0; ; cycle++) {
         if (!process_inputs(module) || !process_outputs(module)) {
             printf("Ran %ld tests.\n", cnt);
             if (!error) fputs("No errors found.\n", stdout);
@@ -36,6 +48,10 @@ int main (int argc, char* argv[])
 
         module.clock = 0;
         module.eval();
+
+#if VM_TRACE
+        tfp.dump(static_cast<vluint64_t>(cycle * 2));
+#endif
 
         if (module.io_check) {
             if ((cnt % 10000 == 0) && cnt) printf("Ran %ld tests.\n", cnt);
@@ -62,6 +78,10 @@ int main (int argc, char* argv[])
 
         module.clock = 1;
         module.eval();
+
+#if VM_TRACE
+        tfp.dump(static_cast<vluint64_t>(cycle * 2 + 1));
+#endif
     }
 
     return 0;

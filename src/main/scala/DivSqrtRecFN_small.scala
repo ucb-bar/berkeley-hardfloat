@@ -220,7 +220,7 @@ class
 
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-    val cycleNum       = RegInit(0.U(log2Ceil(sigWidth + 3).W))
+    val cycleNum       = RegInit(1.U((sigWidth + 3).W))
 
     val sqrtOp_Z       = Reg(Bool())
     val majorExc_Z     = Reg(Bool())
@@ -290,25 +290,25 @@ class
 
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-    val idle = (cycleNum === 0.U)
-    val inReady = (cycleNum <= 1.U)
+    val idle = cycleNum(0)
+    val inReady = idle || cycleNum(1)
     val entering = inReady && io.inValid
     val entering_normalCase = entering && normalCase_S
 
-    val skipCycle2 = (cycleNum === 3.U) && sigX_Z(sigWidth + 1)
+    val skipCycle2 = cycleNum(3) && sigX_Z(sigWidth + 1)
 
-    when (! idle || io.inValid) {
+    when (! idle || entering) {
         cycleNum :=
-            Mux(entering & ! normalCase_S, 1.U, 0.U) |
+            Mux(entering & ! normalCase_S, (1<<1).U, 0.U) |
             Mux(entering_normalCase,
                 Mux(io.sqrtOp,
-                    Mux(rawA_S.sExp(0), sigWidth.U, (sigWidth + 1).U),
-                    (sigWidth + 2).U
+                    Mux(rawA_S.sExp(0), (BigInt(1)<<sigWidth).U, (BigInt(1)<<(sigWidth + 1)).U),
+                    (BigInt(1)<<(sigWidth + 2)).U
                 ),
                 0.U
             ) |
-            Mux(! idle && ! skipCycle2, cycleNum - 1.U, 0.U) |
-            Mux(! idle &&   skipCycle2, 1.U,            0.U)
+            Mux(! entering && ! skipCycle2, cycleNum>>1, 0.U) |
+            Mux(skipCycle2, (1<<1).U,    0.U)
     }
 
     io.inReady := inReady
@@ -346,7 +346,7 @@ class
             0.U
         ) |
         Mux(! inReady, rem_Z<<1, 0.U)
-    val bitMask = (1.U<<cycleNum)>>2
+    val bitMask = cycleNum>>2
     val trialTerm =
         Mux(inReady && ! io.sqrtOp, rawB_S.sig<<1,                 0.U) |
         Mux(inReady && evenSqrt_S,  (BigInt(1)<<sigWidth).U,       0.U) |
@@ -356,7 +356,7 @@ class
     val trialRem = rem.zext - trialTerm.zext
     val newBit = (0.S <= trialRem)
 
-    when (entering_normalCase || (cycleNum > 2.U)) {
+    when (entering_normalCase || !(idle || cycleNum(2))) {
         rem_Z := Mux(newBit, trialRem.asUInt, rem)
     }
     when (entering_normalCase || (! inReady && newBit)) {
@@ -370,7 +370,7 @@ class
 
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-    val rawOutValid = (cycleNum === 1.U)
+    val rawOutValid = cycleNum(1)
 
     io.rawOutValid_div  := rawOutValid && ! sqrtOp_Z
     io.rawOutValid_sqrt := rawOutValid &&   sqrtOp_Z
