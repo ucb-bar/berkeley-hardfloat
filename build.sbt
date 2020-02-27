@@ -1,6 +1,6 @@
 organization := "edu.berkeley.cs"
 
-version := "1.3-SNAPSHOT"
+version := "1.3-20200227-SNAPSHOT"
 
 name := "hardfloat"
 
@@ -13,7 +13,7 @@ resolvers ++= Seq(
   Resolver.sonatypeRepo("releases")
 )
 
-val defaultVersions = Map("chisel3" -> "3.3-SNAPSHOT")
+val defaultVersions = Map("chisel3" -> "3.3-20200227-SNAPSHOT")
 
 // Provide a managed dependency on chisel if -DchiselVersion="" issupplied on the command line.
 libraryDependencies ++= (Seq("chisel3").map {
