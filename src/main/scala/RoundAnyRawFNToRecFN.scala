@@ -51,7 +51,7 @@ class
         outSigWidth: Int,
         options: Int
     )
-    extends Module
+    extends chisel3.RawModule
 {
     val io = IO(new Bundle {
         val invalidExc  = Bool(INPUT)   // overrides 'infiniteExc' and 'in'
@@ -291,7 +291,7 @@ class
 
 class
     RoundRawFNToRecFN(expWidth: Int, sigWidth: Int, options: Int)
-    extends Module
+    extends chisel3.RawModule
 {
     val io = IO(new Bundle {
         val invalidExc  = Bool(INPUT)   // overrides 'infiniteExc' and 'in'

@@ -47,7 +47,7 @@ import consts._
 | "docs/DivSqrtRecF64_mulAddZ31.txt" for more details.
 *----------------------------------------------------------------------------*/
 
-class DivSqrtRecF64ToRaw_mulAddZ31(options: Int) extends Module
+class DivSqrtRecF64ToRaw_mulAddZ31(options: Int) extends chisel3.RawModule
 {
     val io = IO(new Bundle {
         /*--------------------------------------------------------------------
@@ -715,7 +715,7 @@ class DivSqrtRecF64ToRaw_mulAddZ31(options: Int) extends Module
 /*----------------------------------------------------------------------------
 *----------------------------------------------------------------------------*/
 
-class DivSqrtRecF64_mulAddZ31(options: Int) extends Module
+class DivSqrtRecF64_mulAddZ31(options: Int) extends chisel3.RawModule
 {
     val io = IO(new Bundle {
         /*--------------------------------------------------------------------

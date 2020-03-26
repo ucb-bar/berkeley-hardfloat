@@ -40,7 +40,7 @@ package hardfloat
 import Chisel._
 import consts._
 
-class INToRecFN(intWidth: Int, expWidth: Int, sigWidth: Int) extends Module
+class INToRecFN(intWidth: Int, expWidth: Int, sigWidth: Int) extends chisel3.RawModule
 {
     val io = IO(new Bundle {
         val signedIn = Bool(INPUT)

@@ -70,7 +70,7 @@ class MulAddRecFN_interIo(expWidth: Int, sigWidth: Int) extends Bundle
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-class MulAddRecFNToRaw_preMul(expWidth: Int, sigWidth: Int) extends Module
+class MulAddRecFNToRaw_preMul(expWidth: Int, sigWidth: Int) extends chisel3.RawModule
 {
     val io = IO(new Bundle {
         val op = Bits(INPUT, 2)
@@ -169,7 +169,7 @@ class MulAddRecFNToRaw_preMul(expWidth: Int, sigWidth: Int) extends Module
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-class MulAddRecFNToRaw_postMul(expWidth: Int, sigWidth: Int) extends Module
+class MulAddRecFNToRaw_postMul(expWidth: Int, sigWidth: Int) extends chisel3.RawModule
 {
     val io = IO(new Bundle {
         val fromPreMul = new MulAddRecFN_interIo(expWidth, sigWidth).asInput
@@ -299,7 +299,7 @@ class MulAddRecFNToRaw_postMul(expWidth: Int, sigWidth: Int) extends Module
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-class MulAddRecFN(expWidth: Int, sigWidth: Int) extends Module
+class MulAddRecFN(expWidth: Int, sigWidth: Int) extends chisel3.RawModule
 {
     val io = IO(new Bundle {
         val op = Bits(INPUT, 2)

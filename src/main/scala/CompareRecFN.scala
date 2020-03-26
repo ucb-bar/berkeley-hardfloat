@@ -39,7 +39,7 @@ package hardfloat
 
 import Chisel._
 
-class CompareRecFN(expWidth: Int, sigWidth: Int) extends Module
+class CompareRecFN(expWidth: Int, sigWidth: Int) extends chisel3.RawModule
 {
     val io = IO(new Bundle {
         val a = Bits(INPUT, expWidth + sigWidth + 1)

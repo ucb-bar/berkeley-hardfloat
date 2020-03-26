@@ -41,7 +41,7 @@ import Chisel._
 import scala.math._
 import consts._
 
-class RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int) extends Module
+class RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int) extends chisel3.RawModule
 {
     val io = IO(new Bundle {
         val in = Bits(INPUT, expWidth + sigWidth + 1)
