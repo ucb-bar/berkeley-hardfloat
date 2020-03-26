@@ -42,7 +42,7 @@ import consts._
 
 class DivSqrtRecF64 extends Module
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         val inReady_div  = Bool(OUTPUT)
         val inReady_sqrt = Bool(OUTPUT)
         val inValid = Bool(INPUT)
@@ -55,7 +55,7 @@ class DivSqrtRecF64 extends Module
         val outValid_sqrt = Bool(OUTPUT)
         val out = Bits(OUTPUT, 65)
         val exceptionFlags = Bits(OUTPUT, 5)
-    }
+    })
 
     val ds = Module(new DivSqrtRecF64_mulAddZ31(0))
 
@@ -85,7 +85,7 @@ class DivSqrtRecF64 extends Module
 
 class Mul54 extends Module
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         val val_s0 = Bool(INPUT)
         val latch_a_s0 = Bool(INPUT)
         val a_s0 = UInt(INPUT, 54)
@@ -93,7 +93,7 @@ class Mul54 extends Module
         val b_s0 = UInt(INPUT, 54)
         val c_s2 = UInt(INPUT, 105)
         val result_s3 = UInt(OUTPUT, 105)
-    }
+    })
 
     val val_s1 = Reg(Bool())
     val val_s2 = Reg(Bool())
