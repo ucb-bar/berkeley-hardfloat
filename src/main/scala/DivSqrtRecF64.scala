@@ -40,7 +40,7 @@ package hardfloat
 import Chisel._
 import consts._
 
-class DivSqrtRecF64 extends chisel3.RawModule
+class DivSqrtRecF64 extends Module
 {
     val io = IO(new Bundle {
         val inReady_div  = Bool(OUTPUT)
@@ -83,7 +83,7 @@ class DivSqrtRecF64 extends chisel3.RawModule
     ds.io.mulAddResult_3 := mul.io.result_s3
 }
 
-class Mul54 extends chisel3.RawModule
+class Mul54 extends Module
 {
     val io = IO(new Bundle {
         val val_s0 = Bool(INPUT)
