@@ -51,9 +51,9 @@ class
         outSigWidth: Int,
         options: Int
     )
-    extends Module
+    extends chisel3.RawModule
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         val invalidExc  = Bool(INPUT)   // overrides 'infiniteExc' and 'in'
         val infiniteExc = Bool(INPUT)   // overrides 'in' except for 'in.sign'
         val in = new RawFloat(inExpWidth, inSigWidth).asInput
@@ -62,7 +62,7 @@ class
         val detectTininess = UInt(INPUT, 1)
         val out = Bits(OUTPUT, outExpWidth + outSigWidth + 1)
         val exceptionFlags = Bits(OUTPUT, 5)
-    }
+    })
 
     //------------------------------------------------------------------------
     //------------------------------------------------------------------------
@@ -291,9 +291,9 @@ class
 
 class
     RoundRawFNToRecFN(expWidth: Int, sigWidth: Int, options: Int)
-    extends Module
+    extends chisel3.RawModule
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         val invalidExc  = Bool(INPUT)   // overrides 'infiniteExc' and 'in'
         val infiniteExc = Bool(INPUT)   // overrides 'in' except for 'in.sign'
         val in = new RawFloat(expWidth, sigWidth + 2).asInput
@@ -301,7 +301,7 @@ class
         val detectTininess = UInt(INPUT, 1)
         val out = Bits(OUTPUT, expWidth + sigWidth + 1)
         val exceptionFlags = Bits(OUTPUT, 5)
-    }
+    })
 
     val roundAnyRawFNToRecFN =
         Module(

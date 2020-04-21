@@ -39,9 +39,9 @@ package hardfloat
 
 import Chisel._
 
-class CompareRecFN(expWidth: Int, sigWidth: Int) extends Module
+class CompareRecFN(expWidth: Int, sigWidth: Int) extends chisel3.RawModule
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         val a = Bits(INPUT, expWidth + sigWidth + 1)
         val b = Bits(INPUT, expWidth + sigWidth + 1)
         val signaling = Bool(INPUT)
@@ -49,7 +49,7 @@ class CompareRecFN(expWidth: Int, sigWidth: Int) extends Module
         val eq = Bool(OUTPUT)
         val gt = Bool(OUTPUT)
         val exceptionFlags = Bits(OUTPUT, 5)
-    }
+    })
 
     val rawA = rawFloatFromRecFN(expWidth, sigWidth, io.a)
     val rawB = rawFloatFromRecFN(expWidth, sigWidth, io.b)

@@ -43,15 +43,15 @@ import consts._
 class
     RecFNToRecFN(
         inExpWidth: Int, inSigWidth: Int, outExpWidth: Int, outSigWidth: Int)
-    extends Module
+    extends chisel3.RawModule
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         val in = Bits(INPUT, inExpWidth + inSigWidth + 1)
         val roundingMode   = UInt(INPUT, 3)
         val detectTininess = UInt(INPUT, 1)
         val out = Bits(OUTPUT, outExpWidth + outSigWidth + 1)
         val exceptionFlags = Bits(OUTPUT, 5)
-    }
+    })
 
     //------------------------------------------------------------------------
     //------------------------------------------------------------------------

@@ -70,9 +70,9 @@ class MulAddRecFN_interIo(expWidth: Int, sigWidth: Int) extends Bundle
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-class MulAddRecFNToRaw_preMul(expWidth: Int, sigWidth: Int) extends Module
+class MulAddRecFNToRaw_preMul(expWidth: Int, sigWidth: Int) extends chisel3.RawModule
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         val op = Bits(INPUT, 2)
         val a = Bits(INPUT, expWidth + sigWidth + 1)
         val b = Bits(INPUT, expWidth + sigWidth + 1)
@@ -81,7 +81,7 @@ class MulAddRecFNToRaw_preMul(expWidth: Int, sigWidth: Int) extends Module
         val mulAddB = UInt(OUTPUT, sigWidth)
         val mulAddC = UInt(OUTPUT, sigWidth * 2)
         val toPostMul = new MulAddRecFN_interIo(expWidth, sigWidth).asOutput
-    }
+    })
 
     //------------------------------------------------------------------------
     //------------------------------------------------------------------------
@@ -169,15 +169,15 @@ class MulAddRecFNToRaw_preMul(expWidth: Int, sigWidth: Int) extends Module
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-class MulAddRecFNToRaw_postMul(expWidth: Int, sigWidth: Int) extends Module
+class MulAddRecFNToRaw_postMul(expWidth: Int, sigWidth: Int) extends chisel3.RawModule
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         val fromPreMul = new MulAddRecFN_interIo(expWidth, sigWidth).asInput
         val mulAddResult = UInt(INPUT, sigWidth * 2 + 1)
         val roundingMode = UInt(INPUT, 3)
         val invalidExc  = Bool(OUTPUT)
         val rawOut = new RawFloat(expWidth, sigWidth + 2).asOutput
-    }
+    })
 
     //------------------------------------------------------------------------
     //------------------------------------------------------------------------
@@ -299,9 +299,9 @@ class MulAddRecFNToRaw_postMul(expWidth: Int, sigWidth: Int) extends Module
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-class MulAddRecFN(expWidth: Int, sigWidth: Int) extends Module
+class MulAddRecFN(expWidth: Int, sigWidth: Int) extends chisel3.RawModule
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         val op = Bits(INPUT, 2)
         val a = Bits(INPUT, expWidth + sigWidth + 1)
         val b = Bits(INPUT, expWidth + sigWidth + 1)
@@ -310,7 +310,7 @@ class MulAddRecFN(expWidth: Int, sigWidth: Int) extends Module
         val detectTininess = UInt(INPUT, 1)
         val out = Bits(OUTPUT, expWidth + sigWidth + 1)
         val exceptionFlags = Bits(OUTPUT, 5)
-    }
+    })
 
     //------------------------------------------------------------------------
     //------------------------------------------------------------------------
