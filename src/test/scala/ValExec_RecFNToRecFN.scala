@@ -38,32 +38,32 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package hardfloat.test
 
 import hardfloat._
-import Chisel._
+import chisel3._
 
 class
     ValExec_RecFNToRecFN(
         inExpWidth: Int, inSigWidth: Int, outExpWidth: Int, outSigWidth: Int)
     extends Module
 {
-    val io = new Bundle {
-        val in = Bits(INPUT, inExpWidth + inSigWidth)
-        val roundingMode   = UInt(INPUT, 3)
-        val detectTininess = UInt(INPUT, 1)
+    val io = IO(new Bundle {
+        val in = Input(Bits((inExpWidth + inSigWidth).W))
+        val roundingMode   = Input(UInt(3.W))
+        val detectTininess = Input(UInt(1.W))
 
         val expected = new Bundle {
-            val out = Bits(INPUT, outExpWidth + outSigWidth)
-            val exceptionFlags = Bits(INPUT, 5)
-            val recOut = Bits(OUTPUT, outExpWidth + outSigWidth + 1)
+            val out = Input(Bits((outExpWidth + outSigWidth).W))
+            val exceptionFlags = Input(Bits(5.W))
+            val recOut = Output(Bits((outExpWidth + outSigWidth + 1).W))
         }
 
         val actual = new Bundle {
-            val out = Bits(OUTPUT, outExpWidth + outSigWidth + 1)
-            val exceptionFlags = Bits(OUTPUT, 5)
+            val out = Output(Bits((outExpWidth + outSigWidth + 1).W))
+            val exceptionFlags = Output(Bits(5.W))
         }
 
-        val check = Bool(OUTPUT)
-        val pass = Bool(OUTPUT)
-    }
+        val check = Output(Bool())
+        val pass = Output(Bool())
+    })
 
     val recFNToRecFN =
         Module(
@@ -78,7 +78,7 @@ class
     io.actual.out := recFNToRecFN.io.out
     io.actual.exceptionFlags := recFNToRecFN.io.exceptionFlags
 
-    io.check := Bool(true)
+    io.check := true.B
     io.pass :=
         equivRecFN(
             outExpWidth, outSigWidth, io.actual.out, io.expected.recOut) &&

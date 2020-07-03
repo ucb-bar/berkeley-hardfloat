@@ -37,23 +37,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package hardfloat
 
-import Chisel._
+import chisel3._
 
 object consts {
     /*------------------------------------------------------------------------
     | For rounding to integer values, rounding mode 'odd' rounds to minimum
     | magnitude instead, same as 'minMag'.
     *------------------------------------------------------------------------*/
-    def round_near_even   = UInt("b000", 3)
-    def round_minMag      = UInt("b001", 3)
-    def round_min         = UInt("b010", 3)
-    def round_max         = UInt("b011", 3)
-    def round_near_maxMag = UInt("b100", 3)
-    def round_odd         = UInt("b110", 3)
+    def round_near_even   = "b000".U
+    def round_minMag      = "b001".U
+    def round_min         = "b010".U
+    def round_max         = "b011".U
+    def round_near_maxMag = "b100".U
+    def round_odd         = "b110".U
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-    def tininess_beforeRounding = UInt(0, 1)
-    def tininess_afterRounding  = UInt(1, 1)
+    def tininess_beforeRounding = 0.U
+    def tininess_afterRounding  = 1.U
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
     def flRoundOpt_sigMSBitAlwaysZero  = 1
@@ -67,12 +67,12 @@ object consts {
 
 class RawFloat(val expWidth: Int, val sigWidth: Int) extends Bundle
 {
-    val isNaN  = Bool()              // overrides all other fields
-    val isInf  = Bool()              // overrides 'isZero', 'sExp', and 'sig'
-    val isZero = Bool()              // overrides 'sExp' and 'sig'
-    val sign   = Bool()
-    val sExp = SInt(width = expWidth + 2)
-    val sig  = UInt(width = sigWidth + 1)   // 2 m.s. bits cannot both be 0
+    val isNaN: Bool = Bool()              // overrides all other fields
+    val isInf: Bool = Bool()              // overrides 'isZero', 'sExp', and 'sig'
+    val isZero: Bool = Bool()              // overrides 'sExp' and 'sig'
+    val sign: Bool = Bool()
+    val sExp: SInt = SInt((expWidth + 2).W)
+    val sig: UInt = UInt((sigWidth + 1).W)   // 2 m.s. bits cannot both be 0
 
 }
 

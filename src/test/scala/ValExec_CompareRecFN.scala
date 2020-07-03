@@ -38,34 +38,34 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package hardfloat.test
 
 import hardfloat._
-import Chisel._
+import chisel3._
 
 class ValExec_CompareRecFN_lt(expWidth: Int, sigWidth: Int) extends Module
 {
-    val io = new Bundle {
-        val a = Bits(INPUT, expWidth + sigWidth)
-        val b = Bits(INPUT, expWidth + sigWidth)
+    val io = IO(new Bundle {
+        val a = Input(Bits((expWidth + sigWidth).W))
+        val b = Input(Bits((expWidth + sigWidth).W))
         val expected = new Bundle {
-            val out = Bits(INPUT, 1)
-            val exceptionFlags = Bits(INPUT, 5)
+            val out = Input(Bits(1.W))
+            val exceptionFlags = Input(Bits(5.W))
         }
         val actual = new Bundle {
-            val out = Bits(OUTPUT, 1)
-            val exceptionFlags = Bits(OUTPUT, 5)
+            val out = Output(Bits(1.W))
+            val exceptionFlags = Output(Bits(5.W))
         }
-        val check = Bool(OUTPUT)
-        val pass = Bool(OUTPUT)
-    }
+        val check = Output(Bool())
+        val pass = Output(Bool())
+    })
 
     val compareRecFN = Module(new CompareRecFN(expWidth, sigWidth))
     compareRecFN.io.a := recFNFromFN(expWidth, sigWidth, io.a)
     compareRecFN.io.b := recFNFromFN(expWidth, sigWidth, io.b)
-    compareRecFN.io.signaling := Bool(true)
+    compareRecFN.io.signaling := true.B
 
     io.actual.out := compareRecFN.io.lt
     io.actual.exceptionFlags := compareRecFN.io.exceptionFlags
 
-    io.check := Bool(true)
+    io.check := true.B
     io.pass :=
         (io.actual.out === io.expected.out) &&
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
@@ -73,30 +73,30 @@ class ValExec_CompareRecFN_lt(expWidth: Int, sigWidth: Int) extends Module
 
 class ValExec_CompareRecFN_le(expWidth: Int, sigWidth: Int) extends Module
 {
-    val io = new Bundle {
-        val a = Bits(INPUT, expWidth + sigWidth)
-        val b = Bits(INPUT, expWidth + sigWidth)
+    val io = IO(new Bundle {
+        val a = Input(Bits((expWidth + sigWidth).W))
+        val b = Input(Bits((expWidth + sigWidth).W))
         val expected = new Bundle {
-            val out = Bits(INPUT, 1)
-            val exceptionFlags = Bits(INPUT, 5)
+            val out = Input(Bits(1.W))
+            val exceptionFlags = Input(Bits(5.W))
         }
         val actual = new Bundle {
-            val out = Bits(OUTPUT, 1)
-            val exceptionFlags = Bits(OUTPUT, 5)
+            val out = Output(Bits(1.W))
+            val exceptionFlags = Output(Bits(5.W))
         }
-        val check = Bool(OUTPUT)
-        val pass = Bool(OUTPUT)
-    }
+        val check = Output(Bool())
+        val pass = Output(Bool())
+    })
 
     val compareRecFN = Module(new CompareRecFN(expWidth, sigWidth))
     compareRecFN.io.a := recFNFromFN(expWidth, sigWidth, io.a)
     compareRecFN.io.b := recFNFromFN(expWidth, sigWidth, io.b)
-    compareRecFN.io.signaling := Bool(true)
+    compareRecFN.io.signaling := true.B
 
     io.actual.out := compareRecFN.io.lt || compareRecFN.io.eq
     io.actual.exceptionFlags := compareRecFN.io.exceptionFlags
 
-    io.check := Bool(true)
+    io.check := true.B
     io.pass :=
         (io.actual.out === io.expected.out) &&
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
@@ -104,30 +104,30 @@ class ValExec_CompareRecFN_le(expWidth: Int, sigWidth: Int) extends Module
 
 class ValExec_CompareRecFN_eq(expWidth: Int, sigWidth: Int) extends Module
 {
-    val io = new Bundle {
-        val a = Bits(INPUT, expWidth + sigWidth)
-        val b = Bits(INPUT, expWidth + sigWidth)
+    val io = IO(new Bundle {
+        val a = Input(Bits((expWidth + sigWidth).W))
+        val b = Input(Bits((expWidth + sigWidth).W))
         val expected = new Bundle {
-            val out = Bits(INPUT, 1)
-            val exceptionFlags = Bits(INPUT, 5)
+            val out = Input(Bits(1.W))
+            val exceptionFlags = Input(Bits(5.W))
         }
         val actual = new Bundle {
-            val out = Bits(OUTPUT, 1)
-            val exceptionFlags = Bits(OUTPUT, 5)
+            val out = Output(Bits(1.W))
+            val exceptionFlags = Output(Bits(5.W))
         }
-        val check = Bool(OUTPUT)
-        val pass = Bool(OUTPUT)
-    }
+        val check = Output(Bool())
+        val pass = Output(Bool())
+    })
 
     val compareRecFN = Module(new CompareRecFN(expWidth, sigWidth))
     compareRecFN.io.a := recFNFromFN(expWidth, sigWidth, io.a)
     compareRecFN.io.b := recFNFromFN(expWidth, sigWidth, io.b)
-    compareRecFN.io.signaling := Bool(false)
+    compareRecFN.io.signaling := false.B
 
     io.actual.out := compareRecFN.io.eq
     io.actual.exceptionFlags := compareRecFN.io.exceptionFlags
 
-    io.check := Bool(true)
+    io.check := true.B
     io.pass :=
         (io.actual.out === io.expected.out) &&
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
@@ -176,3 +176,4 @@ class CompareRecFNSpec extends FMATester {
         check(test(64, "eq"))
   }
 }
+

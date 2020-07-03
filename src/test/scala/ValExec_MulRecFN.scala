@@ -37,31 +37,31 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package hardfloat.test
 
+import chisel3._
 import hardfloat._
-import Chisel._
 
 class ValExec_MulRecFN(expWidth: Int, sigWidth: Int) extends Module
 {
-    val io = new Bundle {
-        val a = Bits(INPUT, expWidth + sigWidth)
-        val b = Bits(INPUT, expWidth + sigWidth)
-        val roundingMode   = UInt(INPUT, 3)
-        val detectTininess = UInt(INPUT, 1)
+    val io = IO(new Bundle {
+        val a = Input(Bits((expWidth + sigWidth).W))
+        val b = Input(Bits((expWidth + sigWidth).W))
+        val roundingMode   = Input(UInt(3.W))
+        val detectTininess = Input(UInt(1.W))
 
         val expected = new Bundle {
-            val out = Bits(INPUT, expWidth + sigWidth)
-            val exceptionFlags = Bits(INPUT, 5)
-            val recOut = Bits(OUTPUT, expWidth + sigWidth + 1)
+            val out = Input(Bits((expWidth + sigWidth).W))
+            val exceptionFlags = Input(Bits(5.W))
+            val recOut = Output(Bits((expWidth + sigWidth + 1).W))
         }
 
         val actual = new Bundle {
-            val out = Bits(OUTPUT, expWidth + sigWidth + 1)
-            val exceptionFlags = Bits(OUTPUT, 5)
+            val out = Output(Bits((expWidth + sigWidth + 1).W))
+            val exceptionFlags = Output(Bits(5.W))
         }
 
-        val check = Bool(OUTPUT)
-        val pass = Bool(OUTPUT)
-    }
+        val check = Output(Bool())
+        val pass = Output(Bool())
+    })
 
     val mulRecFN = Module(new MulRecFN(expWidth, sigWidth))
     mulRecFN.io.a := recFNFromFN(expWidth, sigWidth, io.a)
@@ -74,7 +74,7 @@ class ValExec_MulRecFN(expWidth: Int, sigWidth: Int) extends Module
     io.actual.out := mulRecFN.io.out
     io.actual.exceptionFlags := mulRecFN.io.exceptionFlags
 
-    io.check := Bool(true)
+    io.check := true.B
     io.pass :=
         equivRecFN(expWidth, sigWidth, io.actual.out, io.expected.recOut) &&
         (io.actual.exceptionFlags === io.expected.exceptionFlags)

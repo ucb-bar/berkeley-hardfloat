@@ -38,21 +38,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package hardfloat.test
 
 import hardfloat._
-import Chisel._
+import chisel3._
 
 class ValExec_fNFromRecFN(expWidth: Int, sigWidth: Int) extends Module
 {
-    val io = new Bundle {
-        val a = Bits(INPUT, expWidth + sigWidth)
-        val out = Bits(OUTPUT, expWidth + sigWidth)
-        val check = Bool(OUTPUT)
-        val pass = Bool(OUTPUT)
-    }
+    val io = IO(new Bundle {
+        val a = Output(Bits((expWidth + sigWidth).W))
+        val out = Output(Bits((expWidth + sigWidth).W))
+        val check = Output(Bool())
+        val pass = Output(Bool())
+    })
 
     io.out :=
         fNFromRecFN(expWidth, sigWidth, recFNFromFN(expWidth, sigWidth, io.a))
 
-    io.check := Bool(true)
+    io.check := true.B
     io.pass := (io.out === io.a)
 }
 

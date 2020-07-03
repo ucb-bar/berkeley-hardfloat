@@ -37,7 +37,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package hardfloat
 
-import Chisel._
+import chisel3._
+import chisel3.util._
 
 object fNFromRecFN
 {
@@ -47,20 +48,20 @@ object fNFromRecFN
 
         val rawIn = rawFloatFromRecFN(expWidth, sigWidth, in)
 
-        val isSubnormal = (rawIn.sExp < SInt(minNormExp))
-        val denormShiftDist = UInt(1) - rawIn.sExp(log2Up(sigWidth - 1) - 1, 0)
+        val isSubnormal = rawIn.sExp < minNormExp.S
+        val denormShiftDist = 1.U - rawIn.sExp(log2Up(sigWidth - 1) - 1, 0)
         val denormFract = ((rawIn.sig>>1)>>denormShiftDist)(sigWidth - 2, 0)
 
         val expOut =
             Mux(isSubnormal,
-                UInt(0),
+                0.U,
                 rawIn.sExp(expWidth - 1, 0) -
-                    UInt((BigInt(1)<<(expWidth - 1)) + 1)
+                  ((BigInt(1)<<(expWidth - 1)) + 1).U
             ) | Fill(expWidth, rawIn.isNaN || rawIn.isInf)
         val fractOut =
             Mux(isSubnormal,
                 denormFract,
-                Mux(rawIn.isInf, UInt(0), rawIn.sig(sigWidth - 2, 0))
+                Mux(rawIn.isInf, 0.U, rawIn.sig(sigWidth - 2, 0))
             )
         Cat(rawIn.sign, expOut, fractOut)
     }
