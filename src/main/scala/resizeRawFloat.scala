@@ -37,7 +37,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package hardfloat
 
-import Chisel._
+import chisel3._
+import chisel3.util.Fill
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -47,7 +48,7 @@ object resizeRawFloat
     def apply(expWidth: Int, sigWidth: Int, in: RawFloat): RawFloat =
     {
         val sAdjustedExp =
-            in.sExp +& SInt((BigInt(1)<<expWidth) - (BigInt(1)<<in.expWidth))
+            in.sExp +& ((BigInt(1)<<expWidth) - (BigInt(1)<<in.expWidth)).S
 
         val out = Wire(new RawFloat(expWidth, sigWidth))
         out.sign   := in.sign
@@ -58,9 +59,9 @@ object resizeRawFloat
             (if (in.expWidth <= expWidth)
                  sAdjustedExp
              else
-                 Cat((sAdjustedExp < SInt(0)),
+                 ((sAdjustedExp < 0.S)##
                      Mux(sAdjustedExp(in.expWidth + 1, expWidth + 1).orR,
-                         Cat(Fill(expWidth - 1, UInt(1, 1)), UInt(0, 2)),
+                         Fill(expWidth - 1, 1.U(1.W)) ## 0.U(2.W),
                          sAdjustedExp(expWidth, 0)
                      )
                  ).asSInt)
@@ -68,9 +69,9 @@ object resizeRawFloat
             (if (in.sigWidth <= sigWidth)
                  in.sig<<(sigWidth - in.sigWidth)
              else
-                 Cat(in.sig(in.sigWidth + 2, in.sigWidth - sigWidth + 1),
+                 in.sig(in.sigWidth + 2, in.sigWidth - sigWidth + 1) ##
                      in.sig(in.sigWidth - sigWidth, 0).orR
-                 ))
+                 )
         out
     }
 }
