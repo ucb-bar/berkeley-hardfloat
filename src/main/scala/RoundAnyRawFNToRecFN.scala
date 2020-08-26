@@ -151,11 +151,11 @@ class
             if (neverUnderflows)
                 0.U(outSigWidth.W) ## doShiftSigDown1 ## 3.U(2.W)
             else
-                lowMask(
+                (lowMask(
                         sAdjustedExp(outExpWidth, 0),
                         outMinNormExp - outSigWidth - 1,
                         outMinNormExp
-                    ) | doShiftSigDown1 ##
+                    ) | doShiftSigDown1) ##
                   3.U(2.W)
 
         val shiftedRoundMask = 0.U(1.W) ## roundMask>>1

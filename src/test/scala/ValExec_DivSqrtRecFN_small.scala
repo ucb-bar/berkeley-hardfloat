@@ -57,8 +57,8 @@ class
         val input = Flipped(Decoupled(new DivRecFN_io(expWidth, sigWidth)))
 
         val output = new Bundle {
-            val a = Flipped(Bits((expWidth + sigWidth).W))
-            val b = Flipped(Bits((expWidth + sigWidth).W))
+            val a = Flipped(Input(Bits((expWidth + sigWidth).W)))
+            val b = Flipped(Input(Bits((expWidth + sigWidth).W)))
             val roundingMode   = Output(UInt(3.W))
             val detectTininess = Output(UInt(1.W))
         }
@@ -160,6 +160,7 @@ class
     ds.io.inValid := io.input.valid && cq.io.enq.ready
     ds.io.sqrtOp := true.B
     ds.io.a := recFNFromFN(expWidth, sigWidth, io.input.bits.a)
+    ds.io.b := DontCare
     ds.io.roundingMode   := io.input.bits.roundingMode
     ds.io.detectTininess := io.input.bits.detectTininess
 

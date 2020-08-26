@@ -52,7 +52,7 @@ class
         val expected = new Bundle {
             val out = Input(Bits((expWidth + sigWidth).W))
             val exceptionFlags = Input(Bits(5.W))
-            val recOut = Input(Bits((expWidth + sigWidth + 1).W))
+            val recOut = Output(Bits((expWidth + sigWidth + 1).W))
         }
 
         val actual = new Bundle {
@@ -85,10 +85,10 @@ class
     ValExec_INToRecFN(intWidth: Int, expWidth: Int, sigWidth: Int)
     extends Module
 {
-    val io = new Bundle {
+    val io = IO(new Bundle {
         val in = Input(Bits(intWidth.W))
         val roundingMode   = Input(UInt(3.W))
-        val detectTininess = UInt(1.W)
+        val detectTininess = Input(UInt(1.W))
 
         val expected = new Bundle {
             val out = Input(Bits((expWidth + sigWidth).W))
@@ -103,7 +103,7 @@ class
 
         val check = Output(Bool())
         val pass = Output(Bool())
-    }
+    })
 
     val iNToRecFN = Module(new INToRecFN(intWidth, expWidth, sigWidth))
     iNToRecFN.io.signedIn := true.B

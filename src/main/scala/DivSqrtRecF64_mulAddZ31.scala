@@ -83,12 +83,12 @@ class DivSqrtRecF64ToRaw_mulAddZ31 extends Module
 
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-    val cycleNum_A      = Reg(0.U(3.W))
-    val cycleNum_B      = Reg(0.U(4.W))
-    val cycleNum_C      = Reg(0.U(3.W))
-    val cycleNum_E      = Reg(0.U(3.W))
+    val cycleNum_A      = RegInit(0.U(3.W))
+    val cycleNum_B      = RegInit(0.U(4.W))
+    val cycleNum_C      = RegInit(0.U(3.W))
+    val cycleNum_E      = RegInit(0.U(3.W))
 
-    val valid_PA        = Reg(false.B)
+    val valid_PA        = RegInit(false.B)
     val sqrtOp_PA       = Reg(Bool())
     val majorExc_PA     = Reg(Bool())
 //*** REDUCE 3 BITS TO 2-BIT CODE:
@@ -623,7 +623,7 @@ class DivSqrtRecF64ToRaw_mulAddZ31 extends Module
         Mux(cyc_E3_sqrt,
             (Mux(sExp_PC(0),
                  sigB_PC(0)<<1,
-                 sigB_PC(1) ^ sigB_PC(0) ## sigB_PC(0)
+                 (sigB_PC(1) ^ sigB_PC(0)) ## sigB_PC(0)
              ) ^ ((~ sigT_E(0))<<1)
             )<<54,
             0.U
