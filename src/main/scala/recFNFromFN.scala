@@ -45,8 +45,8 @@ object recFNFromFN
     {
         val rawIn = rawFloatFromFN(expWidth, sigWidth, in)
         rawIn.sign ##
-            Mux(rawIn.isZero, 0.U(3.W), rawIn.sExp(expWidth, expWidth - 2)) |
-                Mux(rawIn.isNaN, 1.U, 0.U) ##
+          (Mux(rawIn.isZero, 0.U(3.W), rawIn.sExp(expWidth, expWidth - 2)) |
+                Mux(rawIn.isNaN, 1.U, 0.U)) ##
             rawIn.sExp(expWidth - 3, 0) ##
             rawIn.sig(sigWidth - 2, 0)
     }

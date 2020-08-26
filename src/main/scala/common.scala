@@ -44,12 +44,12 @@ object consts {
     | For rounding to integer values, rounding mode 'odd' rounds to minimum
     | magnitude instead, same as 'minMag'.
     *------------------------------------------------------------------------*/
-    def round_near_even   = "b000".U
-    def round_minMag      = "b001".U
-    def round_min         = "b010".U
-    def round_max         = "b011".U
-    def round_near_maxMag = "b100".U
-    def round_odd         = "b110".U
+    def round_near_even   = "b000".U(3.W)
+    def round_minMag      = "b001".U(3.W)
+    def round_min         = "b010".U(3.W)
+    def round_max         = "b011".U(3.W)
+    def round_near_maxMag = "b100".U(3.W)
+    def round_odd         = "b110".U(3.W)
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
     def tininess_beforeRounding = 0.U

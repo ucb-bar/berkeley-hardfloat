@@ -43,7 +43,7 @@ import chisel3._
 class ValExec_fNFromRecFN(expWidth: Int, sigWidth: Int) extends Module
 {
     val io = IO(new Bundle {
-        val a = Output(Bits((expWidth + sigWidth).W))
+        val a = Input(Bits((expWidth + sigWidth).W))
         val out = Output(Bits((expWidth + sigWidth).W))
         val check = Output(Bool())
         val pass = Output(Bool())

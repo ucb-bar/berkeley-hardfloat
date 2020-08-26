@@ -64,7 +64,7 @@ class ValExec_DivSqrtRecF64_div extends Module {
         val expected = new Bundle {
             val out = Output(Bits(64.W))
             val exceptionFlags = Output(Bits(5.W))
-            val recOut = Output(Bits(5.W))
+            val recOut = Output(Bits(65.W))
         }
 
         val actual = new Bundle {
@@ -154,6 +154,7 @@ class ValExec_DivSqrtRecF64_sqrt extends Module {
     ds.io.inValid := io.input.valid && cq.io.enq.ready
     ds.io.sqrtOp := true.B
     ds.io.b := recFNFromFN(11, 53, io.input.bits.b)
+    ds.io.a := DontCare
     ds.io.roundingMode   := io.input.bits.roundingMode
     ds.io.detectTininess := io.input.bits.detectTininess
 

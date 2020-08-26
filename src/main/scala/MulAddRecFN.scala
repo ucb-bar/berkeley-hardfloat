@@ -116,7 +116,7 @@ class MulAddRecFNToRaw_preMul(expWidth: Int, sigWidth: Int) extends RawModule
             )
         )
     val mainAlignedSigC =
-        Mux(doSubMags, ~rawC.sig, rawC.sig) ## Fill(sigSumWidth - sigWidth + 2, doSubMags).asSInt>>CAlignDist
+        (Mux(doSubMags, ~rawC.sig, rawC.sig) ## Fill(sigSumWidth - sigWidth + 2, doSubMags)).asSInt>>CAlignDist
     val reduced4CExtra =
         (orReduceBy4(rawC.sig<<((sigSumWidth - sigWidth - 1) & 3)) &
              lowMask(
