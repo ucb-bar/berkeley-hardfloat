@@ -4,7 +4,7 @@ version := "1.3-SNAPSHOT"
 
 name := "hardfloat"
 
-scalaVersion := "2.12.8"
+scalaVersion := "2.12.12"
 
 scalacOptions += "-Xsource:2.11"
 
@@ -13,7 +13,7 @@ resolvers ++= Seq(
   Resolver.sonatypeRepo("releases")
 )
 
-val defaultVersions = Map("chisel3" -> "3.3-SNAPSHOT")
+val defaultVersions = Map("chisel3" -> "3.4-SNAPSHOT")
 
 // Provide a managed dependency on chisel if -DchiselVersion="" issupplied on the command line.
 libraryDependencies ++= (Seq("chisel3").map {

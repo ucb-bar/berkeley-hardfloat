@@ -1,4 +1,4 @@
-CHISEL_VERSION = 3.2-SNAPSHOT
+CHISEL_VERSION = 3.4-SNAPSHOT
 
 #default: test-c test-v
 default: test-c
