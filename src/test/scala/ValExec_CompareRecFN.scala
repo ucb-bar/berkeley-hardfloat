@@ -71,10 +71,6 @@ class ValExec_CompareRecFN_lt(expWidth: Int, sigWidth: Int) extends Module
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
 
-class ValExec_CompareRecF16_lt extends ValExec_CompareRecFN_lt(5, 11)
-class ValExec_CompareRecF32_lt extends ValExec_CompareRecFN_lt(8, 24)
-class ValExec_CompareRecF64_lt extends ValExec_CompareRecFN_lt(11, 53)
-
 class ValExec_CompareRecFN_le(expWidth: Int, sigWidth: Int) extends Module
 {
     val io = new Bundle {
@@ -105,10 +101,6 @@ class ValExec_CompareRecFN_le(expWidth: Int, sigWidth: Int) extends Module
         (io.actual.out === io.expected.out) &&
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
-
-class ValExec_CompareRecF16_le extends ValExec_CompareRecFN_le(5, 11)
-class ValExec_CompareRecF32_le extends ValExec_CompareRecFN_le(8, 24)
-class ValExec_CompareRecF64_le extends ValExec_CompareRecFN_le(11, 53)
 
 class ValExec_CompareRecFN_eq(expWidth: Int, sigWidth: Int) extends Module
 {
@@ -141,7 +133,46 @@ class ValExec_CompareRecFN_eq(expWidth: Int, sigWidth: Int) extends Module
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
 
-class ValExec_CompareRecF16_eq extends ValExec_CompareRecFN_eq(5, 11)
-class ValExec_CompareRecF32_eq extends ValExec_CompareRecFN_eq(8, 24)
-class ValExec_CompareRecF64_eq extends ValExec_CompareRecFN_eq(11, 53)
+class CompareRecFNSpec extends FMATester {
+    def test(f: Int, fn: String): Seq[String] = {
+        val generator = fn match {
+            case "lt" => () => new ValExec_CompareRecFN_lt(exp(f), sig(f))
+            case "le" => () => new ValExec_CompareRecFN_le(exp(f), sig(f))
+            case "eq" => () => new ValExec_CompareRecFN_eq(exp(f), sig(f))
+        }
+        test(
+            s"CompareRecF${f}_$fn",
+            generator,
+            "CompareRecFN.cpp",
+            Seq(Seq(s"f${f}_${fn}"))
+        )
+    }
 
+    "CompareRecF16_lt" should "pass" in {
+        check(test(16, "lt"))
+    }
+    "CompareRecF32_lt" should "pass" in {
+        check(test(32, "lt"))
+    }
+    "CompareRecF64_lt" should "pass" in {
+        check(test(64, "lt"))
+    }
+    "CompareRecF16_le" should "pass" in {
+        check(test(16, "le"))
+    }
+    "CompareRecF32_le" should "pass" in {
+        check(test(32, "le"))
+    }
+    "CompareRecF64_le" should "pass" in {
+        check(test(64, "lt"))
+    }
+    "CompareRecF16_eq" should "pass" in {
+        check(test(16, "eq"))
+    }
+    "CompareRecF32_eq" should "pass" in {
+        check(test(32, "eq"))
+    }
+    "CompareRecF64_eq" should "pass" in {
+        check(test(64, "eq"))
+  }
+}
