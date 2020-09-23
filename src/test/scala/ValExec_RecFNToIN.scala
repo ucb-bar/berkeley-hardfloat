@@ -80,12 +80,6 @@ class
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
 
-class ValExec_RecF16ToUI32 extends ValExec_RecFNToUIN(5, 11, 32)
-class ValExec_RecF16ToUI64 extends ValExec_RecFNToUIN(5, 11, 64)
-class ValExec_RecF32ToUI32 extends ValExec_RecFNToUIN(8, 24, 32)
-class ValExec_RecF32ToUI64 extends ValExec_RecFNToUIN(8, 24, 64)
-class ValExec_RecF64ToUI32 extends ValExec_RecFNToUIN(11, 53, 32)
-class ValExec_RecF64ToUI64 extends ValExec_RecFNToUIN(11, 53, 64)
 
 class
     ValExec_RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int)
@@ -126,11 +120,70 @@ class
         (io.actual.out === io.expected.out) &&
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
+class RecFNToUINSpec extends FMATester {
+    def test(f: Int, i: Int): Seq[String] = {
+        val (softfloatArgs, dutArgs) = roundings.map { case (s, d) =>
+            (s +: Seq("-exact", "-level2", s"f${f}_to_ui${i}"), Seq(d))
+        }.unzip
+        test(
+            s"RecF${f}ToUI${i}",
+            () => new ValExec_RecFNToUIN(exp(f), sig(f), i),
+            "RecFNToUIN.cpp",
+            softfloatArgs,
+            Some(dutArgs)
+        )
+    }
 
-class ValExec_RecF16ToI32 extends ValExec_RecFNToIN(5, 11, 32)
-class ValExec_RecF16ToI64 extends ValExec_RecFNToIN(5, 11, 64)
-class ValExec_RecF32ToI32 extends ValExec_RecFNToIN(8, 24, 32)
-class ValExec_RecF32ToI64 extends ValExec_RecFNToIN(8, 24, 64)
-class ValExec_RecF64ToI32 extends ValExec_RecFNToIN(11, 53, 32)
-class ValExec_RecF64ToI64 extends ValExec_RecFNToIN(11, 53, 64)
+    "RecF16ToUI32" should "pass" in {
+        check(test(16, 32))
+    }
+    "RecF16ToUI64" should "pass" in {
+        check(test(16, 64))
+    }
+    "RecF32ToUI32" should "pass" in {
+        check(test(32, 32))
+    }
+    "RecF32ToUI64" should "pass" in {
+        check(test(32, 64))
+    }
+    "RecF64ToUI32" should "pass" in {
+        check(test(64, 32))
+    }
+    "RecF64ToUI64" should "pass" in {
+        check(test(64, 64))
+    }
+}
 
+class RecFNToINSpec extends FMATester {
+    def test(f: Int, i: Int): Seq[String] = {
+        val (softfloatArgs, dutArgs) = roundings.map { case (s, d) =>
+            (s +: Seq("-exact", "-level2", s"f${f}_to_i${i}"), Seq(d))
+        }.unzip
+        test(
+            s"RecF${f}ToI${i}",
+            () => new ValExec_RecFNToIN(exp(f), sig(f), i),
+            "RecFNToIN.cpp",
+            softfloatArgs,
+            Some(dutArgs)
+        )
+    }
+
+    "RecF16ToI32" should "pass" in {
+        check(test(16, 32))
+    }
+    "RecF16ToI64" should "pass" in {
+        check(test(16, 64))
+    }
+    "RecF32ToI32" should "pass" in {
+        check(test(32, 32))
+    }
+    "RecF32ToI64" should "pass" in {
+        check(test(32, 64))
+    }
+    "RecF64ToI32" should "pass" in {
+        check(test(64, 32))
+    }
+    "RecF64ToI64" should "pass" in {
+        check(test(64, 64))
+    }
+}
