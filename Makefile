@@ -41,6 +41,8 @@ VERILATOR = verilator $(VERILATOR_TRACE)
 
 VERILATOR_CFLAGS = -std=c++11 -Icsrc/
 
+HARDFLOAT_JAR = target/scala-2.12/hardfloat-assembly-1.3-SNAPSHOT.jar
+
 tests = \
  f16FromRecF16 \
  f32FromRecF32 \
@@ -102,13 +104,15 @@ tests = \
  CompareRecF64_le \
  CompareRecF64_eq
 
+$(HARDFLOAT_JAR):
+	sbt -Dchisel3Version=$(CHISEL_VERSION) assembly
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 
 define test_fNFromRecFN_template
 
-test-$(1)/ValExec_$(1).v: src/main/scala/*.scala
-	sbt -Dchisel3Version=$(CHISEL_VERSION) "run $(1) -td test-$(1)"
+test-$(1)/ValExec_$(1).v: src/main/scala/*.scala $(HARDFLOAT_JAR)
+	java -cp $(HARDFLOAT_JAR) hardfloat.FMATest $(1) -td test-$(1)
 
 test-$(1)/dut.mk: test-$(1)/ValExec_$(1).v
 	$(VERILATOR) -cc --prefix dut --Mdir test-$(1) -CFLAGS "$(VERILATOR_CFLAGS) -include ../csrc/test-$(1).h" test-$(1)/ValExec_$(1).v --exe csrc/test-fNFromRecFN.cpp
@@ -130,8 +134,8 @@ endef
 
 define test_RecFNToUIN_template
 
-test-$(1)/ValExec_$(1).v: src/main/scala/*.scala
-	sbt -Dchisel3Version=$(CHISEL_VERSION) "run $(1) -td test-$(1)"
+test-$(1)/ValExec_$(1).v: src/main/scala/*.scala $(HARDFLOAT_JAR)
+	java -cp $(HARDFLOAT_JAR) hardfloat.FMATest $(1) -td test-$(1)
 
 test-$(1)/dut.mk: test-$(1)/ValExec_$(1).v
 	$(VERILATOR) -cc --prefix dut --Mdir test-$(1) -CFLAGS "$(VERILATOR_CFLAGS) -include ../csrc/test-$(1).h" test-$(1)/ValExec_$(1).v --exe csrc/test-RecFNToUIN.cpp
@@ -174,8 +178,8 @@ endef
 
 define test_RecFNToIN_template
 
-test-$(1)/ValExec_$(1).v: src/main/scala/*.scala
-	sbt -Dchisel3Version=$(CHISEL_VERSION) "run $(1) -td test-$(1)"
+test-$(1)/ValExec_$(1).v: src/main/scala/*.scala $(HARDFLOAT_JAR)
+	java -cp $(HARDFLOAT_JAR) hardfloat.FMATest $(1) -td test-$(1)
 
 test-$(1)/dut.mk: test-$(1)/ValExec_$(1).v
 	$(VERILATOR) -cc --prefix dut --Mdir test-$(1) -CFLAGS "$(VERILATOR_CFLAGS) -include ../csrc/test-$(1).h" test-$(1)/ValExec_$(1).v --exe csrc/test-RecFNToIN.cpp
@@ -218,8 +222,8 @@ endef
 
 define test_CompareRecFN_template
 
-test-$(1)/ValExec_$(1).v: src/main/scala/*.scala
-	sbt -Dchisel3Version=$(CHISEL_VERSION) "run $(1) -td test-$(1)"
+test-$(1)/ValExec_$(1).v: src/main/scala/*.scala $(HARDFLOAT_JAR)
+	java -cp $(HARDFLOAT_JAR) hardfloat.FMATest $(1) -td test-$(1)
 
 test-$(1)/dut.mk: test-$(1)/ValExec_$(1).v
 	$(VERILATOR) -cc --prefix dut --Mdir test-$(1) -CFLAGS "$(VERILATOR_CFLAGS) -include ../csrc/test-$(1).h" test-$(1)/ValExec_$(1).v --exe csrc/test-CompareRecFN.cpp
@@ -241,8 +245,8 @@ endef
 
 define otherTest_template
 
-test-$(1)/ValExec_$(1).v: src/main/scala/*.scala
-	sbt -Dchisel3Version=$(CHISEL_VERSION) "run $(1) -td test-$(1)"
+test-$(1)/ValExec_$(1).v: src/main/scala/*.scala $(HARDFLOAT_JAR)
+	java -cp $(HARDFLOAT_JAR) hardfloat.FMATest $(1) -td test-$(1)
 
 test-$(1)/dut.mk: test-$(1)/ValExec_$(1).v
 	$(VERILATOR) -cc --prefix dut --Mdir test-$(1) -CFLAGS "$(VERILATOR_CFLAGS) -include ../csrc/test-$(1).h" test-$(1)/ValExec_$(1).v --exe csrc/test.cpp
