@@ -43,6 +43,11 @@ class hardfloat extends ScalaModule with SbtModule with PublishModule { m =>
     MavenRepository("https://oss.sonatype.org/service/local/staging/deploy/maven2")
   )
 
+  object test extends Tests {
+    def ivyDeps = Agg(ivy"org.scalatest::scalatest:3.2.0")
+    def testFrameworks = Seq("org.scalatest.tools.Framework")
+  }
+
   def pomSettings = PomSettings(
     description = artifactName(),
     organization = "edu.berkeley.cs",
