@@ -20,6 +20,7 @@ libraryDependencies ++= (Seq("chisel3").map {
   dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
 })
 libraryDependencies ++= Seq("org.scalatest" %% "scalatest" % "3.2.0" % "test")
+Test / testForkedParallel := true
 
 publishMavenStyle := true
 publishArtifact in Test := false
