@@ -35,27 +35,60 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =============================================================================*/
 
-package hardfloat
+package hardfloat.test
 
+import hardfloat._
 import Chisel._
 
-class ValExec_fNFromRecFN(expWidth: Int, sigWidth: Int) extends Module
+class
+    ValExec_RecFNToRecFN(
+        inExpWidth: Int, inSigWidth: Int, outExpWidth: Int, outSigWidth: Int)
+    extends Module
 {
     val io = new Bundle {
-        val a = Bits(INPUT, expWidth + sigWidth)
-        val out = Bits(OUTPUT, expWidth + sigWidth)
+        val in = Bits(INPUT, inExpWidth + inSigWidth)
+        val roundingMode   = UInt(INPUT, 3)
+        val detectTininess = UInt(INPUT, 1)
+
+        val expected = new Bundle {
+            val out = Bits(INPUT, outExpWidth + outSigWidth)
+            val exceptionFlags = Bits(INPUT, 5)
+            val recOut = Bits(OUTPUT, outExpWidth + outSigWidth + 1)
+        }
+
+        val actual = new Bundle {
+            val out = Bits(OUTPUT, outExpWidth + outSigWidth + 1)
+            val exceptionFlags = Bits(OUTPUT, 5)
+        }
+
         val check = Bool(OUTPUT)
         val pass = Bool(OUTPUT)
     }
 
-    io.out :=
-        fNFromRecFN(expWidth, sigWidth, recFNFromFN(expWidth, sigWidth, io.a))
+    val recFNToRecFN =
+        Module(
+            new RecFNToRecFN(inExpWidth, inSigWidth, outExpWidth, outSigWidth))
+    recFNToRecFN.io.in := recFNFromFN(inExpWidth, inSigWidth, io.in)
+    recFNToRecFN.io.roundingMode   := io.roundingMode
+    recFNToRecFN.io.detectTininess := io.detectTininess
+
+    io.expected.recOut :=
+        recFNFromFN(outExpWidth, outSigWidth, io.expected.out)
+
+    io.actual.out := recFNToRecFN.io.out
+    io.actual.exceptionFlags := recFNToRecFN.io.exceptionFlags
 
     io.check := Bool(true)
-    io.pass := (io.out === io.a)
+    io.pass :=
+        equivRecFN(
+            outExpWidth, outSigWidth, io.actual.out, io.expected.recOut) &&
+        (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
 
-class ValExec_f16FromRecF16 extends ValExec_fNFromRecFN(5, 11)
-class ValExec_f32FromRecF32 extends ValExec_fNFromRecFN(8, 24)
-class ValExec_f64FromRecF64 extends ValExec_fNFromRecFN(11, 53)
+class ValExec_RecF16ToRecF32 extends ValExec_RecFNToRecFN(5, 11, 8, 24)
+class ValExec_RecF16ToRecF64 extends ValExec_RecFNToRecFN(5, 11, 11, 53)
+class ValExec_RecF32ToRecF16 extends ValExec_RecFNToRecFN(8, 24, 5, 11)
+class ValExec_RecF32ToRecF64 extends ValExec_RecFNToRecFN(8, 24, 11, 53)
+class ValExec_RecF64ToRecF16 extends ValExec_RecFNToRecFN(11, 53, 5, 11)
+class ValExec_RecF64ToRecF32 extends ValExec_RecFNToRecFN(11, 53, 8, 24)
 

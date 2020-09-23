@@ -35,8 +35,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =============================================================================*/
 
-package hardfloat
+package hardfloat.test
 
+import hardfloat._
 import Chisel._
 
 class DivRecF64_io extends Bundle {

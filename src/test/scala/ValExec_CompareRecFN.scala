@@ -35,8 +35,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =============================================================================*/
 
-package hardfloat
+package hardfloat.test
 
+import hardfloat._
 import Chisel._
 
 class ValExec_CompareRecFN_lt(expWidth: Int, sigWidth: Int) extends Module
