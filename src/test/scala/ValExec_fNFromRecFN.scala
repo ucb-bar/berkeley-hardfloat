@@ -56,7 +56,25 @@ class ValExec_fNFromRecFN(expWidth: Int, sigWidth: Int) extends Module
     io.pass := (io.out === io.a)
 }
 
-class ValExec_f16FromRecF16 extends ValExec_fNFromRecFN(5, 11)
-class ValExec_f32FromRecF32 extends ValExec_fNFromRecFN(8, 24)
-class ValExec_f64FromRecF64 extends ValExec_fNFromRecFN(11, 53)
+class FnFromRecFnSpec extends FMATester {
+    def test(f: Int): Seq[String] = {
+        test(
+            s"f${f}FromRecF${f}",
+            () => new ValExec_fNFromRecFN(exp(f), sig(f)),
+            "fNFromRecFN.cpp",
+            Seq(Seq("-level2", s"-f${f}"))
+        )
+    }
 
+    "f16FromRecF16" should "pass" in {
+        check(test(16))
+    }
+
+    "f32FromRecF32" should "pass" in {
+        check(test(32))
+    }
+
+    "f64FromRecF64" should "pass" in {
+        check(test(64))
+    }
+}
