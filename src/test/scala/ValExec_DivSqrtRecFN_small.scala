@@ -114,16 +114,6 @@ class
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
 
-class
-    ValExec_DivSqrtRecF16_small_div
-        extends ValExec_DivSqrtRecFN_small_div(5, 11)
-class
-    ValExec_DivSqrtRecF32_small_div
-        extends ValExec_DivSqrtRecFN_small_div(8, 24)
-class
-    ValExec_DivSqrtRecF64_small_div
-        extends ValExec_DivSqrtRecFN_small_div(11, 53)
-
 class SqrtRecFN_io(expWidth: Int, sigWidth: Int) extends Bundle {
     val a = Bits(width = expWidth + sigWidth)
     val roundingMode   = UInt(width = 3)
@@ -196,13 +186,34 @@ class
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
 
-class
-    ValExec_DivSqrtRecF16_small_sqrt
-        extends ValExec_DivSqrtRecFN_small_sqrt(5, 11)
-class
-    ValExec_DivSqrtRecF32_small_sqrt
-        extends ValExec_DivSqrtRecFN_small_sqrt(8, 24)
-class
-    ValExec_DivSqrtRecF64_small_sqrt
-        extends ValExec_DivSqrtRecFN_small_sqrt(11, 53)
-
+class DivSqrtRecFn_smallSpec extends FMATester {
+    def test(f: Int, fn: String): Seq[String] = {
+        val generator = fn match {
+            case "div" => () => new ValExec_DivSqrtRecFN_small_div(exp(f), sig(f))
+            case "sqrt" => () => new ValExec_DivSqrtRecFN_small_sqrt(exp(f), sig(f))
+        }
+        test(
+            s"DivSqrtRecF${f}_small_${fn}",
+            generator,
+            (if (fn == "sqrt") Seq("-level2") else Seq.empty) ++ Seq(s"f${f}_${fn}")
+        )
+    }
+    "DivSqrtRecF16_small_div" should "pass" in {
+        check(test(16, "div"))
+    }
+    "DivSqrtRecF32_small_div" should "pass" in {
+        check(test(32, "div"))
+    }
+    "DivSqrtRecF64_small_div" should "pass" in {
+        check(test(64, "div"))
+    }
+    "DivSqrtRecF16_small_sqrt" should "pass" in {
+        check(test(16, "sqrt"))
+    }
+    "DivSqrtRecF32_small_sqrt" should "pass" in {
+        check(test(32, "sqrt"))
+    }
+    "DivSqrtRecF64_small_sqrt" should "pass" in {
+        check(test(64, "sqrt"))
+    }
+}
