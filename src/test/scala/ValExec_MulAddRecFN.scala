@@ -83,10 +83,6 @@ class ValExec_MulAddRecFN(expWidth: Int, sigWidth: Int) extends Module
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
 
-class ValExec_MulAddRecF16 extends ValExec_MulAddRecFN(5, 11)
-class ValExec_MulAddRecF32 extends ValExec_MulAddRecFN(8, 24)
-class ValExec_MulAddRecF64 extends ValExec_MulAddRecFN(11, 53)
-
 class ValExec_MulAddRecFN_add(expWidth: Int, sigWidth: Int) extends Module
 {
     val io = new Bundle {
@@ -128,10 +124,6 @@ class ValExec_MulAddRecFN_add(expWidth: Int, sigWidth: Int) extends Module
         equivRecFN(expWidth, sigWidth, io.actual.out, io.expected.recOut) &&
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
-
-class ValExec_MulAddRecF16_add extends ValExec_MulAddRecFN_add(5, 11)
-class ValExec_MulAddRecF32_add extends ValExec_MulAddRecFN_add(8, 24)
-class ValExec_MulAddRecF64_add extends ValExec_MulAddRecFN_add(11, 53)
 
 class ValExec_MulAddRecFN_mul(expWidth: Int, sigWidth: Int) extends Module
 {
@@ -176,7 +168,47 @@ class ValExec_MulAddRecFN_mul(expWidth: Int, sigWidth: Int) extends Module
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
 
-class ValExec_MulAddRecF16_mul extends ValExec_MulAddRecFN_mul(5, 11)
-class ValExec_MulAddRecF32_mul extends ValExec_MulAddRecFN_mul(8, 24)
-class ValExec_MulAddRecF64_mul extends ValExec_MulAddRecFN_mul(11, 53)
-
+class MulAddRecFNSpec extends FMATester {
+    def test(f: Int, fn: String): Seq[String] = {
+        test(
+            s"MulAddRecF${f}${fn match {
+                case "add" => "_add"
+                case "mul" => "_mul"
+                case "mulAdd" => ""
+            }}",
+            () => fn match {
+                case "add" => new ValExec_MulAddRecFN_add(exp(f), sig(f))
+                case "mul" => new ValExec_MulAddRecFN_mul(exp(f), sig(f))
+                case "mulAdd" => new ValExec_MulAddRecFN(exp(f), sig(f))
+            },
+            Seq(s"f${f}_${fn}")
+        )
+    }
+    "MulAddRecF16" should "pass" in {
+        check(test(16, "mulAdd"))
+    }
+    "MulAddRecF32" should "pass" in {
+        check(test(32, "mulAdd"))
+    }
+    "MulAddRecF64" should "pass" in {
+        check(test(64, "mulAdd"))
+    }
+    "MulAddRecF16_add" should "pass" in {
+        check(test(16, "add"))
+    }
+    "MulAddRecF32_add" should "pass" in {
+        check(test(32, "add"))
+    }
+    "MulAddRecF64_add" should "pass" in {
+        check(test(64, "add"))
+    }
+    "MulAddRecF16_mul" should "pass" in {
+        check(test(16, "mul"))
+    }
+    "MulAddRecF32_mul" should "pass" in {
+        check(test(32, "mul"))
+    }
+    "MulAddRecF64_mul" should "pass" in {
+        check(test(64, "mul"))
+    }
+}
