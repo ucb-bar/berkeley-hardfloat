@@ -1,7 +1,12 @@
 #include "dut.h"
 
+#ifndef ROUNDING_MODE
 #define ROUNDING_MODE io_roundingMode
+#endif
+
+#ifndef DETECT_TININESS
 #define DETECT_TININESS io_detectTininess
+#endif
 
 static void initialize_dut(dut& m)
 {
