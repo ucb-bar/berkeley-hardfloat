@@ -81,13 +81,6 @@ class
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
 
-class ValExec_UI32ToRecF16 extends ValExec_UINToRecFN(32, 5, 11)
-class ValExec_UI32ToRecF32 extends ValExec_UINToRecFN(32, 8, 24)
-class ValExec_UI32ToRecF64 extends ValExec_UINToRecFN(32, 11, 53)
-class ValExec_UI64ToRecF16 extends ValExec_UINToRecFN(64, 5, 11)
-class ValExec_UI64ToRecF32 extends ValExec_UINToRecFN(64, 8, 24)
-class ValExec_UI64ToRecF64 extends ValExec_UINToRecFN(64, 11, 53)
-
 class
     ValExec_INToRecFN(intWidth: Int, expWidth: Int, sigWidth: Int)
     extends Module
@@ -129,10 +122,30 @@ class
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
 
-class ValExec_I32ToRecF16 extends ValExec_INToRecFN(32, 5, 11)
-class ValExec_I32ToRecF32 extends ValExec_INToRecFN(32, 8, 24)
-class ValExec_I32ToRecF64 extends ValExec_INToRecFN(32, 11, 53)
-class ValExec_I64ToRecF16 extends ValExec_INToRecFN(64, 5, 11)
-class ValExec_I64ToRecF32 extends ValExec_INToRecFN(64, 8, 24)
-class ValExec_I64ToRecF64 extends ValExec_INToRecFN(64, 11, 53)
-
+class INToRecFNSpec extends FMATester {
+    def test(i: Int, f: Int): Seq[String] = {
+        test(
+            s"I${i}ToRecF${f}",
+            () => new ValExec_INToRecFN(i, exp(f), sig(f)),
+            Seq("-level2", s"i${i}_to_f${f}")
+        )
+    }
+    "I32ToRecF16" should "pass" in {
+        check(test(32, 16))
+    }
+    "I32ToRecF32" should "pass" in {
+        check(test(32, 32))
+    }
+    "I32ToRecF64" should "pass" in {
+        check(test(32, 64))
+    }
+    "I64ToRecF16" should "pass" in {
+        check(test(64, 16))
+    }
+    "I64ToRecF32" should "pass" in {
+        check(test(64, 32))
+    }
+    "I64ToRecF64" should "pass" in {
+        check(test(64, 64))
+    }
+}
