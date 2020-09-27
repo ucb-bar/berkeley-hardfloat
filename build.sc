@@ -7,7 +7,7 @@ import coursier.maven.MavenRepository
 // Please retain it.
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 val defaultVersions = Map(
-  "chisel3" -> "3.3-SNAPSHOT",
+  "chisel3" -> "3.4-SNAPSHOT",
 )
 
 def getVersion(dep: String, org: String = "edu.berkeley.cs") = {
@@ -17,7 +17,7 @@ def getVersion(dep: String, org: String = "edu.berkeley.cs") = {
 object hardfloat extends hardfloat 
 
 class hardfloat extends ScalaModule with SbtModule with PublishModule { m =>
-  def scalaVersion = "2.12.8"
+  def scalaVersion = "2.12.12"
   // different scala version shares same sources
   // mill use foo/2.11.12 foo/2.12.11 as millSourcePath by default
   override def millSourcePath = super.millSourcePath / os.up
@@ -42,6 +42,11 @@ class hardfloat extends ScalaModule with SbtModule with PublishModule { m =>
     MavenRepository("https://oss.sonatype.org/content/repositories/snapshots"),
     MavenRepository("https://oss.sonatype.org/service/local/staging/deploy/maven2")
   )
+
+  object test extends Tests {
+    def ivyDeps = Agg(ivy"org.scalatest::scalatest:3.2.0")
+    def testFrameworks = Seq("org.scalatest.tools.Framework")
+  }
 
   def pomSettings = PomSettings(
     description = artifactName(),
