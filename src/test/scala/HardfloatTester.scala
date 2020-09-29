@@ -1,5 +1,9 @@
 package hardfloat.test
 
+import java.io.File
+import java.nio.file.Files
+import java.text.SimpleDateFormat
+import java.util.Calendar
 import logger.LazyLogging
 import org.scalatest.ParallelTestExecution
 import org.scalatest.flatspec.AnyFlatSpec
@@ -26,4 +30,19 @@ trait HardfloatTester extends AnyFlatSpec with Matchers with ParallelTestExecuti
     "-rnear_maxMag" -> "4",
     "-rodd" -> "6"
   )
+
+  lazy val TestDirectory = new File("test_run_dir")
+
+  def timeStamp: String = {
+    val format = new SimpleDateFormat("yyyyMMddHHmmss")
+    val now = Calendar.getInstance.getTime
+    format.format(now)
+  }
+
+  def createTestDirectory(testName: String): File = {
+    val outer = new File(TestDirectory, testName)
+    outer.mkdirs()
+    Files.createTempDirectory(outer.toPath, timeStamp).toFile
+  }
+
 }

@@ -7,7 +7,6 @@ import chisel3.stage.ChiselGeneratorAnnotation
 import firrtl.AnnotationSeq
 import firrtl.options.TargetDirAnnotation
 import firrtl.stage.OutputFileAnnotation
-import firrtl.util.BackendCompilationUtilities._
 import scala.sys.process.{Process, ProcessLogger}
 
 trait FMATester extends HardfloatTester {
