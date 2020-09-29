@@ -164,7 +164,7 @@ class CompareRecFNSpec extends FMATester {
         check(test(32, "le"))
     }
     "CompareRecF64_le" should "pass" in {
-        check(test(64, "lt"))
+        check(test(64, "le"))
     }
     "CompareRecF16_eq" should "pass" in {
         check(test(16, "eq"))
