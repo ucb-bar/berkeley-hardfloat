@@ -322,8 +322,6 @@ class
         isInf_Z    := isInf_S
         isZero_Z   := isZero_S
         sign_Z     := sign_S
-    }
-    when (entering_normalCase) {
         sExp_Z :=
             Mux(io.sqrtOp,
                 (rawA_S.sExp>>1) +& (BigInt(1)<<(expWidth - 1)).S,
@@ -356,10 +354,10 @@ class
     val trialRem = rem.zext - trialTerm.zext
     val newBit = (0.S <= trialRem)
 
-    when (entering_normalCase || !(idle || cycleNum(2))) {
+    when (entering || !(idle || cycleNum(2))) {
         rem_Z := Mux(newBit, trialRem.asUInt, rem)
     }
-    when (entering_normalCase || (! inReady && newBit)) {
+    when (entering || (! inReady && newBit)) {
         notZeroRem_Z := (trialRem =/= 0.S)
         sigX_Z :=
             Mux(inReady && ! io.sqrtOp, newBit<<(sigWidth + 1),  0.U) |
