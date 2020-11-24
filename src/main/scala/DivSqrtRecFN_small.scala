@@ -220,7 +220,9 @@ class
 
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-    val cycleNum       = RegInit(1.U((sigWidth + 3).W))
+    val cycleNum       = RegInit(0.U(log2Ceil(sigWidth + 3).W))
+    val inReady        = RegInit(true.B)  // <-> (cycleNum <= 1)
+    val rawOutValid    = RegInit(false.B) // <-> (cycleNum === 1)
 
     val sqrtOp_Z       = Reg(Bool())
     val majorExc_Z     = Reg(Bool())
@@ -230,7 +232,7 @@ class
     val isZero_Z       = Reg(Bool())
     val sign_Z         = Reg(Bool())
     val sExp_Z         = Reg(SInt((expWidth + 2).W))
-    val fractB_Z       = Reg(UInt((sigWidth - 1).W))
+    val fractB_Z       = Reg(UInt(sigWidth.W))
     val roundingMode_Z = Reg(UInt(3.W))
 
     /*------------------------------------------------------------------------
@@ -290,25 +292,29 @@ class
 
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-    val idle = cycleNum(0)
-    val inReady = idle || cycleNum(1)
+    val idle = cycleNum === 0.U
     val entering = inReady && io.inValid
     val entering_normalCase = entering && normalCase_S
 
-    val skipCycle2 = cycleNum(3) && sigX_Z(sigWidth + 1)
+    val skipCycle2 = cycleNum === 3.U && sigX_Z(sigWidth + 1)
 
     when (! idle || entering) {
-        cycleNum :=
-            Mux(entering & ! normalCase_S, (1<<1).U, 0.U) |
+        def computeCycleNum(f: UInt => UInt): UInt = {
+            Mux(entering & ! normalCase_S, f(1.U), 0.U) |
             Mux(entering_normalCase,
                 Mux(io.sqrtOp,
-                    Mux(rawA_S.sExp(0), (BigInt(1)<<sigWidth).U, (BigInt(1)<<(sigWidth + 1)).U),
-                    (BigInt(1)<<(sigWidth + 2)).U
+                    Mux(rawA_S.sExp(0), f(sigWidth.U), f((sigWidth + 1).U)),
+                    f((sigWidth + 2).U)
                 ),
                 0.U
             ) |
-            Mux(! entering && ! skipCycle2, cycleNum>>1, 0.U) |
-            Mux(skipCycle2, (1<<1).U,    0.U)
+            Mux(! entering && ! skipCycle2, f(cycleNum - 1.U), 0.U) |
+            Mux(skipCycle2, f(1.U), 0.U)
+        }
+
+        inReady := computeCycleNum(_ <= 1.U).asBool
+        rawOutValid := computeCycleNum(_ === 1.U).asBool
+        cycleNum := computeCycleNum(x => x)
     }
 
     io.inReady := inReady
@@ -329,8 +335,11 @@ class
             )
         roundingMode_Z := io.roundingMode
     }
-    when (entering_normalCase && ! io.sqrtOp) {
-        fractB_Z := rawB_S.sig(sigWidth - 2, 0)
+    when (entering || ! inReady && sqrtOp_Z) {
+        fractB_Z :=
+            Mux(inReady && ! io.sqrtOp,   rawB_S.sig(sigWidth - 2, 0)<<1, 0.U) |
+            Mux(inReady &&   io.sqrtOp,   Mux(rawA_S.sExp(0), (BigInt(1)<<(sigWidth - 2)).U, (BigInt(1)<<(sigWidth - 1)).U), 0.U) |
+            Mux(! inReady /* sqrtOp_Z */, fractB_Z>>1, 0.U)
     }
 
     /*------------------------------------------------------------------------
@@ -344,17 +353,18 @@ class
             0.U
         ) |
         Mux(! inReady, rem_Z<<1, 0.U)
-    val bitMask = cycleNum>>2
+    val bitMask = (1.U<<cycleNum)>>2
     val trialTerm =
         Mux(inReady && ! io.sqrtOp, rawB_S.sig<<1,                 0.U) |
         Mux(inReady && evenSqrt_S,  (BigInt(1)<<sigWidth).U,       0.U) |
         Mux(inReady && oddSqrt_S,   (BigInt(5)<<(sigWidth - 1)).U, 0.U) |
-        Mux(! inReady && ! sqrtOp_Z, Cat(1.U, fractB_Z)<<1,        0.U) |
-        Mux(! inReady &&   sqrtOp_Z, sigX_Z<<1 | bitMask,          0.U)
+        Mux(! inReady,              fractB_Z,                      0.U) |
+        Mux(! inReady && ! sqrtOp_Z, (1.U << sigWidth),            0.U) |
+        Mux(! inReady &&   sqrtOp_Z, sigX_Z<<1,                    0.U)
     val trialRem = rem.zext - trialTerm.zext
     val newBit = (0.S <= trialRem)
 
-    when (entering || !(idle || cycleNum(2))) {
+    when (entering || !idle) {
         rem_Z := Mux(newBit, trialRem.asUInt, rem)
     }
     when (entering || (! inReady && newBit)) {
@@ -368,8 +378,6 @@ class
 
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-    val rawOutValid = cycleNum(1)
-
     io.rawOutValid_div  := rawOutValid && ! sqrtOp_Z
     io.rawOutValid_sqrt := rawOutValid &&   sqrtOp_Z
     io.roundingModeOut  := roundingMode_Z
