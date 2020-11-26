@@ -52,7 +52,7 @@ class DivRecFN_io(expWidth: Int, sigWidth: Int) extends Bundle {
 }
 
 class
-    ValExec_DivSqrtRecFN_small_div(expWidth: Int, sigWidth: Int) extends Module
+    ValExec_DivSqrtRecFN_small_div(expWidth: Int, sigWidth: Int, options: Int) extends Module
 {
     val io = new Bundle {
         val input = Decoupled(new DivRecFN_io(expWidth, sigWidth)).flip
@@ -79,7 +79,7 @@ class
         val pass = Bool(OUTPUT)
     }
 
-    val ds = Module(new DivSqrtRecFN_small(expWidth, sigWidth, 0))
+    val ds = Module(new DivSqrtRecFN_small(expWidth, sigWidth, options))
     val cq = Module(new Queue(new DivRecFN_io(expWidth, sigWidth), 5))
 
     cq.io.enq.valid := io.input.valid && ds.io.inReady
@@ -126,7 +126,7 @@ class SqrtRecFN_io(expWidth: Int, sigWidth: Int) extends Bundle {
 }
 
 class
-    ValExec_DivSqrtRecFN_small_sqrt(expWidth: Int, sigWidth: Int)
+    ValExec_DivSqrtRecFN_small_sqrt(expWidth: Int, sigWidth: Int, options: Int)
     extends Module
 {
     val io = new Bundle {
@@ -153,7 +153,7 @@ class
         val pass = Bool(OUTPUT)
     }
 
-    val ds = Module(new DivSqrtRecFN_small(expWidth, sigWidth, 0))
+    val ds = Module(new DivSqrtRecFN_small(expWidth, sigWidth, options))
     val cq = Module(new Queue(new SqrtRecFN_io(expWidth, sigWidth), 5))
 
     cq.io.enq.valid := io.input.valid && ds.io.inReady
@@ -188,13 +188,18 @@ class
 
 class DivSqrtRecFn_smallSpec extends FMATester {
     def test(f: Int, fn: String): Seq[String] = {
-        val generator = fn match {
-            case "div" => () => new ValExec_DivSqrtRecFN_small_div(exp(f), sig(f))
-            case "sqrt" => () => new ValExec_DivSqrtRecFN_small_sqrt(exp(f), sig(f))
+        def generator(options: Int) = fn match {
+            case "div" => () => new ValExec_DivSqrtRecFN_small_div(exp(f), sig(f), options)
+            case "sqrt" => () => new ValExec_DivSqrtRecFN_small_sqrt(exp(f), sig(f), options)
         }
         test(
             s"DivSqrtRecF${f}_small_${fn}",
-            generator,
+            generator(0),
+            (if (fn == "sqrt") Seq("-level2") else Seq.empty) ++ Seq(s"f${f}_${fn}")
+        )
+        test(
+            s"DivSqrtRecF${f}_small_${fn}",
+            generator(consts.divSqrtOpt_twoBitsPerCycle),
             (if (fn == "sqrt") Seq("-level2") else Seq.empty) ++ Seq(s"f${f}_${fn}")
         )
     }

@@ -60,6 +60,9 @@ object consts {
     def flRoundOpt_subnormsAlwaysExact = 2
     def flRoundOpt_neverUnderflows     = 4
     def flRoundOpt_neverOverflows      = 8
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    def divSqrtOpt_twoBitsPerCycle     = 16
 }
 
 class RawFloat(val expWidth: Int, val sigWidth: Int) extends Bundle

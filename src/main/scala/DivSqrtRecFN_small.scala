@@ -296,7 +296,8 @@ class
     val entering = inReady && io.inValid
     val entering_normalCase = entering && normalCase_S
 
-    val skipCycle2 = cycleNum === 3.U && sigX_Z(sigWidth + 1)
+    val processTwoBits = cycleNum >= 3.U && ((options & divSqrtOpt_twoBitsPerCycle) != 0).B
+    val skipCycle2 = cycleNum === 3.U && sigX_Z(sigWidth + 1) && ((options & divSqrtOpt_twoBitsPerCycle) == 0).B
 
     when (! idle || entering) {
         def computeCycleNum(f: UInt => UInt): UInt = {
@@ -308,7 +309,7 @@ class
                 ),
                 0.U
             ) |
-            Mux(! entering && ! skipCycle2, f(cycleNum - 1.U), 0.U) |
+            Mux(! entering && ! skipCycle2, f(cycleNum - Mux(processTwoBits, 2.U, 1.U)), 0.U) |
             Mux(skipCycle2, f(1.U), 0.U)
         }
 
@@ -337,9 +338,11 @@ class
     }
     when (entering || ! inReady && sqrtOp_Z) {
         fractB_Z :=
-            Mux(inReady && ! io.sqrtOp,   rawB_S.sig(sigWidth - 2, 0)<<1, 0.U) |
-            Mux(inReady &&   io.sqrtOp,   Mux(rawA_S.sExp(0), (BigInt(1)<<(sigWidth - 2)).U, (BigInt(1)<<(sigWidth - 1)).U), 0.U) |
-            Mux(! inReady /* sqrtOp_Z */, fractB_Z>>1, 0.U)
+            Mux(inReady && ! io.sqrtOp,                       rawB_S.sig(sigWidth - 2, 0)<<1, 0.U) |
+            Mux(inReady && io.sqrtOp && rawA_S.sExp(0),       (BigInt(1)<<(sigWidth - 2)).U,  0.U) |
+            Mux(inReady && io.sqrtOp && ! rawA_S.sExp(0),     (BigInt(1)<<(sigWidth - 1)).U,  0.U) |
+            Mux(! inReady /* sqrtOp_Z */ && processTwoBits,   fractB_Z>>2,                    0.U) |
+            Mux(! inReady /* sqrtOp_Z */ && ! processTwoBits, fractB_Z>>1,                    0.U)
     }
 
     /*------------------------------------------------------------------------
@@ -355,25 +358,44 @@ class
         Mux(! inReady, rem_Z<<1, 0.U)
     val bitMask = (1.U<<cycleNum)>>2
     val trialTerm =
-        Mux(inReady && ! io.sqrtOp, rawB_S.sig<<1,                 0.U) |
-        Mux(inReady && evenSqrt_S,  (BigInt(1)<<sigWidth).U,       0.U) |
-        Mux(inReady && oddSqrt_S,   (BigInt(5)<<(sigWidth - 1)).U, 0.U) |
-        Mux(! inReady,              fractB_Z,                      0.U) |
-        Mux(! inReady && ! sqrtOp_Z, (1.U << sigWidth),            0.U) |
-        Mux(! inReady &&   sqrtOp_Z, sigX_Z<<1,                    0.U)
-    val trialRem = rem.zext - trialTerm.zext
+        Mux(inReady && ! io.sqrtOp,  rawB_S.sig<<1,                 0.U) |
+        Mux(inReady && evenSqrt_S,   (BigInt(1)<<sigWidth).U,       0.U) |
+        Mux(inReady && oddSqrt_S,    (BigInt(5)<<(sigWidth - 1)).U, 0.U) |
+        Mux(! inReady,               fractB_Z,                      0.U) |
+        Mux(! inReady && ! sqrtOp_Z, 1.U << sigWidth,               0.U) |
+        Mux(! inReady &&   sqrtOp_Z, sigX_Z<<1,                     0.U)
+    val trialRem = rem.zext -& trialTerm.zext
     val newBit = (0.S <= trialRem)
 
-    when (entering || !idle) {
-        rem_Z := Mux(newBit, trialRem.asUInt, rem)
-    }
-    when (entering || (! inReady && newBit)) {
-        notZeroRem_Z := (trialRem =/= 0.S)
+    val nextRem_Z = Mux(newBit, trialRem.asUInt, rem)(sigWidth + 1, 0)
+    val rem2 = nextRem_Z<<1
+    val trialTerm2_newBit0 = Mux(sqrtOp_Z, fractB_Z>>1 | sigX_Z<<1, fractB_Z | (1.U << sigWidth))
+    val trialTerm2_newBit1 = trialTerm2_newBit0 | Mux(sqrtOp_Z, fractB_Z<<1, 0.U)
+    val trialRem2 =
+        Mux(newBit,
+            (trialRem<<1) - trialTerm2_newBit1.zext,
+            (rem_Z<<2)(sigWidth+2, 0).zext - trialTerm2_newBit0.zext)
+    val newBit2 = (0.S <= trialRem2)
+    val nextNotZeroRem_Z = Mux(inReady || newBit, trialRem =/= 0.S, notZeroRem_Z)
+    val nextNotZeroRem_Z_2 = // <-> Mux(newBit2, trialRem2 =/= 0.S, nextNotZeroRem_Z)
+        processTwoBits && newBit && (0.S < (trialRem<<1) - trialTerm2_newBit1.zext) ||
+        processTwoBits && !newBit && (0.S < (rem_Z<<2)(sigWidth+2, 0).zext - trialTerm2_newBit0.zext) ||
+        !(processTwoBits && newBit2) && nextNotZeroRem_Z
+    val nextRem_Z_2 =
+        Mux(processTwoBits && newBit2,  trialRem2.asUInt()(sigWidth + 1, 0), 0.U) |
+        Mux(processTwoBits && !newBit2, rem2(sigWidth + 1, 0),               0.U) |
+        Mux(!processTwoBits,            nextRem_Z,                           0.U)
+
+    when (entering || ! inReady) {
+        notZeroRem_Z := nextNotZeroRem_Z_2
+        rem_Z := nextRem_Z_2
         sigX_Z :=
-            Mux(inReady && ! io.sqrtOp, newBit<<(sigWidth + 1),  0.U) |
-            Mux(inReady &&   io.sqrtOp, (BigInt(1)<<sigWidth).U, 0.U) |
-            Mux(inReady && oddSqrt_S,   newBit<<(sigWidth - 1),  0.U) |
-            Mux(! inReady,              sigX_Z | bitMask,        0.U)
+            Mux(inReady && ! io.sqrtOp,    newBit<<(sigWidth + 1),  0.U) |
+            Mux(inReady &&   io.sqrtOp,    (BigInt(1)<<sigWidth).U, 0.U) |
+            Mux(inReady && oddSqrt_S,      newBit<<(sigWidth - 1),  0.U) |
+            Mux(! inReady,                 sigX_Z,                  0.U) |
+            Mux(! inReady && newBit,       bitMask,                 0.U) |
+            Mux(processTwoBits && newBit2, bitMask>>1,              0.U)
     }
 
     /*------------------------------------------------------------------------
