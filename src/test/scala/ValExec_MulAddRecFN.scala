@@ -38,34 +38,34 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package hardfloat.test
 
 import hardfloat._
-import Chisel._
+import chisel3._
 
 class ValExec_MulAddRecFN(expWidth: Int, sigWidth: Int) extends Module
 {
-    val io = new Bundle {
-        val a = Bits(INPUT, expWidth + sigWidth)
-        val b = Bits(INPUT, expWidth + sigWidth)
-        val c = Bits(INPUT, expWidth + sigWidth)
-        val roundingMode   = UInt(INPUT, 3)
-        val detectTininess = UInt(INPUT, 1)
+    val io = IO(new Bundle {
+        val a = Input(Bits((expWidth + sigWidth).W))
+        val b = Input(Bits((expWidth + sigWidth).W))
+        val c = Input(Bits((expWidth + sigWidth).W))
+        val roundingMode   = Input(UInt(3.W))
+        val detectTininess = Input(UInt(1.W))
 
         val expected = new Bundle {
-            val out = Bits(INPUT, expWidth + sigWidth)
-            val exceptionFlags = Bits(INPUT, 5)
-            val recOut = Bits(OUTPUT, expWidth + sigWidth + 1)
+            val out = Input(Bits((expWidth + sigWidth).W))
+            val exceptionFlags = Input(Bits(5.W))
+            val recOut = Output(Bits((expWidth + sigWidth + 1).W))
         }
 
         val actual = new Bundle {
-            val out = Bits(OUTPUT, expWidth + sigWidth + 1)
-            val exceptionFlags = Bits(OUTPUT, 5)
+            val out = Output(Bits((expWidth + sigWidth + 1).W))
+            val exceptionFlags = Output(Bits(5.W))
         }
 
-        val check = Bool(OUTPUT)
-        val pass = Bool(OUTPUT)
-    }
+        val check = Output(Bool())
+        val pass = Output(Bool())
+    })
 
     val mulAddRecFN = Module(new MulAddRecFN(expWidth, sigWidth))
-    mulAddRecFN.io.op := UInt(0)
+    mulAddRecFN.io.op := 0.U
     mulAddRecFN.io.a := recFNFromFN(expWidth, sigWidth, io.a)
     mulAddRecFN.io.b := recFNFromFN(expWidth, sigWidth, io.b)
     mulAddRecFN.io.c := recFNFromFN(expWidth, sigWidth, io.c)
@@ -77,7 +77,7 @@ class ValExec_MulAddRecFN(expWidth: Int, sigWidth: Int) extends Module
     io.actual.out := mulAddRecFN.io.out
     io.actual.exceptionFlags := mulAddRecFN.io.exceptionFlags
 
-    io.check := Bool(true)
+    io.check := true.B
     io.pass :=
         equivRecFN(expWidth, sigWidth, io.actual.out, io.expected.recOut) &&
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
@@ -85,31 +85,31 @@ class ValExec_MulAddRecFN(expWidth: Int, sigWidth: Int) extends Module
 
 class ValExec_MulAddRecFN_add(expWidth: Int, sigWidth: Int) extends Module
 {
-    val io = new Bundle {
-        val a = Bits(INPUT, expWidth + sigWidth)
-        val b = Bits(INPUT, expWidth + sigWidth)
-        val roundingMode   = UInt(INPUT, 3)
-        val detectTininess = UInt(INPUT, 1)
+    val io = IO(new Bundle {
+        val a = Input(Bits((expWidth + sigWidth).W))
+        val b = Input(Bits((expWidth + sigWidth).W))
+        val roundingMode   = Input(UInt(3.W))
+        val detectTininess = Input(UInt(1.W))
 
         val expected = new Bundle {
-            val out = Bits(INPUT, expWidth + sigWidth)
-            val exceptionFlags = Bits(INPUT, 5)
-            val recOut = Bits(OUTPUT, expWidth + sigWidth + 1)
+            val out = Input(Bits((expWidth + sigWidth).W))
+            val exceptionFlags = Input(Bits(5.W))
+            val recOut = Output(Bits((expWidth + sigWidth + 1).W))
         }
 
         val actual = new Bundle {
-            val out = Bits(OUTPUT, expWidth + sigWidth + 1)
-            val exceptionFlags = Bits(OUTPUT, 5)
+            val out = Output(Bits((expWidth + sigWidth + 1).W))
+            val exceptionFlags = Output(Bits(5.W))
         }
 
-        val check = Bool(OUTPUT)
-        val pass = Bool(OUTPUT)
-    }
+        val check = Output(Bool())
+        val pass = Output(Bool())
+    })
 
     val mulAddRecFN = Module(new MulAddRecFN(expWidth, sigWidth))
-    mulAddRecFN.io.op := UInt(0)
+    mulAddRecFN.io.op := 0.U
     mulAddRecFN.io.a := recFNFromFN(expWidth, sigWidth, io.a)
-    mulAddRecFN.io.b := UInt(BigInt(1)<<(expWidth + sigWidth - 1))
+    mulAddRecFN.io.b := (BigInt(1)<<(expWidth + sigWidth - 1)).U
     mulAddRecFN.io.c := recFNFromFN(expWidth, sigWidth, io.b)
     mulAddRecFN.io.roundingMode   := io.roundingMode
     mulAddRecFN.io.detectTininess := io.detectTininess
@@ -119,7 +119,7 @@ class ValExec_MulAddRecFN_add(expWidth: Int, sigWidth: Int) extends Module
     io.actual.out := mulAddRecFN.io.out
     io.actual.exceptionFlags := mulAddRecFN.io.exceptionFlags
 
-    io.check := Bool(true)
+    io.check := true.B
     io.pass :=
         equivRecFN(expWidth, sigWidth, io.actual.out, io.expected.recOut) &&
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
@@ -127,33 +127,32 @@ class ValExec_MulAddRecFN_add(expWidth: Int, sigWidth: Int) extends Module
 
 class ValExec_MulAddRecFN_mul(expWidth: Int, sigWidth: Int) extends Module
 {
-    val io = new Bundle {
-        val a = Bits(INPUT, expWidth + sigWidth)
-        val b = Bits(INPUT, expWidth + sigWidth)
-        val roundingMode   = UInt(INPUT, 3)
-        val detectTininess = UInt(INPUT, 1)
+    val io = IO(new Bundle {
+        val a = Input(Bits((expWidth + sigWidth).W))
+        val b = Input(Bits((expWidth + sigWidth).W))
+        val roundingMode   = Input(UInt(3.W))
+        val detectTininess = Input(UInt(1.W))
 
         val expected = new Bundle {
-            val out = Bits(INPUT, expWidth + sigWidth)
-            val exceptionFlags = Bits(INPUT, 5)
-            val recOut = Bits(OUTPUT, expWidth + sigWidth + 1)
+            val out = Input(Bits((expWidth + sigWidth).W))
+            val exceptionFlags = Input(Bits(5.W))
+            val recOut = Output(Bits((expWidth + sigWidth + 1).W))
         }
 
         val actual = new Bundle {
-            val out = Bits(OUTPUT, expWidth + sigWidth + 1)
-            val exceptionFlags = Bits(OUTPUT, 5)
+            val out = Output(Bits((expWidth + sigWidth + 1).W))
+            val exceptionFlags = Output(Bits(5.W))
         }
 
-        val check = Bool(OUTPUT)
-        val pass = Bool(OUTPUT)
-    }
-
+        val check = Output(Bool())
+        val pass = Output(Bool())
+    })
     val mulAddRecFN = Module(new MulAddRecFN(expWidth, sigWidth))
-    mulAddRecFN.io.op := UInt(0)
+    mulAddRecFN.io.op := 0.U
     mulAddRecFN.io.a := recFNFromFN(expWidth, sigWidth, io.a)
     mulAddRecFN.io.b := recFNFromFN(expWidth, sigWidth, io.b)
     mulAddRecFN.io.c :=
-        ((io.a ^ io.b) & UInt(BigInt(1)<<(expWidth + sigWidth - 1)))<<1
+        ((io.a ^ io.b) & (BigInt(1)<<(expWidth + sigWidth - 1)).U)<<1
     mulAddRecFN.io.roundingMode   := io.roundingMode
     mulAddRecFN.io.detectTininess := io.detectTininess
 
@@ -162,13 +161,13 @@ class ValExec_MulAddRecFN_mul(expWidth: Int, sigWidth: Int) extends Module
     io.actual.out := mulAddRecFN.io.out
     io.actual.exceptionFlags := mulAddRecFN.io.exceptionFlags
 
-    io.check := Bool(true)
+    io.check := true.B
     io.pass :=
         equivRecFN(expWidth, sigWidth, io.actual.out, io.expected.recOut) &&
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
 
-class MulAddRecFNSpec extends FMATester {
+class MulAddRecFNFMASpec extends FMATester {
     def test(f: Int, fn: String): Seq[String] = {
         test(
             s"MulAddRecF${f}${fn match {
@@ -182,6 +181,51 @@ class MulAddRecFNSpec extends FMATester {
                 case "mulAdd" => new ValExec_MulAddRecFN(exp(f), sig(f))
             },
             Seq(s"f${f}_${fn}")
+        )
+    }
+    "MulAddRecF16" should "pass" in {
+        check(test(16, "mulAdd"))
+    }
+    "MulAddRecF32" should "pass" in {
+        check(test(32, "mulAdd"))
+    }
+    "MulAddRecF64" should "pass" in {
+        check(test(64, "mulAdd"))
+    }
+    "MulAddRecF16_add" should "pass" in {
+        check(test(16, "add"))
+    }
+    "MulAddRecF32_add" should "pass" in {
+        check(test(32, "add"))
+    }
+    "MulAddRecF64_add" should "pass" in {
+        check(test(64, "add"))
+    }
+    "MulAddRecF16_mul" should "pass" in {
+        check(test(16, "mul"))
+    }
+    "MulAddRecF32_mul" should "pass" in {
+        check(test(32, "mul"))
+    }
+    "MulAddRecF64_mul" should "pass" in {
+        check(test(64, "mul"))
+    }
+}
+
+
+class MulAddRecFNMiterSpec extends MiterTester {
+    def test(f: Int, fn: String): Int = {
+        test(
+            s"MulAddRecF${f}${fn match {
+                case "add" => "_add"
+                case "mul" => "_mul"
+                case "mulAdd" => ""
+            }}",
+            () => fn match {
+                case "add" => new ValExec_MulAddRecFN_add(exp(f), sig(f))
+                case "mul" => new ValExec_MulAddRecFN_mul(exp(f), sig(f))
+                case "mulAdd" => new ValExec_MulAddRecFN(exp(f), sig(f))
+            }
         )
     }
     "MulAddRecF16" should "pass" in {

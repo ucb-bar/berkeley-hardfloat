@@ -37,40 +37,38 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package hardfloat
 
-import Chisel._
+import chisel3._
 
-object rawFloatFromFN
-{
-    def apply(expWidth: Int, sigWidth: Int, in: Bits) =
-    {
-        val sign = in(expWidth + sigWidth - 1)
-        val expIn = in(expWidth + sigWidth - 2, sigWidth - 1)
-        val fractIn = in(sigWidth - 2, 0)
+object rawFloatFromFN {
+  def apply(expWidth: Int, sigWidth: Int, in: Bits) = {
+    val sign = in(expWidth + sigWidth - 1)
+    val expIn = in(expWidth + sigWidth - 2, sigWidth - 1)
+    val fractIn = in(sigWidth - 2, 0)
 
-        val isZeroExpIn = (expIn === UInt(0))
-        val isZeroFractIn = (fractIn === UInt(0))
+    val isZeroExpIn = (expIn === 0.U)
+    val isZeroFractIn = (fractIn === 0.U)
 
-        val normDist = countLeadingZeros(fractIn)
-        val subnormFract = (fractIn<<normDist)(sigWidth - 3, 0)<<1
-        val adjustedExp =
-            Mux(isZeroExpIn,
-                normDist ^ UInt((BigInt(1)<<(expWidth + 1)) - 1),
-                expIn
-            ) + (UInt(BigInt(1)<<(expWidth - 1))
-                     | Mux(isZeroExpIn, UInt(2), UInt(1)))
+    val normDist = countLeadingZeros(fractIn)
+    val subnormFract = (fractIn << normDist) (sigWidth - 3, 0) << 1
+    val adjustedExp =
+      Mux(isZeroExpIn,
+        normDist ^ ((BigInt(1) << (expWidth + 1)) - 1).U,
+        expIn
+      ) + ((BigInt(1) << (expWidth - 1)).U
+        | Mux(isZeroExpIn, 2.U, 1.U))
 
-        val isZero = isZeroExpIn && isZeroFractIn
-        val isSpecial = (adjustedExp(expWidth, expWidth - 1) === UInt(3))
+    val isZero = isZeroExpIn && isZeroFractIn
+    val isSpecial = adjustedExp(expWidth, expWidth - 1) === 3.U
 
-        val out = Wire(new RawFloat(expWidth, sigWidth))
-        out.isNaN  := isSpecial && ! isZeroFractIn
-        out.isInf  := isSpecial &&   isZeroFractIn
-        out.isZero := isZero
-        out.sign   := sign
-        out.sExp   := adjustedExp(expWidth, 0).zext
-        out.sig :=
-            Cat(UInt(0, 1), ! isZero, Mux(isZeroExpIn, subnormFract, fractIn))
-        out
-    }
+    val out = Wire(new RawFloat(expWidth, sigWidth))
+    out.isNaN := isSpecial && !isZeroFractIn
+    out.isInf := isSpecial && isZeroFractIn
+    out.isZero := isZero
+    out.sign := sign
+    out.sExp := adjustedExp(expWidth, 0).zext
+    out.sig :=
+      0.U(1.W) ## !isZero ## Mux(isZeroExpIn, subnormFract, fractIn)
+    out
+  }
 }
 

@@ -38,31 +38,52 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package hardfloat.test
 
 import hardfloat._
-import Chisel._
+import chisel3._
 
 class ValExec_fNFromRecFN(expWidth: Int, sigWidth: Int) extends Module
 {
-    val io = new Bundle {
-        val a = Bits(INPUT, expWidth + sigWidth)
-        val out = Bits(OUTPUT, expWidth + sigWidth)
-        val check = Bool(OUTPUT)
-        val pass = Bool(OUTPUT)
-    }
+    val io = IO(new Bundle {
+        val a = Input(Bits((expWidth + sigWidth).W))
+        val out = Output(Bits((expWidth + sigWidth).W))
+        val check = Output(Bool())
+        val pass = Output(Bool())
+    })
 
     io.out :=
         fNFromRecFN(expWidth, sigWidth, recFNFromFN(expWidth, sigWidth, io.a))
 
-    io.check := Bool(true)
+    io.check := true.B
     io.pass := (io.out === io.a)
 }
 
-class FnFromRecFnSpec extends FMATester {
+class FnFromRecFnFMASpec extends FMATester {
     def test(f: Int): Seq[String] = {
         test(
             s"f${f}FromRecF${f}",
             () => new ValExec_fNFromRecFN(exp(f), sig(f)),
             "fNFromRecFN.cpp",
             Seq(Seq("-level2", s"-f${f}"))
+        )
+    }
+
+    "f16FromRecF16" should "pass" in {
+        check(test(16))
+    }
+
+    "f32FromRecF32" should "pass" in {
+        check(test(32))
+    }
+
+    "f64FromRecF64" should "pass" in {
+        check(test(64))
+    }
+}
+
+class FnFromRecFnMiterSpec extends MiterTester {
+    def test(f: Int): Int = {
+        test(
+            s"f${f}FromRecF${f}",
+            () => new ValExec_fNFromRecFN(exp(f), sig(f))
         )
     }
 

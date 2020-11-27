@@ -37,7 +37,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package hardfloat
 
-import Chisel._
+import chisel3._
+import chisel3.util._
 
 /*----------------------------------------------------------------------------
 | In the result, no more than one of 'isNaN', 'isInf', and 'isZero' will be
@@ -48,8 +49,8 @@ object rawFloatFromRecFN
     def apply(expWidth: Int, sigWidth: Int, in: Bits): RawFloat =
     {
         val exp = in(expWidth + sigWidth - 1, sigWidth - 1)
-        val isZero    = (exp(expWidth, expWidth - 2) === UInt(0))
-        val isSpecial = (exp(expWidth, expWidth - 1) === UInt(3))
+        val isZero    = exp(expWidth, expWidth - 2) === 0.U
+        val isSpecial = exp(expWidth, expWidth - 1) === 3.U
 
         val out = Wire(new RawFloat(expWidth, sigWidth))
         out.isNaN  := isSpecial &&   exp(expWidth - 2)
@@ -57,7 +58,7 @@ object rawFloatFromRecFN
         out.isZero := isZero
         out.sign   := in(expWidth + sigWidth)
         out.sExp   := exp.zext
-        out.sig    := Cat(UInt(0, 1), ! isZero, in(sigWidth - 2, 0))
+        out.sig    := 0.U(1.W) ## ! isZero ## in(sigWidth - 2, 0)
         out
     }
 }

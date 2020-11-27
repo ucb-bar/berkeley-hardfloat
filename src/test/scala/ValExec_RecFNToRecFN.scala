@@ -38,32 +38,32 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package hardfloat.test
 
 import hardfloat._
-import Chisel._
+import chisel3._
 
 class
     ValExec_RecFNToRecFN(
         inExpWidth: Int, inSigWidth: Int, outExpWidth: Int, outSigWidth: Int)
     extends Module
 {
-    val io = new Bundle {
-        val in = Bits(INPUT, inExpWidth + inSigWidth)
-        val roundingMode   = UInt(INPUT, 3)
-        val detectTininess = UInt(INPUT, 1)
+    val io = IO(new Bundle {
+        val in = Input(Bits((inExpWidth + inSigWidth).W))
+        val roundingMode   = Input(UInt(3.W))
+        val detectTininess = Input(UInt(1.W))
 
         val expected = new Bundle {
-            val out = Bits(INPUT, outExpWidth + outSigWidth)
-            val exceptionFlags = Bits(INPUT, 5)
-            val recOut = Bits(OUTPUT, outExpWidth + outSigWidth + 1)
+            val out = Input(Bits((outExpWidth + outSigWidth).W))
+            val exceptionFlags = Input(Bits(5.W))
+            val recOut = Output(Bits((outExpWidth + outSigWidth + 1).W))
         }
 
         val actual = new Bundle {
-            val out = Bits(OUTPUT, outExpWidth + outSigWidth + 1)
-            val exceptionFlags = Bits(OUTPUT, 5)
+            val out = Output(Bits((outExpWidth + outSigWidth + 1).W))
+            val exceptionFlags = Output(Bits(5.W))
         }
 
-        val check = Bool(OUTPUT)
-        val pass = Bool(OUTPUT)
-    }
+        val check = Output(Bool())
+        val pass = Output(Bool())
+    })
 
     val recFNToRecFN =
         Module(
@@ -78,21 +78,14 @@ class
     io.actual.out := recFNToRecFN.io.out
     io.actual.exceptionFlags := recFNToRecFN.io.exceptionFlags
 
-    io.check := Bool(true)
+    io.check := true.B
     io.pass :=
         equivRecFN(
             outExpWidth, outSigWidth, io.actual.out, io.expected.recOut) &&
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
 
-class ValExec_RecF16ToRecF32 extends ValExec_RecFNToRecFN(5, 11, 8, 24)
-class ValExec_RecF16ToRecF64 extends ValExec_RecFNToRecFN(5, 11, 11, 53)
-class ValExec_RecF32ToRecF16 extends ValExec_RecFNToRecFN(8, 24, 5, 11)
-class ValExec_RecF32ToRecF64 extends ValExec_RecFNToRecFN(8, 24, 11, 53)
-class ValExec_RecF64ToRecF16 extends ValExec_RecFNToRecFN(11, 53, 5, 11)
-class ValExec_RecF64ToRecF32 extends ValExec_RecFNToRecFN(11, 53, 8, 24)
-
-class RecFNToRecFNSpec extends FMATester {
+class RecFNToRecFNFMASpec extends FMATester {
     def test(f0: Int, f1: Int): Seq[String] = {
         test(
             s"RecF${f0}ToRecF${f1}",
@@ -120,3 +113,29 @@ class RecFNToRecFNSpec extends FMATester {
     }
 }
 
+class RecFNToRecFNMiterSpec extends MiterTester {
+    def test(f0: Int, f1: Int): Int = {
+        test(
+            s"RecF${f0}ToRecF${f1}",
+            () => new ValExec_RecFNToRecFN(exp(f0), sig(f0), exp(f1), sig(f1))
+        )
+    }
+    "RecF16ToRecF32" should "pass" in {
+        check(test(16, 32))
+    }
+    "RecF16ToRecF64" should "pass" in {
+        check(test(16, 64))
+    }
+    "RecF32ToRecF16" should "pass" in {
+        check(test(32, 16))
+    }
+    "RecF32ToRecF64" should "pass" in {
+        check(test(32, 64))
+    }
+    "RecF64ToRecF16" should "pass" in {
+        check(test(64, 16))
+    }
+    "RecF64ToRecF32" should "pass" in {
+        check(test(64, 32))
+    }
+}

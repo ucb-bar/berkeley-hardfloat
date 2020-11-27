@@ -38,30 +38,30 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package hardfloat.test
 
 import hardfloat._
-import Chisel._
+import chisel3._
 
 class ValExec_AddRecFN(expWidth: Int, sigWidth: Int) extends Module
 {
-    val io = new Bundle {
-        val a = Bits(INPUT, expWidth + sigWidth)
-        val b = Bits(INPUT, expWidth + sigWidth)
-        val roundingMode   = UInt(INPUT, 3)
-        val detectTininess = UInt(INPUT, 1)
+    val io = IO(new Bundle {
+        val a = Input(Bits((expWidth + sigWidth).W))
+        val b = Input(Bits((expWidth + sigWidth).W))
+        val roundingMode   = Input(UInt(3.W))
+        val detectTininess = Input(UInt(1.W))
 
         val expected = new Bundle {
-            val out = Bits(INPUT, expWidth + sigWidth)
-            val exceptionFlags = Bits(INPUT, 5)
-            val recOut = Bits(OUTPUT, expWidth + sigWidth + 1)
+            val out = Input(Bits((expWidth + sigWidth).W))
+            val exceptionFlags = Input(Bits(5.W))
+            val recOut = Output(Bits((expWidth + sigWidth + 1).W))
         }
 
         val actual = new Bundle {
-            val out = Bits(OUTPUT, expWidth + sigWidth + 1)
-            val exceptionFlags = Bits(OUTPUT, 5)
+            val out = Output(Bits((expWidth + sigWidth + 1).W))
+            val exceptionFlags = Output(Bits(5.W))
         }
 
-        val check = Bool(OUTPUT)
-        val pass = Bool(OUTPUT)
-    }
+        val check = Output(Bool())
+        val pass = Output(Bool())
+    })
 
     val addRecFN = Module(new AddRecFN(expWidth, sigWidth))
     addRecFN.io.subOp := false.B
@@ -75,19 +75,36 @@ class ValExec_AddRecFN(expWidth: Int, sigWidth: Int) extends Module
     io.actual.out := addRecFN.io.out
     io.actual.exceptionFlags := addRecFN.io.exceptionFlags
 
-    io.check := Bool(true)
+    io.check := true.B
     io.pass :=
         equivRecFN(expWidth, sigWidth, io.actual.out, io.expected.recOut) &&
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
 
-class AddRecFNSpec extends FMATester {
+class AddRecFNFMASpec extends FMATester {
     def test(f: Int): Seq[String] = {
         test(s"AddRecF${f}",
             () => new ValExec_AddRecFN(exp(f), sig(f)),
             Seq(s"f${f}_add")
         )
     }
+    "AddRecF16" should "pass" in {
+        check(test(16))
+    }
+    "AddRecF32" should "pass" in {
+        check(test(32))
+    }
+    "AddRecF64" should "pass" in {
+        check(test(64))
+    }
+}
+
+class AddRecFNMiterSpec extends MiterTester {
+    def test(f: Int): Int =
+        test(
+            s"AddRecF${f}",
+            () => new ValExec_AddRecFN(exp(f), sig(f))
+        )
     "AddRecF16" should "pass" in {
         check(test(16))
     }

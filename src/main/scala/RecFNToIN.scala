@@ -37,18 +37,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package hardfloat
 
-import Chisel._
+import chisel3._
+import chisel3.util.log2Up
+
 import scala.math._
 import consts._
 
-class RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int) extends chisel3.RawModule
+class RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int) extends chisel3.Module
 {
     val io = IO(new Bundle {
-        val in = Bits(INPUT, expWidth + sigWidth + 1)
-        val roundingMode = UInt(INPUT, 3)
-        val signedOut = Bool(INPUT)
-        val out = Bits(OUTPUT, intWidth)
-        val intExceptionFlags = Bits(OUTPUT, 3)
+        val in = Input(Bits((expWidth + sigWidth + 1).W))
+        val roundingMode = Input(UInt(3.W))
+        val signedOut = Input(Bool())
+        val out = Output(Bits(intWidth.W))
+        val intExceptionFlags = Output(Bits(3.W))
     })
 
     //------------------------------------------------------------------------
@@ -77,14 +79,14 @@ class RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int) extends chisel3.Raw
     | will all be zeros.
     *------------------------------------------------------------------------*/
     val shiftedSig =
-        Cat(magGeOne, rawIn.sig(sigWidth - 2, 0))<<
+        (magGeOne ## rawIn.sig(sigWidth - 2, 0))<<
             Mux(magGeOne,
                 rawIn.sExp(min(expWidth - 2, log2Up(intWidth) - 1), 0),
-                UInt(0)
+                0.U
             )
     val alignedSig =
-        Cat(shiftedSig>>(sigWidth - 2), shiftedSig(sigWidth - 3, 0).orR)
-    val unroundedInt = UInt(0, intWidth) | alignedSig>>2
+        (shiftedSig>>(sigWidth - 2)) ## shiftedSig(sigWidth - 3, 0).orR
+    val unroundedInt = 0.U(intWidth.W) | alignedSig>>2
 
     val common_inexact = Mux(magGeOne, alignedSig(1, 0).orR, !rawIn.isZero)
     val roundIncr_near_even =
@@ -100,23 +102,23 @@ class RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int) extends chisel3.Raw
     val complUnroundedInt = Mux(rawIn.sign, ~unroundedInt, unroundedInt)
     val roundedInt =
         Mux(roundIncr ^ rawIn.sign,
-            complUnroundedInt + UInt(1),
+            complUnroundedInt + 1.U,
             complUnroundedInt
         ) | (roundingMode_odd && common_inexact)
 
-    val magGeOne_atOverflowEdge = (posExp === UInt(intWidth - 1))
+    val magGeOne_atOverflowEdge = (posExp === (intWidth - 1).U)
 //*** CHANGE TO TAKE BITS FROM THE ORIGINAL 'rawIn.sig' INSTEAD OF FROM
 //***  'unroundedInt'?:
     val roundCarryBut2 = unroundedInt(intWidth - 3, 0).andR && roundIncr
     val common_overflow =
         Mux(magGeOne,
-            (posExp >= UInt(intWidth)) ||
+            (posExp >= intWidth.U) ||
                 Mux(io.signedOut, 
                     Mux(rawIn.sign,
                         magGeOne_atOverflowEdge &&
                             (unroundedInt(intWidth - 2, 0).orR || roundIncr),
                         magGeOne_atOverflowEdge ||
-                            ((posExp === UInt(intWidth - 2)) && roundCarryBut2)
+                            ((posExp === (intWidth - 2).U) && roundCarryBut2)
                     ),
                     rawIn.sign ||
                         (magGeOne_atOverflowEdge &&
@@ -134,12 +136,12 @@ class RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int) extends chisel3.Raw
     val excSign = !rawIn.isNaN && rawIn.sign
     val excOut =
         Mux((io.signedOut === excSign),
-            UInt(BigInt(1)<<(intWidth - 1)),
-            UInt(0)
+            (BigInt(1)<<(intWidth - 1)).U,
+            0.U
         ) |
-        Mux(!excSign, UInt((BigInt(1)<<(intWidth - 1)) - 1), UInt(0))
+        Mux(!excSign, ((BigInt(1)<<(intWidth - 1)) - 1).U, 0.U)
 
     io.out := Mux(invalidExc || common_overflow, excOut, roundedInt)
-    io.intExceptionFlags := Cat(invalidExc, overflow, inexact)
+    io.intExceptionFlags := invalidExc ## overflow ## inexact
 }
 

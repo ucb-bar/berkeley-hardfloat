@@ -37,19 +37,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package hardfloat
 
-import Chisel._
+import chisel3._
 
 object recFNFromFN
 {
     def apply(expWidth: Int, sigWidth: Int, in: Bits) =
     {
         val rawIn = rawFloatFromFN(expWidth, sigWidth, in)
-        Cat(rawIn.sign,
-            Mux(rawIn.isZero, Bits(0, 3), rawIn.sExp(expWidth, expWidth - 2)) |
-                Mux(rawIn.isNaN, UInt(1), UInt(0)),
-            rawIn.sExp(expWidth - 3, 0),
+        rawIn.sign ##
+          (Mux(rawIn.isZero, 0.U(3.W), rawIn.sExp(expWidth, expWidth - 2)) |
+                Mux(rawIn.isNaN, 1.U, 0.U)) ##
+            rawIn.sExp(expWidth - 3, 0) ##
             rawIn.sig(sigWidth - 2, 0)
-        )
     }
 }
 

@@ -37,24 +37,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package hardfloat
 
-import Chisel._
-import consts._
+import chisel3._
 
 class DivSqrtRecF64 extends Module
 {
     val io = IO(new Bundle {
-        val inReady_div  = Bool(OUTPUT)
-        val inReady_sqrt = Bool(OUTPUT)
-        val inValid = Bool(INPUT)
-        val sqrtOp = Bool(INPUT)
-        val a = Bits(INPUT, 65)
-        val b = Bits(INPUT, 65)
-        val roundingMode   = UInt(INPUT, 3)
-        val detectTininess = UInt(INPUT, 1)
-        val outValid_div  = Bool(OUTPUT)
-        val outValid_sqrt = Bool(OUTPUT)
-        val out = Bits(OUTPUT, 65)
-        val exceptionFlags = Bits(OUTPUT, 5)
+        val inReady_div  = Output(Bool())
+        val inReady_sqrt = Output(Bool())
+        val inValid = Input(Bool())
+        val sqrtOp = Input(Bool())
+        val a = Input(Bits(65.W))
+        val b = Input(Bits(65.W))
+        val roundingMode   = Input(Bits(3.W))
+        val detectTininess = Input(UInt(1.W))
+        val outValid_div  = Output(Bool())
+        val outValid_sqrt = Output(Bool())
+        val out = Output(Bits(65.W))
+        val exceptionFlags = Output(Bits(5.W))
     })
 
     val ds = Module(new DivSqrtRecF64_mulAddZ31(0))
@@ -86,22 +85,22 @@ class DivSqrtRecF64 extends Module
 class Mul54 extends Module
 {
     val io = IO(new Bundle {
-        val val_s0 = Bool(INPUT)
-        val latch_a_s0 = Bool(INPUT)
-        val a_s0 = UInt(INPUT, 54)
-        val latch_b_s0 = Bool(INPUT)
-        val b_s0 = UInt(INPUT, 54)
-        val c_s2 = UInt(INPUT, 105)
-        val result_s3 = UInt(OUTPUT, 105)
+        val val_s0 = Input(Bool())
+        val latch_a_s0 = Input(Bool())
+        val a_s0 = Input(UInt(54.W))
+        val latch_b_s0 = Input(Bool())
+        val b_s0 = Input(UInt(54.W))
+        val c_s2 = Input(UInt(105.W))
+        val result_s3 = Output(UInt(105.W))
     })
 
     val val_s1 = Reg(Bool())
     val val_s2 = Reg(Bool())
-    val reg_a_s1 = Reg(UInt(width = 54))
-    val reg_b_s1 = Reg(UInt(width = 54))
-    val reg_a_s2 = Reg(UInt(width = 54))
-    val reg_b_s2 = Reg(UInt(width = 54))
-    val reg_result_s3 = Reg(UInt(width = 105))
+    val reg_a_s1 = Reg(UInt(54.W))
+    val reg_b_s1 = Reg(UInt(54.W))
+    val reg_a_s2 = Reg(UInt(54.W))
+    val reg_b_s2 = Reg(UInt(54.W))
+    val reg_result_s3 = Reg(UInt(105.W))
 
     val_s1 := io.val_s0
     val_s2 := val_s1

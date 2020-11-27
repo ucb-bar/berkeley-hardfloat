@@ -37,31 +37,31 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package hardfloat
 
-import Chisel._
+import chisel3._
 
 object classifyRecFN
 {
     def apply(expWidth: Int, sigWidth: Int, in: Bits) =
     {
-        val minNormExp = (BigInt(1)<<(expWidth - 1)) + 2
+        val minNormExp: BigInt = (BigInt(1)<<(expWidth - 1)) + 2
 
-        val rawIn = rawFloatFromRecFN(expWidth, sigWidth, in)
-        val isSigNaN = isSigNaNRawFloat(rawIn)
-        val isFiniteNonzero = ! rawIn.isNaN && ! rawIn.isInf && ! rawIn.isZero
-        val isSubnormal = (rawIn.sExp < SInt(minNormExp))
+        val rawIn: RawFloat = rawFloatFromRecFN(expWidth, sigWidth, in)
+        val isSigNaN: Bool = isSigNaNRawFloat(rawIn)
+        val isFiniteNonzero: Bool = ! rawIn.isNaN && ! rawIn.isInf && ! rawIn.isZero
+        val isSubnormal: Bool = rawIn.sExp < minNormExp.S
 
-        Cat(
-            rawIn.isNaN && ! isSigNaN,
-            isSigNaN,
-            ! rawIn.sign && rawIn.isInf,
-            ! rawIn.sign && isFiniteNonzero && ! isSubnormal,
-            ! rawIn.sign && isFiniteNonzero &&   isSubnormal,
-            ! rawIn.sign && rawIn.isZero,
-            rawIn.sign   && rawIn.isZero,
-            rawIn.sign   && isFiniteNonzero &&   isSubnormal,
-            rawIn.sign   && isFiniteNonzero && ! isSubnormal,
-            rawIn.sign   && rawIn.isInf
-        )
+
+        (rawIn.isNaN && ! isSigNaN) ##
+        isSigNaN ##
+        (! rawIn.sign && rawIn.isInf) ##
+        (! rawIn.sign && isFiniteNonzero && ! isSubnormal) ##
+        (! rawIn.sign && isFiniteNonzero &&   isSubnormal) ##
+        (! rawIn.sign && rawIn.isZero) ##
+        (rawIn.sign   && rawIn.isZero) ##
+        (rawIn.sign   && isFiniteNonzero &&   isSubnormal) ##
+        (rawIn.sign   && isFiniteNonzero && ! isSubnormal) ##
+        (rawIn.sign   && rawIn.isInf)
+
     }
 }
 
