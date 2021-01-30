@@ -57,6 +57,7 @@ class MulAddRecFN_interIo(expWidth: Int, sigWidth: Int) extends Bundle
     val isInfC          = Bool()
     val isZeroC         = Bool()
     val sExpSum         = SInt(width = expWidth + 2)
+    val sExpProd        = SInt(width = expWidth + 2)
     val doSubMags       = Bool()
     val CIsDominant     = Bool()
     val CDom_CAlignDist = UInt(width = log2Up(sigWidth + 1))
@@ -99,6 +100,7 @@ class MulAddRecFNToRaw_preMul(expWidth: Int, sigWidth: Int) extends chisel3.RawM
 //*** REVIEW THE BIAS FOR 'sExpAlignedProd':
     val sExpAlignedProd =
         rawA.sExp +& rawB.sExp + SInt(-(BigInt(1)<<expWidth) + sigWidth + 3)
+    val sExpProd = rawA.sExp +& rawB.sExp + SInt(-(BigInt(1)<<expWidth))
 
     val doSubMags = signProd ^ rawC.sign ^ io.op(0)
 
@@ -157,6 +159,7 @@ class MulAddRecFNToRaw_preMul(expWidth: Int, sigWidth: Int) extends chisel3.RawM
     io.toPostMul.isNaNC    := rawC.isNaN
     io.toPostMul.isInfC    := rawC.isInf
     io.toPostMul.isZeroC   := rawC.isZero
+    io.toPostMul.sExpProd  := sExpProd
     io.toPostMul.sExpSum   :=
         Mux(CIsDominant, rawC.sExp, sExpAlignedProd - SInt(sigWidth))
     io.toPostMul.doSubMags := doSubMags
@@ -298,6 +301,29 @@ class MulAddRecFNToRaw_postMul(expWidth: Int, sigWidth: Int) extends chisel3.Raw
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+class MulRecFNToRaw_postMul(expWidth: Int, sigWidth: Int) extends chisel3.RawModule
+{
+    val io = IO(new Bundle {
+        val fromPreMul = new MulAddRecFN_interIo(expWidth, sigWidth).asInput
+        val mulAddResult = UInt(INPUT, sigWidth * 2 + 1)
+        val invalidExc  = Bool(OUTPUT)
+        val rawOut = new RawFloat(expWidth, sigWidth + 2).asOutput
+    })
+
+    io.invalidExc :=
+        io.fromPreMul.isSigNaNAny ||
+        (io.fromPreMul.isInfA && io.fromPreMul.isZeroB) ||
+        (io.fromPreMul.isZeroA && io.fromPreMul.isInfB)
+    io.rawOut.isNaN := io.fromPreMul.isNaNAOrB
+    io.rawOut.isInf := io.fromPreMul.isInfA || io.fromPreMul.isInfB
+    io.rawOut.isZero := io.fromPreMul.isZeroA || io.fromPreMul.isZeroB
+    io.rawOut.sign := io.fromPreMul.signProd
+    io.rawOut.sExp := io.fromPreMul.sExpProd
+    io.rawOut.sig := Cat(io.mulAddResult(sigWidth*2 - 1, sigWidth - 2), io.mulAddResult(sigWidth - 3, 0).orR)
+}
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 class MulAddRecFN(expWidth: Int, sigWidth: Int) extends chisel3.RawModule
 {
@@ -310,6 +336,8 @@ class MulAddRecFN(expWidth: Int, sigWidth: Int) extends chisel3.RawModule
         val detectTininess = UInt(INPUT, 1)
         val out = Bits(OUTPUT, expWidth + sigWidth + 1)
         val exceptionFlags = Bits(OUTPUT, 5)
+        val mulOut = Bits(OUTPUT, expWidth + sigWidth + 1)
+        val mulExceptionFlags = Bits(OUTPUT, 5)
     })
 
     //------------------------------------------------------------------------
@@ -333,6 +361,23 @@ class MulAddRecFN(expWidth: Int, sigWidth: Int) extends chisel3.RawModule
         mulAddRecFNToRaw_preMul.io.toPostMul
     mulAddRecFNToRaw_postMul.io.mulAddResult := mulAddResult
     mulAddRecFNToRaw_postMul.io.roundingMode := io.roundingMode
+
+    //------------------------------------------------------------------------
+    //------------------------------------------------------------------------
+    val mulRecFNToRaw_postMul =
+        Module(new MulRecFNToRaw_postMul(expWidth, sigWidth))
+    mulRecFNToRaw_postMul.io.fromPreMul := mulAddRecFNToRaw_preMul.io.toPostMul
+    mulRecFNToRaw_postMul.io.mulAddResult := mulAddResult
+
+    val roundRawFNToRecFN_mul =
+        Module(new RoundRawFNToRecFN(expWidth, sigWidth, 0))
+    roundRawFNToRecFN_mul.io.invalidExc   := mulRecFNToRaw_postMul.io.invalidExc
+    roundRawFNToRecFN_mul.io.infiniteExc  := Bool(false)
+    roundRawFNToRecFN_mul.io.in           := mulRecFNToRaw_postMul.io.rawOut
+    roundRawFNToRecFN_mul.io.roundingMode := io.roundingMode
+    roundRawFNToRecFN_mul.io.detectTininess := io.detectTininess
+    io.mulOut            := roundRawFNToRecFN_mul.io.out
+    io.mulExceptionFlags := roundRawFNToRecFN_mul.io.exceptionFlags
 
     //------------------------------------------------------------------------
     //------------------------------------------------------------------------
