@@ -47,8 +47,6 @@ class DivRecFN_io(expWidth: Int, sigWidth: Int) extends Bundle {
     val out = Bits(width = expWidth + sigWidth)
     val exceptionFlags = Bits(width = 5)
 
-    override def cloneType =
-        new DivRecFN_io(expWidth, sigWidth).asInstanceOf[this.type]
 }
 
 class
@@ -121,8 +119,6 @@ class SqrtRecFN_io(expWidth: Int, sigWidth: Int) extends Bundle {
     val out = Bits(width = expWidth + sigWidth)
     val exceptionFlags = Bits(width = 5)
 
-    override def cloneType =
-        new SqrtRecFN_io(expWidth, sigWidth).asInstanceOf[this.type]
 }
 
 class
