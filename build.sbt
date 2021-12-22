@@ -1,10 +1,10 @@
 organization := "edu.berkeley.cs"
 
-version := "1.3-SNAPSHOT"
+version := "1.5-SNAPSHOT"
 
 name := "hardfloat"
 
-scalaVersion := "2.12.8"
+scalaVersion := "2.12.15"
 
 scalacOptions += "-Xsource:2.11"
 
@@ -13,12 +13,8 @@ resolvers ++= Seq(
   Resolver.sonatypeRepo("releases")
 )
 
-val defaultVersions = Map("chisel3" -> "3.3-SNAPSHOT")
-
-// Provide a managed dependency on chisel if -DchiselVersion="" issupplied on the command line.
-libraryDependencies ++= (Seq("chisel3").map {
-  dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
-})
+addCompilerPlugin("edu.berkeley.cs" % "chisel3-plugin" % "3.5.0-RC2" cross CrossVersion.full)
+libraryDependencies += "edu.berkeley.cs" %% "chisel3" % "3.5.0-RC2"
 libraryDependencies ++= Seq("org.scalatest" %% "scalatest" % "3.2.0" % "test")
 Test / testForkedParallel := true
 
