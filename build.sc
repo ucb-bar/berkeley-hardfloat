@@ -5,12 +5,12 @@ import coursier.maven.MavenRepository
 
 object v {
   val scala = "2.12.15"
-  val chisel3 = ivy"edu.berkeley.cs::chisel3:3.5-SNAPSHOT"
-  val chisel3Plugin = ivy"edu.berkeley.cs:::chisel3-plugin:3.5-SNAPSHOT"
+  val chisel3 = ivy"edu.berkeley.cs::chisel3:3.5.3"
+  val chisel3Plugin = ivy"edu.berkeley.cs:::chisel3-plugin:3.5.3"
   val scalatest = ivy"org.scalatest::scalatest:3.2.0"
 }
 
-object hardfloat extends hardfloat 
+object hardfloat extends hardfloat
 
 class hardfloat extends ScalaModule with SbtModule with PublishModule { m =>
   def scalaVersion = v.scala
@@ -34,14 +34,14 @@ class hardfloat extends ScalaModule with SbtModule with PublishModule { m =>
 
   def scalacPluginClasspath = super.scalacPluginClasspath() ++ chisel3PluginJar
 
-  def moduleDeps = super.moduleDeps ++ chisel3Module 
+  def moduleDeps = super.moduleDeps ++ chisel3Module
 
   def ivyDeps = super.ivyDeps() ++ chisel3IvyDeps
 
   def scalacOptions = Seq("-Xsource:2.11")
 
   def publishVersion = "1.5-SNAPSHOT"
-  
+
   def artifactName = "hardfloat"
 
   def repositories() = super.repositories ++ Seq(
