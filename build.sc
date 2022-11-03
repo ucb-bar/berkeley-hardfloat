@@ -4,9 +4,9 @@ import mill.scalalib.publish._
 import coursier.maven.MavenRepository
 
 object v {
-  val scala = "2.12.15"
-  val chisel3 = ivy"edu.berkeley.cs::chisel3:3.5.3"
-  val chisel3Plugin = ivy"edu.berkeley.cs:::chisel3-plugin:3.5.3"
+  val scala = "2.13.8"
+  val chisel3 = ivy"edu.berkeley.cs::chisel3:3.5.4"
+  val chisel3Plugin = ivy"edu.berkeley.cs:::chisel3-plugin:3.5.4"
   val scalatest = ivy"org.scalatest::scalatest:3.2.0"
 }
 
