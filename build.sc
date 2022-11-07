@@ -8,6 +8,7 @@ object v {
   val chisel3 = ivy"edu.berkeley.cs::chisel3:3.5.4"
   val chisel3Plugin = ivy"edu.berkeley.cs:::chisel3-plugin:3.5.4"
   val scalatest = ivy"org.scalatest::scalatest:3.2.0"
+  val scalapar = ivy"org.scala-lang.modules::scala-parallel-collections:1.0.4"
 }
 
 object hardfloat extends hardfloat
@@ -50,7 +51,7 @@ class hardfloat extends ScalaModule with SbtModule with PublishModule { m =>
   )
 
   object test extends Tests {
-    def ivyDeps = Agg(v.scalatest)
+    def ivyDeps = Agg(v.scalatest, v.scalapar)
     def testFramework = "org.scalatest.tools.Framework"
   }
 

@@ -8,6 +8,8 @@ import firrtl.AnnotationSeq
 import firrtl.options.TargetDirAnnotation
 import firrtl.stage.OutputFileAnnotation
 import scala.sys.process.{Process, ProcessLogger}
+import scala.collection.parallel.CollectionConverters._
+
 
 trait FMATester extends HardfloatTester {
   def check(stdouts: Seq[String]) = {
