@@ -25,6 +25,8 @@ jobs:
         distribution: temurin
         java-version: ${{ matrix.java }}
         cache: sbt
+    - name: Install Verilator
+      run: sudo apt-get install -y verilator gcc
     - name: Build and test
       shell: bash
       run: make test
