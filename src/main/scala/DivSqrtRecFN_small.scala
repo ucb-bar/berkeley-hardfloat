@@ -187,7 +187,7 @@ package hardfloat
 
 import chisel3._
 import chisel3.util._
-
+import consts._
 /*----------------------------------------------------------------------------
 | Computes a division or square root for floating-point in recoded form.
 | Multiple clock cycles are needed for each division or square-root operation,
