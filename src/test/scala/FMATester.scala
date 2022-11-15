@@ -8,8 +8,22 @@ import firrtl.AnnotationSeq
 import firrtl.options.TargetDirAnnotation
 import firrtl.stage.OutputFileAnnotation
 import scala.sys.process.{Process, ProcessLogger}
-import scala.collection.parallel.CollectionConverters._
 
+private[test] object CompatParColls {
+  val Converters = {
+    import Compat._
+
+    {
+      import scala.collection.parallel._
+
+      CollectionConverters
+    }
+  }
+
+  object Compat {
+    object CollectionConverters
+  }
+}
 
 trait FMATester extends HardfloatTester {
   def check(stdouts: Seq[String]) = {
@@ -93,6 +107,7 @@ trait FMATester extends HardfloatTester {
 
     (if (dutArgs.isDefined) {
       require(softfloatArgs.size == dutArgs.get.size, "size of softfloatArgs and dutArgs should be same.")
+      import CompatParColls._
       (softfloatArgs zip dutArgs.get).par.map { case (s, d) => executeAndLog(s, d)}
     } else softfloatArgs.par.map{s => executeAndLog(s, Seq.empty)}).seq
   }

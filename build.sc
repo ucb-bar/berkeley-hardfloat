@@ -51,7 +51,12 @@ class hardfloat extends ScalaModule with SbtModule with PublishModule { m =>
   )
 
   object test extends Tests {
-    def ivyDeps = Agg(v.scalatest, v.scalapar)
+    def ivyDeps = Agg(v.scalatest) ++ {
+      if (scalaVersion().split('.')(1).toInt == 13)
+        Agg(v.scalapar)
+      else
+        Agg()
+    }
     def testFramework = "org.scalatest.tools.Framework"
   }
 
