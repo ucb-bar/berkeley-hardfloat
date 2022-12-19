@@ -4,9 +4,9 @@ import mill.scalalib.publish._
 import coursier.maven.MavenRepository
 
 object v {
-  val scala = "2.13.8"
-  val chisel3 = ivy"edu.berkeley.cs::chisel3:3.5.4"
-  val chisel3Plugin = ivy"edu.berkeley.cs:::chisel3-plugin:3.5.4"
+  val scala = "2.13.10"
+  val chisel3 = ivy"edu.berkeley.cs::chisel3:3.5.5"
+  val chisel3Plugin = ivy"edu.berkeley.cs:::chisel3-plugin:3.5.5"
   val scalatest = ivy"org.scalatest::scalatest:3.2.0"
   val scalapar = ivy"org.scala-lang.modules::scala-parallel-collections:1.0.4"
 }
@@ -38,8 +38,6 @@ class hardfloat extends ScalaModule with SbtModule with PublishModule { m =>
   def moduleDeps = super.moduleDeps ++ chisel3Module
 
   def ivyDeps = super.ivyDeps() ++ chisel3IvyDeps
-
-  def scalacOptions = Seq("-Xsource:2.11")
 
   def publishVersion = "1.5-SNAPSHOT"
 
