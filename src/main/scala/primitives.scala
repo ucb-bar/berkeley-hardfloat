@@ -37,7 +37,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package hardfloat
 
-import Chisel._
+import chisel3._
+import chisel3.util._
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -60,21 +61,19 @@ object lowMask
                 if (mid <= bottomBound) {
                     Mux(msb,
                         lowMask(lsbs, topBound - mid, bottomBound - mid),
-                        UInt(0)
+                        0.U
                     )
                 } else {
                     Mux(msb,
-                        Cat(lowMask(lsbs, topBound - mid, 0),
-                            UInt((BigInt(1)<<(mid - bottomBound).toInt) - 1)
-                        ),
+                        lowMask(lsbs, topBound - mid, 0) ## ((BigInt(1)<<(mid - bottomBound).toInt) - 1).U,
                         lowMask(lsbs, mid, bottomBound)
                     )
                 }
             } else {
-                ~Mux(msb, UInt(0), ~lowMask(lsbs, topBound, bottomBound))
+                ~Mux(msb, 0.U, ~lowMask(lsbs, topBound, bottomBound))
             }
         } else {
-            val shift = SInt(BigInt(-1)<<numInVals.toInt)>>in
+            val shift = (BigInt(-1)<<numInVals.toInt).S>>in
             Reverse(
                 shift(
                     (numInVals - 1 - bottomBound).toInt,

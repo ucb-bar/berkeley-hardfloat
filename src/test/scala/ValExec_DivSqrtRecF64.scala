@@ -38,42 +38,43 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package hardfloat.test
 
 import hardfloat._
-import Chisel._
+import chisel3._
+import chisel3.util._
 
 class DivRecF64_io extends Bundle {
-    val a = Bits(width = 64)
-    val b = Bits(width = 64)
-    val roundingMode   = UInt(width = 3)
-    val detectTininess = UInt(width = 1)
-    val out = Bits(width = 64)
-    val exceptionFlags = Bits(width = 5)
+    val a = Bits(64.W)
+    val b = Bits(64.W)
+    val roundingMode   = UInt(3.W)
+    val detectTininess = UInt(1.W)
+    val out = Bits(64.W)
+    val exceptionFlags = Bits(5.W)
 }
 
 class ValExec_DivSqrtRecF64_div extends Module {
-    val io = new Bundle {
-        val input = Decoupled(new DivRecF64_io).flip
+    val io = IO(new Bundle {
+        val input = Flipped(Decoupled(new DivRecF64_io))
 
         val output = new Bundle {
-            val a = Bits(OUTPUT, 64)
-            val b = Bits(OUTPUT, 64)
-            val roundingMode   = UInt(OUTPUT, 3)
-            val detectTininess = UInt(OUTPUT, 1)
+            val a = Output(Bits(64.W))
+            val b = Output(Bits(64.W))
+            val roundingMode   = Output(UInt(3.W))
+            val detectTininess = Output(UInt(1.W))
         }
 
         val expected = new Bundle {
-            val out = Bits(OUTPUT, 64)
-            val exceptionFlags = Bits(OUTPUT, 5)
-            val recOut = Bits(OUTPUT, 65)
+            val out = Output(Bits(64.W))
+            val exceptionFlags = Output(Bits(5.W))
+            val recOut = Output(Bits(65.W))
         }
 
         val actual = new Bundle {
-            val out = Bits(OUTPUT, 65)
-            val exceptionFlags = Bits(OUTPUT, 5)
+            val out = Output(Bits(65.W))
+            val exceptionFlags = Output(Bits(5.W))
         }
 
-        val check = Bool(OUTPUT)
-        val pass = Bool(OUTPUT)
-    }
+        val check = Output(Bool())
+        val pass = Output(Bool())
+    })
 
     val ds = Module(new DivSqrtRecF64)
     val cq = Module(new Queue(new DivRecF64_io, 5))
@@ -83,7 +84,7 @@ class ValExec_DivSqrtRecF64_div extends Module {
 
     io.input.ready := ds.io.inReady_div && cq.io.enq.ready
     ds.io.inValid := io.input.valid && cq.io.enq.ready
-    ds.io.sqrtOp := Bool(false)
+    ds.io.sqrtOp := false.B
     ds.io.a := recFNFromFN(11, 53, io.input.bits.a)
     ds.io.b := recFNFromFN(11, 53, io.input.bits.b)
     ds.io.roundingMode   := io.input.bits.roundingMode
@@ -111,37 +112,37 @@ class ValExec_DivSqrtRecF64_div extends Module {
 }
 
 class SqrtRecF64_io extends Bundle {
-    val b = Bits(width = 64)
-    val roundingMode   = UInt(width = 3)
-    val detectTininess = UInt(width = 1)
-    val out = Bits(width = 64)
-    val exceptionFlags = Bits(width = 5)
+    val b = Bits(64.W)
+    val roundingMode   = UInt(3.W)
+    val detectTininess = UInt(1.W)
+    val out = Bits(64.W)
+    val exceptionFlags = Bits(5.W)
 }
 
 class ValExec_DivSqrtRecF64_sqrt extends Module {
-    val io = new Bundle {
-        val input = Decoupled(new SqrtRecF64_io).flip
+    val io = IO(new Bundle {
+        val input = Flipped(Decoupled(new SqrtRecF64_io))
 
         val output = new Bundle {
-            val b = Bits(OUTPUT, 64)
-            val roundingMode   = UInt(OUTPUT, 3)
-            val detectTininess = UInt(OUTPUT, 1)
+            val b = Output(Bits(64.W))
+            val roundingMode   = Output(UInt(3.W))
+            val detectTininess = Output(UInt(1.W))
         }
 
         val expected = new Bundle {
-            val out = Bits(OUTPUT, 64)
-            val exceptionFlags = Bits(OUTPUT, 5)
-            val recOut = Bits(OUTPUT, 65)
+            val out = Output(Bits(64.W))
+            val exceptionFlags = Output(Bits(5.W))
+            val recOut = Output(Bits(65.W))
         }
 
         val actual = new Bundle {
-            val out = Bits(OUTPUT, 65)
-            val exceptionFlags = Bits(OUTPUT, 5)
+            val out = Output(Bits(65.W))
+            val exceptionFlags = Output(Bits(5.W))
         }
 
-        val check = Bool(OUTPUT)
-        val pass = Bool(OUTPUT)
-    }
+        val check = Output(Bool())
+        val pass = Output(Bool())
+    })
 
     val ds = Module(new DivSqrtRecF64)
     val cq = Module(new Queue(new SqrtRecF64_io, 5))
@@ -151,8 +152,9 @@ class ValExec_DivSqrtRecF64_sqrt extends Module {
 
     io.input.ready := ds.io.inReady_sqrt && cq.io.enq.ready
     ds.io.inValid := io.input.valid && cq.io.enq.ready
-    ds.io.sqrtOp := Bool(true)
+    ds.io.sqrtOp := true.B
     ds.io.b := recFNFromFN(11, 53, io.input.bits.b)
+    ds.io.a := DontCare
     ds.io.roundingMode   := io.input.bits.roundingMode
     ds.io.detectTininess := io.input.bits.detectTininess
 

@@ -37,7 +37,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package hardfloat
 
-import Chisel._
+import chisel3._
+import chisel3.util._
 import consts._
 
 //----------------------------------------------------------------------------
@@ -56,28 +57,28 @@ class MulAddRecFN_interIo(expWidth: Int, sigWidth: Int) extends Bundle
     val isNaNC          = Bool()
     val isInfC          = Bool()
     val isZeroC         = Bool()
-    val sExpSum         = SInt(width = expWidth + 2)
+    val sExpSum         = SInt((expWidth + 2).W)
     val doSubMags       = Bool()
     val CIsDominant     = Bool()
-    val CDom_CAlignDist = UInt(width = log2Up(sigWidth + 1))
-    val highAlignedSigC = UInt(width = sigWidth + 2)
-    val bit0AlignedSigC = UInt(width = 1)
+    val CDom_CAlignDist = UInt(log2Ceil(sigWidth + 1).W)
+    val highAlignedSigC = UInt((sigWidth + 2).W)
+    val bit0AlignedSigC = UInt(1.W)
 
 }
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-class MulAddRecFNToRaw_preMul(expWidth: Int, sigWidth: Int) extends chisel3.RawModule
+class MulAddRecFNToRaw_preMul(expWidth: Int, sigWidth: Int) extends RawModule
 {
     val io = IO(new Bundle {
-        val op = Bits(INPUT, 2)
-        val a = Bits(INPUT, expWidth + sigWidth + 1)
-        val b = Bits(INPUT, expWidth + sigWidth + 1)
-        val c = Bits(INPUT, expWidth + sigWidth + 1)
-        val mulAddA = UInt(OUTPUT, sigWidth)
-        val mulAddB = UInt(OUTPUT, sigWidth)
-        val mulAddC = UInt(OUTPUT, sigWidth * 2)
-        val toPostMul = new MulAddRecFN_interIo(expWidth, sigWidth).asOutput
+        val op = Input(Bits(2.W))
+        val a = Input(Bits((expWidth + sigWidth + 1).W))
+        val b = Input(Bits((expWidth + sigWidth + 1).W))
+        val c = Input(Bits((expWidth + sigWidth + 1).W))
+        val mulAddA = Output(UInt(sigWidth.W))
+        val mulAddB = Output(UInt(sigWidth.W))
+        val mulAddC = Output(UInt((sigWidth * 2).W))
+        val toPostMul = Output(new MulAddRecFN_interIo(expWidth, sigWidth))
     })
 
     //------------------------------------------------------------------------
@@ -95,7 +96,7 @@ class MulAddRecFNToRaw_preMul(expWidth: Int, sigWidth: Int) extends chisel3.RawM
     val signProd = rawA.sign ^ rawB.sign ^ io.op(1)
 //*** REVIEW THE BIAS FOR 'sExpAlignedProd':
     val sExpAlignedProd =
-        rawA.sExp +& rawB.sExp + SInt(-(BigInt(1)<<expWidth) + sigWidth + 3)
+        rawA.sExp +& rawB.sExp + (-(BigInt(1)<<expWidth) + sigWidth + 3).S
 
     val doSubMags = signProd ^ rawC.sign ^ io.op(0)
 
@@ -103,21 +104,19 @@ class MulAddRecFNToRaw_preMul(expWidth: Int, sigWidth: Int) extends chisel3.RawM
     //------------------------------------------------------------------------
     val sNatCAlignDist = sExpAlignedProd - rawC.sExp
     val posNatCAlignDist = sNatCAlignDist(expWidth + 1, 0)
-    val isMinCAlign = rawA.isZero || rawB.isZero || (sNatCAlignDist < SInt(0))
+    val isMinCAlign = rawA.isZero || rawB.isZero || (sNatCAlignDist < 0.S)
     val CIsDominant =
-        ! rawC.isZero && (isMinCAlign || (posNatCAlignDist <= UInt(sigWidth)))
+        ! rawC.isZero && (isMinCAlign || (posNatCAlignDist <= sigWidth.U))
     val CAlignDist =
         Mux(isMinCAlign,
-            UInt(0),
-            Mux(posNatCAlignDist < UInt(sigSumWidth - 1),
-                posNatCAlignDist(log2Up(sigSumWidth) - 1, 0),
-                UInt(sigSumWidth - 1)
+            0.U,
+            Mux(posNatCAlignDist < (sigSumWidth - 1).U,
+                posNatCAlignDist(log2Ceil(sigSumWidth) - 1, 0),
+                (sigSumWidth - 1).U
             )
         )
     val mainAlignedSigC =
-        Cat(Mux(doSubMags, ~rawC.sig, rawC.sig),
-            Fill(sigSumWidth - sigWidth + 2, doSubMags)
-        ).asSInt>>CAlignDist
+        (Mux(doSubMags, ~rawC.sig, rawC.sig) ## Fill(sigSumWidth - sigWidth + 2, doSubMags)).asSInt>>CAlignDist
     val reduced4CExtra =
         (orReduceBy4(rawC.sig<<((sigSumWidth - sigWidth - 1) & 3)) &
              lowMask(
@@ -155,10 +154,10 @@ class MulAddRecFNToRaw_preMul(expWidth: Int, sigWidth: Int) extends chisel3.RawM
     io.toPostMul.isInfC    := rawC.isInf
     io.toPostMul.isZeroC   := rawC.isZero
     io.toPostMul.sExpSum   :=
-        Mux(CIsDominant, rawC.sExp, sExpAlignedProd - SInt(sigWidth))
+        Mux(CIsDominant, rawC.sExp, sExpAlignedProd - sigWidth.S)
     io.toPostMul.doSubMags := doSubMags
     io.toPostMul.CIsDominant := CIsDominant
-    io.toPostMul.CDom_CAlignDist := CAlignDist(log2Up(sigWidth + 1) - 1, 0)
+    io.toPostMul.CDom_CAlignDist := CAlignDist(log2Ceil(sigWidth + 1) - 1, 0)
     io.toPostMul.highAlignedSigC :=
         alignedSigC(sigSumWidth - 1, sigWidth * 2 + 1)
     io.toPostMul.bit0AlignedSigC := alignedSigC(0)
@@ -166,14 +165,14 @@ class MulAddRecFNToRaw_preMul(expWidth: Int, sigWidth: Int) extends chisel3.RawM
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-class MulAddRecFNToRaw_postMul(expWidth: Int, sigWidth: Int) extends chisel3.RawModule
+class MulAddRecFNToRaw_postMul(expWidth: Int, sigWidth: Int) extends RawModule
 {
     val io = IO(new Bundle {
-        val fromPreMul = new MulAddRecFN_interIo(expWidth, sigWidth).asInput
-        val mulAddResult = UInt(INPUT, sigWidth * 2 + 1)
-        val roundingMode = UInt(INPUT, 3)
-        val invalidExc  = Bool(OUTPUT)
-        val rawOut = new RawFloat(expWidth, sigWidth + 2).asOutput
+        val fromPreMul = Input(new MulAddRecFN_interIo(expWidth, sigWidth))
+        val mulAddResult = Input(UInt((sigWidth * 2 + 1).W))
+        val roundingMode = Input(UInt(3.W))
+        val invalidExc  = Output(Bool())
+        val rawOut = Output(new RawFloat(expWidth, sigWidth + 2))
     })
 
     //------------------------------------------------------------------------
@@ -189,7 +188,7 @@ class MulAddRecFNToRaw_postMul(expWidth: Int, sigWidth: Int) extends chisel3.Raw
     val opSignC = io.fromPreMul.signProd ^ io.fromPreMul.doSubMags
     val sigSum =
         Cat(Mux(io.mulAddResult(sigWidth * 2),
-                io.fromPreMul.highAlignedSigC + UInt(1),
+                io.fromPreMul.highAlignedSigC + 1.U,
                 io.fromPreMul.highAlignedSigC
                ),
             io.mulAddResult(sigWidth * 2 - 1, 0),
@@ -203,11 +202,11 @@ class MulAddRecFNToRaw_postMul(expWidth: Int, sigWidth: Int) extends chisel3.Raw
     val CDom_absSigSum =
         Mux(io.fromPreMul.doSubMags,
             ~sigSum(sigSumWidth - 1, sigWidth + 1),
-            Cat(UInt(0, 1),
+            0.U(1.W) ##
 //*** IF GAP IS REDUCED TO 1 BIT, MUST REDUCE THIS COMPONENT TO 1 BIT TOO:
-                io.fromPreMul.highAlignedSigC(sigWidth + 1, sigWidth),
+                io.fromPreMul.highAlignedSigC(sigWidth + 1, sigWidth) ##
                 sigSum(sigSumWidth - 3, sigWidth + 2)
-            )
+
         )
     val CDom_absSigSumExtra =
         Mux(io.fromPreMul.doSubMags,
@@ -237,7 +236,7 @@ class MulAddRecFNToRaw_postMul(expWidth: Int, sigWidth: Int) extends chisel3.Raw
     val notCDom_reduced2AbsSigSum = orReduceBy2(notCDom_absSigSum)
     val notCDom_normDistReduced2 = countLeadingZeros(notCDom_reduced2AbsSigSum)
     val notCDom_nearNormDist = notCDom_normDistReduced2<<1
-    val notCDom_sExp = io.fromPreMul.sExpSum - notCDom_nearNormDist.zext
+    val notCDom_sExp = io.fromPreMul.sExpSum - notCDom_nearNormDist.asUInt().zext
     val notCDom_mainSig =
         (notCDom_absSigSum<<notCDom_nearNormDist)(
             sigWidth * 2 + 3, sigWidth - 1)
@@ -251,7 +250,7 @@ class MulAddRecFNToRaw_postMul(expWidth: Int, sigWidth: Int) extends chisel3.Raw
             notCDom_mainSig(2, 0).orR || notCDom_reduced4SigExtra
         )
     val notCDom_completeCancellation =
-        (notCDom_sig(sigWidth + 2, sigWidth + 1) === UInt(0))
+        (notCDom_sig(sigWidth + 2, sigWidth + 1) === 0.U)
     val notCDom_sign =
         Mux(notCDom_completeCancellation,
             roundingMode_min,
@@ -296,17 +295,17 @@ class MulAddRecFNToRaw_postMul(expWidth: Int, sigWidth: Int) extends chisel3.Raw
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-class MulAddRecFN(expWidth: Int, sigWidth: Int) extends chisel3.RawModule
+class MulAddRecFN(expWidth: Int, sigWidth: Int) extends RawModule
 {
     val io = IO(new Bundle {
-        val op = Bits(INPUT, 2)
-        val a = Bits(INPUT, expWidth + sigWidth + 1)
-        val b = Bits(INPUT, expWidth + sigWidth + 1)
-        val c = Bits(INPUT, expWidth + sigWidth + 1)
-        val roundingMode   = UInt(INPUT, 3)
-        val detectTininess = UInt(INPUT, 1)
-        val out = Bits(OUTPUT, expWidth + sigWidth + 1)
-        val exceptionFlags = Bits(OUTPUT, 5)
+        val op = Input(Bits(2.W))
+        val a = Input(Bits((expWidth + sigWidth + 1).W))
+        val b = Input(Bits((expWidth + sigWidth + 1).W))
+        val c = Input(Bits((expWidth + sigWidth + 1).W))
+        val roundingMode   = Input(UInt(3.W))
+        val detectTininess = Input(UInt(1.W))
+        val out = Output(Bits((expWidth + sigWidth + 1).W))
+        val exceptionFlags = Output(Bits(5.W))
     })
 
     //------------------------------------------------------------------------
@@ -336,7 +335,7 @@ class MulAddRecFN(expWidth: Int, sigWidth: Int) extends chisel3.RawModule
     val roundRawFNToRecFN =
         Module(new RoundRawFNToRecFN(expWidth, sigWidth, 0))
     roundRawFNToRecFN.io.invalidExc   := mulAddRecFNToRaw_postMul.io.invalidExc
-    roundRawFNToRecFN.io.infiniteExc  := Bool(false)
+    roundRawFNToRecFN.io.infiniteExc  := false.B
     roundRawFNToRecFN.io.in           := mulAddRecFNToRaw_postMul.io.rawOut
     roundRawFNToRecFN.io.roundingMode := io.roundingMode
     roundRawFNToRecFN.io.detectTininess := io.detectTininess

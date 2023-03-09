@@ -38,43 +38,42 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package hardfloat.test
 
 import hardfloat._
-import Chisel._
+import chisel3._
 
 class
     ValExec_RecFNToUIN(expWidth: Int, sigWidth: Int, intWidth: Int)
     extends Module
 {
-    val io = new Bundle {
-        val in = Bits(INPUT, expWidth + sigWidth)
-        val roundingMode = UInt(INPUT, 3)
+    val io = IO(new Bundle {
+        val in = Input(Bits((expWidth + sigWidth).W))
+        val roundingMode   = Input(UInt(3.W))
 
         val expected = new Bundle {
-            val out = Bits(INPUT, intWidth)
-            val exceptionFlags = Bits(INPUT, 5)
+            val out = Input(Bits(intWidth.W))
+            val exceptionFlags = Input(Bits(5.W))
         }
 
         val actual = new Bundle {
-            val out = Bits(OUTPUT, intWidth)
-            val exceptionFlags = Bits(OUTPUT, 5)
+            val out = Output(Bits(intWidth.W))
+            val exceptionFlags = Output(Bits(5.W))
         }
 
-        val check = Bool(OUTPUT)
-        val pass = Bool(OUTPUT)
-    }
-
+        val check = Output(Bool())
+        val pass = Output(Bool())
+    })
     val recFNToIN = Module(new RecFNToIN(expWidth, sigWidth, intWidth))
     recFNToIN.io.in := recFNFromFN(expWidth, sigWidth, io.in)
     recFNToIN.io.roundingMode := io.roundingMode
-    recFNToIN.io.signedOut := Bool(false)
+    recFNToIN.io.signedOut := false.B
 
     io.actual.out := recFNToIN.io.out
     io.actual.exceptionFlags :=
-        Cat(recFNToIN.io.intExceptionFlags(2, 1).orR,
-            UInt(0, 3),
+        recFNToIN.io.intExceptionFlags(2, 1).orR ##
+            0.U(3.W) ##
             recFNToIN.io.intExceptionFlags(0)
-        )
 
-    io.check := Bool(true)
+
+    io.check := true.B
     io.pass :=
         (io.actual.out === io.expected.out) &&
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
@@ -85,37 +84,37 @@ class
     ValExec_RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int)
     extends Module
 {
-    val io = new Bundle {
-        val in = Bits(INPUT, expWidth + sigWidth)
-        val roundingMode = UInt(INPUT, 3)
+    val io = IO(new Bundle {
+        val in = Input(Bits((expWidth + sigWidth).W))
+        val roundingMode   = Input(UInt(3.W))
 
         val expected = new Bundle {
-            val out = Bits(INPUT, intWidth)
-            val exceptionFlags = Bits(INPUT, 5)
+            val out = Input(Bits(intWidth.W))
+            val exceptionFlags = Input(Bits(5.W))
         }
 
         val actual = new Bundle {
-            val out = Bits(OUTPUT, intWidth)
-            val exceptionFlags = Bits(OUTPUT, 5)
+            val out = Output(Bits(intWidth.W))
+            val exceptionFlags = Output(Bits(5.W))
         }
 
-        val check = Bool(OUTPUT)
-        val pass = Bool(OUTPUT)
-    }
+        val check = Output(Bool())
+        val pass = Output(Bool())
+    })
 
     val recFNToIN = Module(new RecFNToIN(expWidth, sigWidth, intWidth))
     recFNToIN.io.in := recFNFromFN(expWidth, sigWidth, io.in)
     recFNToIN.io.roundingMode := io.roundingMode
-    recFNToIN.io.signedOut := Bool(true)
+    recFNToIN.io.signedOut := true.B
 
     io.actual.out := recFNToIN.io.out
     io.actual.exceptionFlags :=
-        Cat(recFNToIN.io.intExceptionFlags(2, 1).orR,
-            UInt(0, 3),
-            recFNToIN.io.intExceptionFlags(0)
-        )
+        recFNToIN.io.intExceptionFlags(2, 1).orR ##
+          0.U(3.W) ##
+          recFNToIN.io.intExceptionFlags(0)
 
-    io.check := Bool(true)
+
+    io.check := true.B
     io.pass :=
         (io.actual.out === io.expected.out) &&
         (io.actual.exceptionFlags === io.expected.exceptionFlags)

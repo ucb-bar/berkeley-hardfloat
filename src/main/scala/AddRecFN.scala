@@ -44,7 +44,7 @@ import consts._
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-class AddRawFN(expWidth: Int, sigWidth: Int) extends chisel3.RawModule
+class AddRawFN(expWidth: Int, sigWidth: Int) extends RawModule
 {
     val io = IO(new Bundle {
         val subOp = Input(Bool())
@@ -130,7 +130,7 @@ class AddRawFN(expWidth: Int, sigWidth: Int) extends chisel3.RawModule
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-class AddRecFN(expWidth: Int, sigWidth: Int) extends chisel3.RawModule
+class AddRecFN(expWidth: Int, sigWidth: Int) extends RawModule
 {
     val io = IO(new Bundle {
         val subOp = Input(Bool())

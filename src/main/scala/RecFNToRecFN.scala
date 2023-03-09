@@ -37,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package hardfloat
 
-import Chisel._
+import chisel3._
 import consts._
 
 class
@@ -46,11 +46,11 @@ class
     extends chisel3.RawModule
 {
     val io = IO(new Bundle {
-        val in = Bits(INPUT, inExpWidth + inSigWidth + 1)
-        val roundingMode   = UInt(INPUT, 3)
-        val detectTininess = UInt(INPUT, 1)
-        val out = Bits(OUTPUT, outExpWidth + outSigWidth + 1)
-        val exceptionFlags = Bits(OUTPUT, 5)
+        val in = Input(Bits((inExpWidth + inSigWidth + 1).W))
+        val roundingMode   = Input(UInt(3.W))
+        val detectTininess = Input(UInt(1.W))
+        val out = Output(Bits((outExpWidth + outSigWidth + 1).W))
+        val exceptionFlags = Output(Bits(5.W))
     })
 
     //------------------------------------------------------------------------
@@ -62,7 +62,7 @@ class
         //--------------------------------------------------------------------
         //--------------------------------------------------------------------
         io.out            := io.in<<(outSigWidth - inSigWidth)
-        io.exceptionFlags := Cat(isSigNaNRawFloat(rawIn), Bits(0, 4))
+        io.exceptionFlags := isSigNaNRawFloat(rawIn) ## 0.U(4.W)
 
     } else {
 
@@ -78,7 +78,7 @@ class
                         flRoundOpt_sigMSBitAlwaysZero
                     ))
         roundAnyRawFNToRecFN.io.invalidExc     := isSigNaNRawFloat(rawIn)
-        roundAnyRawFNToRecFN.io.infiniteExc    := Bool(false)
+        roundAnyRawFNToRecFN.io.infiniteExc    := false.B
         roundAnyRawFNToRecFN.io.in             := rawIn
         roundAnyRawFNToRecFN.io.roundingMode   := io.roundingMode
         roundAnyRawFNToRecFN.io.detectTininess := io.detectTininess

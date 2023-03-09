@@ -37,7 +37,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package hardfloat
 
-import Chisel._
+import chisel3._
+import chisel3.util._
 
 object rawFloatFromIN
 {
@@ -49,18 +50,18 @@ object rawFloatFromIN
 
         val sign = signedIn && in(in.getWidth - 1)
         val absIn = Mux(sign, -in.asUInt, in.asUInt)
-        val extAbsIn = Cat(UInt(0, extIntWidth), absIn)(extIntWidth - 1, 0)
+        val extAbsIn = (0.U(extIntWidth.W) ## absIn)(extIntWidth - 1, 0)
         val adjustedNormDist = countLeadingZeros(extAbsIn)
         val sig =
             (extAbsIn<<adjustedNormDist)(
                 extIntWidth - 1, extIntWidth - in.getWidth)
 
         val out = Wire(new RawFloat(expWidth, in.getWidth))
-        out.isNaN  := Bool(false)
-        out.isInf  := Bool(false)
+        out.isNaN  := false.B
+        out.isInf  := false.B
         out.isZero := ! sig(in.getWidth - 1)
         out.sign   := sign
-        out.sExp   := Cat(UInt(2, 2), ~adjustedNormDist(expWidth - 2, 0)).zext
+        out.sExp   := (2.U(2.W) ## ~adjustedNormDist(expWidth - 2, 0)).zext
         out.sig    := sig
         out
     }
