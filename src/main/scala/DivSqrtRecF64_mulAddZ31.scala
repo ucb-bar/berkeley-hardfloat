@@ -38,7 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package hardfloat
 
 import chisel3._
-import chisel3.util.{Cat, Fill}
+import chisel3.util.Fill
 import consts._
 
 /*----------------------------------------------------------------------------
