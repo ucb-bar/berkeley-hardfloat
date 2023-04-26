@@ -181,7 +181,7 @@ class
             )
 //*** IF SIG WIDTH IS VERY NARROW, NEED TO ACCOUNT FOR ROUND-EVEN ZEROING
 //***  M.S. BIT OF SUBNORMAL SIG?
-        val sRoundedExp = sAdjustedExp +& (roundedSig>>outSigWidth).asUInt().zext
+        val sRoundedExp = sAdjustedExp +& (roundedSig>>outSigWidth).asUInt.zext
 
         common_expOut := sRoundedExp(outExpWidth, 0)
         common_fractOut :=

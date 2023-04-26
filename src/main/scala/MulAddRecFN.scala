@@ -236,7 +236,7 @@ class MulAddRecFNToRaw_postMul(expWidth: Int, sigWidth: Int) extends RawModule
     val notCDom_reduced2AbsSigSum = orReduceBy2(notCDom_absSigSum)
     val notCDom_normDistReduced2 = countLeadingZeros(notCDom_reduced2AbsSigSum)
     val notCDom_nearNormDist = notCDom_normDistReduced2<<1
-    val notCDom_sExp = io.fromPreMul.sExpSum - notCDom_nearNormDist.asUInt().zext
+    val notCDom_sExp = io.fromPreMul.sExpSum - notCDom_nearNormDist.asUInt.zext
     val notCDom_mainSig =
         (notCDom_absSigSum<<notCDom_nearNormDist)(
             sigWidth * 2 + 3, sigWidth - 1)
