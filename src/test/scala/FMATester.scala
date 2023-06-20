@@ -41,7 +41,7 @@ trait FMATester extends HardfloatTester {
     val testDirAbsolutePath: String = testDir.toPath.toAbsolutePath.toString
     /** elaborate module to [[testDir]]. */
     val annos: AnnotationSeq = (new circt.stage.ChiselStage).execute(
-      Array("-X", "verilog"),
+      Array("--target", "systemverilog"),
       Seq(
         TargetDirAnnotation(testDirAbsolutePath),
         ChiselGeneratorAnnotation(module)
