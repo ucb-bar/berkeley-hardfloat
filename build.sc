@@ -43,14 +43,13 @@ class hardfloat extends ScalaModule with SbtModule with PublishModule { m =>
 
   def artifactName = "hardfloat"
 
-  def repositories() = super.repositories ++ Seq(
-    MavenRepository("https://oss.sonatype.org/content/repositories/snapshots"),
-    MavenRepository("https://oss.sonatype.org/service/local/staging/deploy/maven2")
-  )
-
-  object test extends Tests {
+  object test extends SbtModule with TestModule with TestModule.ScalaTest {
+    def scalaVersion = v.scala
     def ivyDeps = Agg(v.scalatest, v.scalapar)
-    def testFramework = "org.scalatest.tools.Framework"
+    def moduleDeps = super.moduleDeps ++ Some(m)
+    override def sources = T.sources {
+      Seq(PathRef(m.millSourcePath / "src" / "test"))
+    }
   }
 
   def pomSettings = PomSettings(
