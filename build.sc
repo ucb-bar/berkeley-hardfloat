@@ -1,58 +1,65 @@
 import mill._
 import mill.scalalib._
 import mill.scalalib.publish._
-import coursier.maven.MavenRepository
+import $file.common
 
 object v {
   val scala = "2.13.10"
-  val chisel3 = ivy"edu.berkeley.cs::chisel3:3.5.5"
-  val chisel3Plugin = ivy"edu.berkeley.cs:::chisel3-plugin:3.5.5"
+  val chiselCrossVersions = Map(
+    "3.5.5" -> (ivy"edu.berkeley.cs::chisel3:3.5.5", ivy"edu.berkeley.cs:::chisel3-plugin:3.5.5"),
+    "5.0.0" -> (ivy"org.chipsalliance::chisel:5.0.0", ivy"org.chipsalliance:::chisel-plugin:5.0.0"),
+  )
   val scalatest = ivy"org.scalatest::scalatest:3.2.0"
   val scalapar = ivy"org.scala-lang.modules::scala-parallel-collections:1.0.4"
 }
 
-object hardfloat extends hardfloat
+object hardfloat extends Cross[Hardfloat](v.chiselCrossVersions.keys.toSeq)
 
-class hardfloat extends ScalaModule with SbtModule with PublishModule { m =>
-  def scalaVersion = v.scala
-  // different scala version shares same sources
-  // mill use foo/2.11.12 foo/2.12.11 as millSourcePath by default
-  override def millSourcePath = super.millSourcePath / os.up
+trait Hardfloat
+  extends common.HardfloatModule
+    with HardfloatPublishModule
+    with Cross.Module[String] {
 
-  def chisel3Module: Option[PublishModule] = None
+  override def scalaVersion = T(v.scala)
 
-  def chisel3IvyDeps = if(chisel3Module.isEmpty) Agg(
-    v.chisel3
-  ) else Agg.empty[Dep]
+  override def millSourcePath = os.pwd / "hardfloat"
 
-  def chisel3PluginJar: Option[PathRef] = None
+  def chiselModule = None
 
-  def chisel3PluginIvyDeps = if(chisel3Module.isEmpty) Agg(
-    v.chisel3Plugin
-  ) else Agg.empty[Dep]
+  def chiselPluginJar = None
 
-  def scalacPluginIvyDeps = super.ivyDeps() ++ chisel3PluginIvyDeps
+  def chiselIvy = Some(v.chiselCrossVersions(crossValue)._1)
 
-  def scalacPluginClasspath = super.scalacPluginClasspath() ++ chisel3PluginJar
+  def chiselPluginIvy = Some(v.chiselCrossVersions(crossValue)._2)
+}
 
-  def moduleDeps = super.moduleDeps ++ chisel3Module
+object hardfloatdut extends Cross[HardfloatDut](v.chiselCrossVersions.keys.toSeq)
 
-  def ivyDeps = super.ivyDeps() ++ chisel3IvyDeps
+trait HardfloatDut
+  extends common.HardfloatTestModule
+    with Cross.Module[String] {
 
-  def publishVersion = "1.5-SNAPSHOT"
+  override def scalaVersion = T(v.scala)
 
-  def artifactName = "hardfloat"
+  override def millSourcePath = os.pwd / "hardfloat" / "tests"
 
-  def repositories() = super.repositories ++ Seq(
-    MavenRepository("https://oss.sonatype.org/content/repositories/snapshots"),
-    MavenRepository("https://oss.sonatype.org/service/local/staging/deploy/maven2")
-  )
+  def hardfloatModule = hardfloat(crossValue)
 
-  object test extends Tests {
-    def ivyDeps = Agg(v.scalatest, v.scalapar)
-    def testFramework = "org.scalatest.tools.Framework"
-  }
+  def chiselModule = None
 
+  def chiselPluginJar = None
+
+  def chiselIvy = Some(v.chiselCrossVersions(crossValue)._1)
+
+  def chiselPluginIvy = Some(v.chiselCrossVersions(crossValue)._2)
+
+  def scalatestIvy = v.scalatest
+
+  def scalaparIvy = v.scalapar
+}
+
+
+trait HardfloatPublishModule extends PublishModule {
   def pomSettings = PomSettings(
     description = artifactName(),
     organization = "edu.berkeley.cs",
@@ -65,4 +72,6 @@ class hardfloat extends ScalaModule with SbtModule with PublishModule { m =>
       Developer("yunsup", "Yunsup Lee", "https://aspire.eecs.berkeley.edu/author/yunsup/")
     )
   )
+
+  def publishVersion = "1.5-SNAPSHOT"
 }
