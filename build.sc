@@ -6,7 +6,8 @@ import $file.common
 object v {
   val scala = "2.13.10"
   val chiselCrossVersions = Map(
-    "3.5.5" -> (ivy"edu.berkeley.cs::chisel3:3.5.5", ivy"edu.berkeley.cs:::chisel3-plugin:3.5.5"),
+    "3.5.6" -> (ivy"edu.berkeley.cs::chisel3:3.5.6", ivy"edu.berkeley.cs:::chisel3-plugin:3.5.6"),
+    "3.6.0" -> (ivy"edu.berkeley.cs::chisel3:3.6.0", ivy"edu.berkeley.cs:::chisel3-plugin:3.6.0"),
     "5.0.0" -> (ivy"org.chipsalliance::chisel:5.0.0", ivy"org.chipsalliance:::chisel-plugin:5.0.0"),
   )
   val scalatest = ivy"org.scalatest::scalatest:3.2.0"
