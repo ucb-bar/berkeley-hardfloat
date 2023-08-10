@@ -1,19 +1,13 @@
 package hardfloat.test
 
 import chisel3.RawModule
-import chisel3.stage.ChiselGeneratorAnnotation
-import firrtl.AnnotationSeq
-import firrtl.options.TargetDirAnnotation
-import firrtl.stage.OutputFileAnnotation
-
 import org.scalatest.ParallelTestExecution
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-import scala.collection.parallel.CollectionConverters._
-
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import scala.collection.parallel.CollectionConverters._
 
 trait FMATester extends AnyFlatSpec with Matchers with ParallelTestExecution {
   def exp(f: Int) = f match {
@@ -64,14 +58,7 @@ trait FMATester extends AnyFlatSpec with Matchers with ParallelTestExecution {
 
     val testRunDir = os.pwd / "test_run_dir" / s"${this.getClass.getSimpleName}_$name" / s"${new SimpleDateFormat("yyyyMMddHHmmss").format(Calendar.getInstance.getTime)}"
     os.makeDir.all(testRunDir)
-    /** elaborate module to [[testDir]]. */
-    val annos: AnnotationSeq = (new chisel3.stage.ChiselStage).execute(
-      Array("-X", "verilog"),
-      Seq(
-        TargetDirAnnotation(testRunDir.toString),
-        ChiselGeneratorAnnotation(module)
-      )
-    )
+    os.write(testRunDir / "dut.v", chisel3.getVerilogString(module()))
 
     /* command Synthesis verilog to C++. */
     val verilatorCompile: Seq[String] = Seq(
@@ -80,9 +67,7 @@ trait FMATester extends AnyFlatSpec with Matchers with ParallelTestExecution {
       "--prefix", "dut",
       "--Mdir", testRunDir.toString,
       "-CFLAGS", s"""-I${getClass.getResource("/includes/").getPath} -include ${getClass.getResource(s"/includes/$name.h").getPath}""",
-      annos.collectFirst {
-        case OutputFileAnnotation(f) => f
-      }.get + ".v",
+      "dut.v",
       "--exe", s"${getClass.getResource(s"/csrc/$harness").getPath}"
     ) ++ (if (sys.env.contains("VCD")) Seq("--trace") else Seq.empty)
     os.proc(verilatorCompile).call(testRunDir)
