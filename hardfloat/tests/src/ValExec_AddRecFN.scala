@@ -80,21 +80,3 @@ class ValExec_AddRecFN(expWidth: Int, sigWidth: Int) extends Module
         equivRecFN(expWidth, sigWidth, io.actual.out, io.expected.recOut) &&
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
-
-class AddRecFNSpec extends FMATester {
-    def test(f: Int): Seq[String] = {
-        test(s"AddRecF${f}",
-            () => new ValExec_AddRecFN(exp(f), sig(f)),
-            Seq(s"f${f}_add")
-        )
-    }
-    "AddRecF16" should "pass" in {
-        check(test(16))
-    }
-    "AddRecF32" should "pass" in {
-        check(test(32))
-    }
-    "AddRecF64" should "pass" in {
-        check(test(64))
-    }
-}

@@ -177,23 +177,3 @@ class ValExec_DivSqrtRecF64_sqrt extends Module {
         equivRecFN(11, 53, io.actual.out, io.expected.recOut) &&
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
-
-class DivSqrtRecF64Spec extends FMATester {
-    def test(fn: String): Seq[String] = {
-        val generator = fn match {
-            case "div" => () => new ValExec_DivSqrtRecF64_div
-            case "sqrt" => () => new ValExec_DivSqrtRecF64_sqrt
-        }
-        test(
-            s"DivSqrtRecF64_${fn}",
-            generator,
-            (if (fn == "sqrt") Seq("-level2") else Seq.empty) ++ Seq(s"f64_${fn}")
-        )
-    }
-    "DivSqrtRecF64_div" should "pass" in {
-        check(test("div"))
-    }
-    "DivSqrtRecF64_sqrt" should "pass" in {
-        check(test("sqrt"))
-    }
-}

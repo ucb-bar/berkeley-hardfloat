@@ -121,31 +121,3 @@ class
         equivRecFN(expWidth, sigWidth, io.actual.out, io.expected.recOut) &&
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
-
-class INToRecFNSpec extends FMATester {
-    def test(i: Int, f: Int): Seq[String] = {
-        test(
-            s"I${i}ToRecF${f}",
-            () => new ValExec_INToRecFN(i, exp(f), sig(f)),
-            Seq("-level2", s"i${i}_to_f${f}")
-        )
-    }
-    "I32ToRecF16" should "pass" in {
-        check(test(32, 16))
-    }
-    "I32ToRecF32" should "pass" in {
-        check(test(32, 32))
-    }
-    "I32ToRecF64" should "pass" in {
-        check(test(32, 64))
-    }
-    "I64ToRecF16" should "pass" in {
-        check(test(64, 16))
-    }
-    "I64ToRecF32" should "pass" in {
-        check(test(64, 32))
-    }
-    "I64ToRecF64" should "pass" in {
-        check(test(64, 64))
-    }
-}
