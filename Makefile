@@ -1,5 +1,3 @@
-CHISEL_VERSION = 3.4-SNAPSHOT
-
 default: test
 
 berkeley-softfloat-3/.git:

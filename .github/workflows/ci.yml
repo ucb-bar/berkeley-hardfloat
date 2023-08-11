@@ -1,10 +1,29 @@
 name: CI
 on:
   pull_request:
-  push:
 
 jobs:
-  test:
+  fma-test:
+    name: Use testfloat to test hardfloat
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        chisel: ["3.5.6", "3.6.0", "5.0.0"]
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'true'
+      - uses: cachix/install-nix-action@v19
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.13.3/install
+          nix_path: nixpkgs=channel:nixos-unstable
+      - name: run test
+        run: |
+          nix --experimental-features 'nix-command flakes' develop -c mill -j 0 'hardfloatdut[${{ matrix.chisel }}].test'
+
+  sbt-test:
+    name: Use testfloat to test hardfloat (with SBT)
     strategy:
       fail-fast: false
       matrix:

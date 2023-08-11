@@ -79,21 +79,3 @@ class ValExec_MulRecFN(expWidth: Int, sigWidth: Int) extends Module
         equivRecFN(expWidth, sigWidth, io.actual.out, io.expected.recOut) &&
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
-
-class MulRecFNSpec extends FMATester {
-    def test(f: Int): Seq[String] = {
-        test(s"MulRecF${f}",
-            () => new ValExec_MulRecFN(exp(f), sig(f)),
-            Seq(s"f${f}_mul")
-        )
-    }
-    "MulRecF16" should "pass" in {
-        check(test(16))
-    }
-    "MulRecF32" should "pass" in {
-        check(test(32))
-    }
-    "MulRecF64" should "pass" in {
-        check(test(64))
-    }
-}

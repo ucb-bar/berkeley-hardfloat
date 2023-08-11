@@ -40,41 +40,54 @@ package hardfloat.test
 import hardfloat._
 import chisel3._
 
-class ValExec_fNFromRecFN(expWidth: Int, sigWidth: Int) extends Module
+class
+    ValExec_RecFNToRecFN(
+        inExpWidth: Int, inSigWidth: Int, outExpWidth: Int, outSigWidth: Int)
+    extends Module
 {
     val io = IO(new Bundle {
-        val a = Input(Bits((expWidth + sigWidth).W))
-        val out = Output(Bits((expWidth + sigWidth).W))
+        val in = Input(Bits((inExpWidth + inSigWidth).W))
+        val roundingMode   = Input(UInt(3.W))
+        val detectTininess = Input(UInt(1.W))
+
+        val expected = new Bundle {
+            val out = Input(Bits((outExpWidth + outSigWidth).W))
+            val exceptionFlags = Input(Bits(5.W))
+            val recOut = Output(Bits((outExpWidth + outSigWidth + 1).W))
+        }
+
+        val actual = new Bundle {
+            val out = Output(Bits((outExpWidth + outSigWidth + 1).W))
+            val exceptionFlags = Output(Bits(5.W))
+        }
+
         val check = Output(Bool())
         val pass = Output(Bool())
     })
 
-    io.out :=
-        fNFromRecFN(expWidth, sigWidth, recFNFromFN(expWidth, sigWidth, io.a))
+    val recFNToRecFN =
+        Module(
+            new RecFNToRecFN(inExpWidth, inSigWidth, outExpWidth, outSigWidth))
+    recFNToRecFN.io.in := recFNFromFN(inExpWidth, inSigWidth, io.in)
+    recFNToRecFN.io.roundingMode   := io.roundingMode
+    recFNToRecFN.io.detectTininess := io.detectTininess
+
+    io.expected.recOut :=
+        recFNFromFN(outExpWidth, outSigWidth, io.expected.out)
+
+    io.actual.out := recFNToRecFN.io.out
+    io.actual.exceptionFlags := recFNToRecFN.io.exceptionFlags
 
     io.check := true.B
-    io.pass := (io.out === io.a)
+    io.pass :=
+        equivRecFN(
+            outExpWidth, outSigWidth, io.actual.out, io.expected.recOut) &&
+        (io.actual.exceptionFlags === io.expected.exceptionFlags)
 }
 
-class FnFromRecFnSpec extends FMATester {
-    def test(f: Int): Seq[String] = {
-        test(
-            s"f${f}FromRecF${f}",
-            () => new ValExec_fNFromRecFN(exp(f), sig(f)),
-            "fNFromRecFN.cpp",
-            Seq(Seq("-level2", s"-f${f}"))
-        )
-    }
-
-    "f16FromRecF16" should "pass" in {
-        check(test(16))
-    }
-
-    "f32FromRecF32" should "pass" in {
-        check(test(32))
-    }
-
-    "f64FromRecF64" should "pass" in {
-        check(test(64))
-    }
-}
+class ValExec_RecF16ToRecF32 extends ValExec_RecFNToRecFN(5, 11, 8, 24)
+class ValExec_RecF16ToRecF64 extends ValExec_RecFNToRecFN(5, 11, 11, 53)
+class ValExec_RecF32ToRecF16 extends ValExec_RecFNToRecFN(8, 24, 5, 11)
+class ValExec_RecF32ToRecF64 extends ValExec_RecFNToRecFN(8, 24, 11, 53)
+class ValExec_RecF64ToRecF16 extends ValExec_RecFNToRecFN(11, 53, 5, 11)
+class ValExec_RecF64ToRecF32 extends ValExec_RecFNToRecFN(11, 53, 8, 24)

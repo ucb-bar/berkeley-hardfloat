@@ -11,8 +11,12 @@ resolvers ++= Seq(
   Resolver.sonatypeRepo("releases")
 )
 
-addCompilerPlugin("edu.berkeley.cs" % "chisel3-plugin" % "3.5.5" cross CrossVersion.full)
-libraryDependencies += "edu.berkeley.cs" %% "chisel3" % "3.5.5"
+Compile / scalaSource := baseDirectory.value / "hardfloat/src/main/scala"
+Test / scalaSource := baseDirectory.value / "hardfloat/tests/src"
+Test / resourceDirectory := baseDirectory.value / "hardfloat/tests/resources"
+
+addCompilerPlugin("edu.berkeley.cs" % "chisel3-plugin" % "3.5.6" cross CrossVersion.full)
+libraryDependencies += "edu.berkeley.cs" %% "chisel3" % "3.5.6"
 libraryDependencies ++= Seq("org.scalatest" %% "scalatest" % "3.2.0" % "test")
 libraryDependencies += "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4"
 Test / testForkedParallel := true

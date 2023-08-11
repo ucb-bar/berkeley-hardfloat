@@ -5,7 +5,7 @@ This Chisel source file is part of a pre-release version of the HardFloat IEEE
 Floating-Point Arithmetic Package, by John R. Hauser (with some contributions
 from Yunsup Lee and Andrew Waterman, mainly concerning testing).
 
-Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016 The Regents of the
+Copyright 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 The Regents of the
 University of California.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -40,12 +40,11 @@ package hardfloat.test
 import hardfloat._
 import chisel3._
 
-class
-    ValExec_UINToRecFN(intWidth: Int, expWidth: Int, sigWidth: Int)
-    extends Module
+class ValExec_AddRecFN(expWidth: Int, sigWidth: Int) extends Module
 {
     val io = IO(new Bundle {
-        val in = Input(Bits(intWidth.W))
+        val a = Input(Bits((expWidth + sigWidth).W))
+        val b = Input(Bits((expWidth + sigWidth).W))
         val roundingMode   = Input(UInt(3.W))
         val detectTininess = Input(UInt(1.W))
 
@@ -64,88 +63,20 @@ class
         val pass = Output(Bool())
     })
 
-    val iNToRecFN = Module(new INToRecFN(intWidth, expWidth, sigWidth))
-    iNToRecFN.io.signedIn := false.B
-    iNToRecFN.io.in := io.in
-    iNToRecFN.io.roundingMode   := io.roundingMode
-    iNToRecFN.io.detectTininess := io.detectTininess
+    val addRecFN = Module(new AddRecFN(expWidth, sigWidth))
+    addRecFN.io.subOp := false.B
+    addRecFN.io.a := recFNFromFN(expWidth, sigWidth, io.a)
+    addRecFN.io.b := recFNFromFN(expWidth, sigWidth, io.b)
+    addRecFN.io.roundingMode   := io.roundingMode
+    addRecFN.io.detectTininess := io.detectTininess
 
     io.expected.recOut := recFNFromFN(expWidth, sigWidth, io.expected.out)
 
-    io.actual.out := iNToRecFN.io.out
-    io.actual.exceptionFlags := iNToRecFN.io.exceptionFlags
+    io.actual.out := addRecFN.io.out
+    io.actual.exceptionFlags := addRecFN.io.exceptionFlags
 
     io.check := true.B
     io.pass :=
         equivRecFN(expWidth, sigWidth, io.actual.out, io.expected.recOut) &&
         (io.actual.exceptionFlags === io.expected.exceptionFlags)
-}
-
-class
-    ValExec_INToRecFN(intWidth: Int, expWidth: Int, sigWidth: Int)
-    extends Module
-{
-    val io = IO(new Bundle {
-        val in = Input(Bits(intWidth.W))
-        val roundingMode   = Input(UInt(3.W))
-        val detectTininess = Input(UInt(1.W))
-
-        val expected = new Bundle {
-            val out = Input(Bits((expWidth + sigWidth).W))
-            val exceptionFlags = Input(Bits(5.W))
-            val recOut = Output(Bits((expWidth + sigWidth + 1).W))
-        }
-
-        val actual = new Bundle {
-            val out = Output(Bits((expWidth + sigWidth + 1).W))
-            val exceptionFlags = Output(Bits(5.W))
-        }
-
-        val check = Output(Bool())
-        val pass = Output(Bool())
-    })
-
-    val iNToRecFN = Module(new INToRecFN(intWidth, expWidth, sigWidth))
-    iNToRecFN.io.signedIn := true.B
-    iNToRecFN.io.in := io.in
-    iNToRecFN.io.roundingMode   := io.roundingMode
-    iNToRecFN.io.detectTininess := io.detectTininess
-
-    io.expected.recOut := recFNFromFN(expWidth, sigWidth, io.expected.out)
-
-    io.actual.out := iNToRecFN.io.out
-    io.actual.exceptionFlags := iNToRecFN.io.exceptionFlags
-
-    io.check := true.B
-    io.pass :=
-        equivRecFN(expWidth, sigWidth, io.actual.out, io.expected.recOut) &&
-        (io.actual.exceptionFlags === io.expected.exceptionFlags)
-}
-
-class INToRecFNSpec extends FMATester {
-    def test(i: Int, f: Int): Seq[String] = {
-        test(
-            s"I${i}ToRecF${f}",
-            () => new ValExec_INToRecFN(i, exp(f), sig(f)),
-            Seq("-level2", s"i${i}_to_f${f}")
-        )
-    }
-    "I32ToRecF16" should "pass" in {
-        check(test(32, 16))
-    }
-    "I32ToRecF32" should "pass" in {
-        check(test(32, 32))
-    }
-    "I32ToRecF64" should "pass" in {
-        check(test(32, 64))
-    }
-    "I64ToRecF16" should "pass" in {
-        check(test(64, 16))
-    }
-    "I64ToRecF32" should "pass" in {
-        check(test(64, 32))
-    }
-    "I64ToRecF64" should "pass" in {
-        check(test(64, 64))
-    }
 }
