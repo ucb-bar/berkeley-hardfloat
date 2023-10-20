@@ -69,7 +69,7 @@ object resizeRawFloat
             (if (in.sigWidth <= sigWidth)
                  in.sig<<(sigWidth - in.sigWidth)
              else
-                 in.sig(in.sigWidth + 2, in.sigWidth - sigWidth + 1) ##
+                 in.sig(in.sigWidth, in.sigWidth - sigWidth + 1) ##
                      in.sig(in.sigWidth - sigWidth, 0).orR
                  )
         out
