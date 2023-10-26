@@ -1,6 +1,6 @@
 { stdenv, fetchFromGitHub, softfloat }:
 stdenv.mkDerivation rec {
-  pname = "softfloat";
+  pname = "testfloat";
   version = "06b20075dd3c1a5d0dd007a93643282832221612";
   src = fetchFromGitHub {
     owner = "ucb-bar";
