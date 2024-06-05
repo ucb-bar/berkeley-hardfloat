@@ -70,6 +70,7 @@ class MulAddRecFN_interIo(expWidth: Int, sigWidth: Int) extends Bundle
 //----------------------------------------------------------------------------
 class MulAddRecFNToRaw_preMul(expWidth: Int, sigWidth: Int) extends RawModule
 {
+    override def desiredName = s"MulAddRecFNToRaw_preMul_e${expWidth}_s${sigWidth}"
     val io = IO(new Bundle {
         val op = Input(Bits(2.W))
         val a = Input(Bits((expWidth + sigWidth + 1).W))
@@ -167,6 +168,7 @@ class MulAddRecFNToRaw_preMul(expWidth: Int, sigWidth: Int) extends RawModule
 //----------------------------------------------------------------------------
 class MulAddRecFNToRaw_postMul(expWidth: Int, sigWidth: Int) extends RawModule
 {
+    override def desiredName = s"MulAddRecFNToRaw_postMul_e${expWidth}_s${sigWidth}"
     val io = IO(new Bundle {
         val fromPreMul = Input(new MulAddRecFN_interIo(expWidth, sigWidth))
         val mulAddResult = Input(UInt((sigWidth * 2 + 1).W))
@@ -297,6 +299,7 @@ class MulAddRecFNToRaw_postMul(expWidth: Int, sigWidth: Int) extends RawModule
 
 class MulAddRecFN(expWidth: Int, sigWidth: Int) extends RawModule
 {
+    override def desiredName = s"MulAddRecFN_e${expWidth}_s${sigWidth}"
     val io = IO(new Bundle {
         val op = Input(Bits(2.W))
         val a = Input(Bits((expWidth + sigWidth + 1).W))
