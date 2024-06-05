@@ -42,6 +42,7 @@ import consts._
 
 class INToRecFN(intWidth: Int, expWidth: Int, sigWidth: Int) extends RawModule
 {
+    override def desiredName = s"INToRecFN_i${intWidth}_e${expWidth}_s${sigWidth}"
     val io = IO(new Bundle {
         val signedIn = Input(Bool())
         val in = Input(Bits(intWidth.W))

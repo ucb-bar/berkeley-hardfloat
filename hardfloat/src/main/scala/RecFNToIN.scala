@@ -45,6 +45,7 @@ import consts._
 
 class RecFNToIN(expWidth: Int, sigWidth: Int, intWidth: Int) extends chisel3.Module
 {
+    override def desiredName = s"RecFNToIN_e${expWidth}_s${sigWidth}_i${intWidth}"
     val io = IO(new Bundle {
         val in = Input(Bits((expWidth + sigWidth + 1).W))
         val roundingMode = Input(UInt(3.W))

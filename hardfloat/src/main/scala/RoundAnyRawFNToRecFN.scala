@@ -54,6 +54,7 @@ class
     )
     extends RawModule
 {
+    override def desiredName = s"RoundAnyRawFNToRecFN_ie${inExpWidth}_is${inSigWidth}_oe${outExpWidth}_os${outSigWidth}"
     val io = IO(new Bundle {
         val invalidExc  = Input(Bool())   // overrides 'infiniteExc' and 'in'
         val infiniteExc = Input(Bool())   // overrides 'in' except for 'in.sign'
@@ -294,6 +295,7 @@ class
     RoundRawFNToRecFN(expWidth: Int, sigWidth: Int, options: Int)
     extends RawModule
 {
+    override def desiredName = s"RoundRawFNToRecFN_e${expWidth}_s${sigWidth}"
     val io = IO(new Bundle {
         val invalidExc  = Input(Bool())   // overrides 'infiniteExc' and 'in'
         val infiniteExc = Input(Bool())   // overrides 'in' except for 'in.sign'

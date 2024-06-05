@@ -199,6 +199,7 @@ class
     DivSqrtRawFN_small(expWidth: Int, sigWidth: Int, options: Int)
     extends Module
 {
+    override def desiredName = s"DivSqrtRawFN_small_e${expWidth}_s${sigWidth}"
     val io = IO(new Bundle {
         /*--------------------------------------------------------------------
         *--------------------------------------------------------------------*/
@@ -421,6 +422,7 @@ class
     DivSqrtRecFNToRaw_small(expWidth: Int, sigWidth: Int, options: Int)
     extends Module
 {
+    override def desiredName = s"DivSqrtRecFMToRaw_small_e${expWidth}_s${sigWidth}"
     val io = IO(new Bundle {
         /*--------------------------------------------------------------------
         *--------------------------------------------------------------------*/
@@ -466,6 +468,7 @@ class
     DivSqrtRecFN_small(expWidth: Int, sigWidth: Int, options: Int)
     extends Module
 {
+    override def desiredName = s"DivSqrtRecFM_small_e${expWidth}_s${sigWidth}"
     val io = IO(new Bundle {
         /*--------------------------------------------------------------------
         *--------------------------------------------------------------------*/
