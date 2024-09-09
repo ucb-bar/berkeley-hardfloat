@@ -65,6 +65,9 @@ object resizeRawFloat
                          sAdjustedExp(expWidth, 0)
                      )
                  ).asSInt)
+        when (in.isNaN || in.isInf) {
+          out.sExp := ((1 << expWidth) + (1 << (expWidth - 1))).U(expWidth,0).zext
+        }
         out.sig :=
             (if (in.sigWidth <= sigWidth)
                  in.sig<<(sigWidth - in.sigWidth)
