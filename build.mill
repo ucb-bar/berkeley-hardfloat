@@ -1,29 +1,35 @@
+//| mill-version: 1.1.0
+//| mill-jvm-version: system
+// Use the system JDK (e.g. JDK17) to avoid Scala 2.13.10 crashes like
+// "bad constant pool index" when Mill runs on its own newer JDK.
+
+package build
+
 import mill._
 import mill.scalalib._
 import mill.scalalib.publish._
-import $file.common
 
 object v {
   val scala = "2.13.10"
   val chiselCrossVersions = Map(
-    "3.5.6" -> (ivy"edu.berkeley.cs::chisel3:3.5.6", ivy"edu.berkeley.cs:::chisel3-plugin:3.5.6"),
-    "3.6.0" -> (ivy"edu.berkeley.cs::chisel3:3.6.0", ivy"edu.berkeley.cs:::chisel3-plugin:3.6.0"),
-    "5.0.0" -> (ivy"org.chipsalliance::chisel:5.0.0", ivy"org.chipsalliance:::chisel-plugin:5.0.0"),
+    "3.5.6" -> (mvn"edu.berkeley.cs::chisel3:3.5.6", mvn"edu.berkeley.cs:::chisel3-plugin:3.5.6"),
+    "3.6.0" -> (mvn"edu.berkeley.cs::chisel3:3.6.0", mvn"edu.berkeley.cs:::chisel3-plugin:3.6.0"),
+    "5.0.0" -> (mvn"org.chipsalliance::chisel:5.2.0", mvn"org.chipsalliance:::chisel-plugin:5.2.0"),
+    "6.7.0" -> (mvn"org.chipsalliance::chisel:6.7.0", mvn"org.chipsalliance:::chisel-plugin:6.7.0"),
+    "7.7.0" -> (mvn"org.chipsalliance::chisel:7.7.0", mvn"org.chipsalliance:::chisel-plugin:7.7.0"),
   )
-  val scalatest = ivy"org.scalatest::scalatest:3.2.0"
-  val scalapar = ivy"org.scala-lang.modules::scala-parallel-collections:1.0.4"
+  val scalatest = mvn"org.scalatest::scalatest:3.2.0"
+  val scalapar = mvn"org.scala-lang.modules::scala-parallel-collections:1.0.4"
 }
 
 object hardfloat extends Cross[Hardfloat](v.chiselCrossVersions.keys.toSeq)
 
 trait Hardfloat
-  extends common.HardfloatModule
+  extends build.HardfloatModule
     with HardfloatPublishModule
     with Cross.Module[String] {
 
-  override def scalaVersion = T(v.scala)
-
-  override def millSourcePath = os.pwd / "hardfloat"
+  override def scalaVersion = v.scala
 
   def chiselModule = None
 
@@ -37,12 +43,12 @@ trait Hardfloat
 object hardfloatdut extends Cross[HardfloatDut](v.chiselCrossVersions.keys.toSeq)
 
 trait HardfloatDut
-  extends common.HardfloatTestModule
+  extends build.HardfloatTestModule
     with Cross.Module[String] {
 
-  override def scalaVersion = T(v.scala)
+  override def scalaVersion = v.scala
 
-  override def millSourcePath = os.pwd / "hardfloat" / "tests"
+  override def moduleDir = super.moduleDir / os.up / "hardfloat" / "tests"
 
   def hardfloatModule = hardfloat(crossValue)
 

@@ -1,3 +1,5 @@
+package build
+
 import mill._
 import mill.scalalib._
 
@@ -10,18 +12,18 @@ trait HasChisel
 
   def chiselPluginJar: T[Option[PathRef]]
 
-  override def scalacOptions = T(super.scalacOptions() ++ chiselPluginJar().map(path => s"-Xplugin:${path.path}"))
+  override def scalacOptions = super.scalacOptions() ++ chiselPluginJar().map(path => s"-Xplugin:${path.path}")
 
-  override def scalacPluginClasspath: T[Agg[PathRef]] = T(super.scalacPluginClasspath() ++ chiselPluginJar())
+  override def scalacPluginClasspath: T[Seq[PathRef]] = super.scalacPluginClasspath() ++ chiselPluginJar()
 
   // Define these for building chisel from ivy
   def chiselIvy: Option[Dep]
 
-  override def ivyDeps = T(super.ivyDeps() ++ chiselIvy)
+  override def mvnDeps = super.mvnDeps() ++ chiselIvy
 
   def chiselPluginIvy: Option[Dep]
 
-  override def scalacPluginIvyDeps: T[Agg[Dep]] = T(super.scalacPluginIvyDeps() ++ chiselPluginIvy.map(Agg(_)).getOrElse(Agg.empty[Dep]))
+  override def scalacPluginMvnDeps: T[Seq[Dep]] = super.scalacPluginMvnDeps() ++ chiselPluginIvy.map(Seq(_)).getOrElse(Seq.empty[Dep])
 }
 
 trait HardfloatModule
@@ -36,7 +38,7 @@ trait HardfloatTestModule
 
   def chiselModule = hardfloatModule.chiselModule
 
-  def chiselPluginJar: T[Option[PathRef]] = T(hardfloatModule.chiselPluginJar())
+  def chiselPluginJar: T[Option[PathRef]] = hardfloatModule.chiselPluginJar()
 
   def chiselIvy: Option[Dep] = hardfloatModule.chiselIvy
 
@@ -48,12 +50,7 @@ trait HardfloatTestModule
 
   override def moduleDeps = super.moduleDeps ++ Some(hardfloatModule)
 
-  override def defaultCommandName() = "test"
+  override def defaultTask() = "test"
 
-  override def ivyDeps = T(
-    super.ivyDeps() ++ Agg(
-      scalatestIvy,
-      scalaparIvy
-    )
-  )
+  override def mvnDeps = super.mvnDeps() ++ Seq(scalatestIvy, scalaparIvy)
 }
