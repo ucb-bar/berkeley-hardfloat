@@ -40,6 +40,27 @@ package hardfloat.test
 import hardfloat._
 import chisel3._
 
+// Put these functions into dedicated classes so that the generated RTL
+// provides dedicated conversion modules that we can instantiate when needed
+
+class fn_from_recfn(expWidth: Int, sigWidth: Int) extends RawModule
+{
+    val io = IO(new Bundle {
+        val i =  Input(UInt((expWidth + sigWidth + 1).W))
+        val o = Output(Bits((expWidth + sigWidth).W))
+    })
+    io.o := fNFromRecFN(expWidth, sigWidth, io.i)
+}
+
+class recfn_from_fn(expWidth: Int, sigWidth: Int) extends RawModule
+{
+    val io = IO(new Bundle {
+        val i =  Input(Bits((expWidth + sigWidth).W))
+        val o = Output(UInt((expWidth + sigWidth + 1).W))
+    })
+    io.o := recFNFromFN(expWidth, sigWidth, io.i)
+}
+
 class ValExec_fNFromRecFN(expWidth: Int, sigWidth: Int) extends Module
 {
     val io = IO(new Bundle {
@@ -49,8 +70,12 @@ class ValExec_fNFromRecFN(expWidth: Int, sigWidth: Int) extends Module
         val pass = Output(Bool())
     })
 
-    io.out :=
-        fNFromRecFN(expWidth, sigWidth, recFNFromFN(expWidth, sigWidth, io.a))
+    val encode = Module(new recfn_from_fn(expWidth, sigWidth))
+    val decode = Module(new fn_from_recfn(expWidth, sigWidth))
+
+    encode.io.i := io.a
+    decode.io.i := encode.io.o
+    io.out      := decode.io.o
 
     io.check := true.B
     io.pass := (io.out === io.a)
