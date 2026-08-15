@@ -138,8 +138,8 @@ class MulAddRecFNToRaw_preMul(expWidth: Int, sigWidth: Int) extends RawModule
 
     //------------------------------------------------------------------------
     //------------------------------------------------------------------------
-    io.mulAddA := rawA.sig
-    io.mulAddB := rawB.sig
+    io.mulAddA :<= rawA.sig.squeeze
+    io.mulAddB :<= rawB.sig.squeeze
     io.mulAddC := alignedSigC(sigWidth * 2, 1)
 
     io.toPostMul.isSigNaNAny :=
@@ -154,8 +154,8 @@ class MulAddRecFNToRaw_preMul(expWidth: Int, sigWidth: Int) extends RawModule
     io.toPostMul.isNaNC    := rawC.isNaN
     io.toPostMul.isInfC    := rawC.isInf
     io.toPostMul.isZeroC   := rawC.isZero
-    io.toPostMul.sExpSum   :=
-        Mux(CIsDominant, rawC.sExp, sExpAlignedProd - sigWidth.S)
+    io.toPostMul.sExpSum   :<=
+        Mux(CIsDominant, rawC.sExp, sExpAlignedProd - sigWidth.S).squeeze
     io.toPostMul.doSubMags := doSubMags
     io.toPostMul.CIsDominant := CIsDominant
     io.toPostMul.CDom_CAlignDist := CAlignDist(log2Ceil(sigWidth + 1) - 1, 0)

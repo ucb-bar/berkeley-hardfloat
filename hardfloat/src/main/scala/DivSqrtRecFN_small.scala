@@ -390,13 +390,13 @@ class
     when (entering || ! inReady) {
         notZeroRem_Z := nextNotZeroRem_Z_2
         rem_Z := nextRem_Z_2
-        sigX_Z :=
-            Mux(inReady && ! io.sqrtOp,    newBit<<(sigWidth + 1),  0.U) |
+        sigX_Z :<=
+           (Mux(inReady && ! io.sqrtOp,    newBit<<(sigWidth + 1),  0.U) |
             Mux(inReady &&   io.sqrtOp,    (BigInt(1)<<sigWidth).U, 0.U) |
             Mux(inReady && oddSqrt_S,      newBit<<(sigWidth - 1),  0.U) |
             Mux(! inReady,                 sigX_Z,                  0.U) |
             Mux(! inReady && newBit,       bitMask,                 0.U) |
-            Mux(processTwoBits && newBit2, bitMask>>1,              0.U)
+            Mux(processTwoBits && newBit2, bitMask>>1,              0.U)).squeeze
     }
 
     /*------------------------------------------------------------------------
