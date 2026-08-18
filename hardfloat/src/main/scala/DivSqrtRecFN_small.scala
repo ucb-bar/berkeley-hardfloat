@@ -357,7 +357,7 @@ class
             0.U
         ) |
         Mux(! inReady, rem_Z<<1, 0.U)
-    val bitMask = (1.U<<cycleNum)>>2
+    val bitMask = (1.U<<cycleNum)(sigWidth + 2, 0)>>2
     val trialTerm =
         Mux(inReady && ! io.sqrtOp,  rawB_S.sig<<1,                 0.U) |
         Mux(inReady && evenSqrt_S,   (BigInt(1)<<sigWidth).U,       0.U) |
