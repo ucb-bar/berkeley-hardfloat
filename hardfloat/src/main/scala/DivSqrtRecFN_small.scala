@@ -492,17 +492,46 @@ class
     val divSqrtRecFNToRaw =
         Module(new DivSqrtRecFNToRaw_small(expWidth, sigWidth, options))
 
-    io.inReady := divSqrtRecFNToRaw.io.inReady
-    divSqrtRecFNToRaw.io.inValid      := io.inValid
+    //------------------------------------------------------------------------
+    // Optional constant-time padding (gated on divSqrtOpt_constTime):
+    // when enabled, every divide / sqrt completes at a fixed worst-case
+    // latency of sigWidth + 5 cycles, regardless of operand class.  This
+    // closes the operand-dependent +1-cycle skipCycle2 timing channel.
+    // When the option is OFF (default), behaviour is identical to before:
+    // io.outValid_* is driven directly from the inner module's pulses,
+    // and io.inReady mirrors the inner inReady, preserving cycle-exact
+    // backward compatibility.
+    //------------------------------------------------------------------------
+    val ctEnable = ((options & divSqrtOpt_constTime) != 0).B
+    val ctTarget = (sigWidth + 5).U
+    val ct_counter      = RegInit(0.U(8.W))
+    val ct_pending_div  = RegInit(false.B)
+    val ct_pending_sqrt = RegInit(false.B)
+
+    val ct_busy = ct_counter =/= 0.U || ct_pending_div || ct_pending_sqrt
+    io.inReady := divSqrtRecFNToRaw.io.inReady && !(ctEnable && ct_busy)
+    divSqrtRecFNToRaw.io.inValid      := io.inValid && !(ctEnable && ct_busy)
     divSqrtRecFNToRaw.io.sqrtOp       := io.sqrtOp
     divSqrtRecFNToRaw.io.a            := io.a
     divSqrtRecFNToRaw.io.b            := io.b
     divSqrtRecFNToRaw.io.roundingMode := io.roundingMode
 
-    //------------------------------------------------------------------------
-    //------------------------------------------------------------------------
-    io.outValid_div  := divSqrtRecFNToRaw.io.rawOutValid_div
-    io.outValid_sqrt := divSqrtRecFNToRaw.io.rawOutValid_sqrt
+    when (ctEnable && io.inValid && io.inReady) {
+        ct_counter := ctTarget
+    } .elsewhen (ctEnable && ct_counter =/= 0.U) {
+        ct_counter := ct_counter - 1.U
+    }
+
+    when (ctEnable && divSqrtRecFNToRaw.io.rawOutValid_div)  { ct_pending_div  := true.B }
+    when (ctEnable && divSqrtRecFNToRaw.io.rawOutValid_sqrt) { ct_pending_sqrt := true.B }
+
+    val ct_emit = ctEnable && ct_counter === 1.U
+    io.outValid_div  := Mux(ctEnable, ct_emit && ct_pending_div,  divSqrtRecFNToRaw.io.rawOutValid_div)
+    io.outValid_sqrt := Mux(ctEnable, ct_emit && ct_pending_sqrt, divSqrtRecFNToRaw.io.rawOutValid_sqrt)
+    when (ct_emit) {
+        ct_pending_div  := false.B
+        ct_pending_sqrt := false.B
+    }
 
     val roundRawFNToRecFN =
         Module(new RoundRawFNToRecFN(expWidth, sigWidth, 0))

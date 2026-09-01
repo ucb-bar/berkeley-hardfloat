@@ -63,6 +63,13 @@ object consts {
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
     def divSqrtOpt_twoBitsPerCycle     = 16
+    /*------------------------------------------------------------------------
+    | When set, DivSqrtRecFN_small pads every divide / sqrt to a fixed
+    | worst-case latency of `sigWidth + 5` cycles, eliminating the
+    | operand-dependent timing channel created by skipCycle2.  Off by
+    | default; enable in security-sensitive deployments.
+    *------------------------------------------------------------------------*/
+    def divSqrtOpt_constTime           = 32
 }
 
 class RawFloat(val expWidth: Int, val sigWidth: Int) extends Bundle
