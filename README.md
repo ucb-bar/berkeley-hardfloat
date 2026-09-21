@@ -48,3 +48,25 @@ To test floating-point units with the C simulator:
 
     $ make
 
+
+Working With Chisel3
+--------------------
+
+For the time being, berkeley hardfloat cannot be downloaded by SBT and users have to compile and publish it locally. For that, first clone this repository:
+    
+    git clone https://github.com/ucb-bar/berkeley-hardfloat.git hardfloat
+    cd hardfloat    
+
+To compile and publish the project locally using chisel3:
+
+    sbt -DchiselVersion="latest.release" publish-local
+
+This will locally publish the hardfloat library. To use hardfloat in your chisel3 project, first add the library dependancy in your build.sbt file:
+
+    libraryDependencies ++= Seq("edu.berkeley.cs" %% "hardfloat" % "1.2")
+
+Then, import the library:
+
+    import chisel3._
+    import hardfloat._
+
