@@ -55,7 +55,7 @@ class AddRawFN(expWidth: Int, sigWidth: Int) extends RawModule
         val rawOut = Output(new RawFloat(expWidth, sigWidth + 2))
     })
 
-    val alignDistWidth = log2Ceil(sigWidth)
+    val alignDistWidth = log2Ceil(sigWidth+3)
 
     val effSignB = io.b.sign ^ io.subOp
     val eqSigns = io.a.sign === effSignB
@@ -78,7 +78,7 @@ class AddRawFN(expWidth: Int, sigWidth: Int) extends RawModule
     val close_adjustedSigSum = close_sigSum<<(sigWidth & 1)
     val close_reduced2SigSum = orReduceBy2(close_adjustedSigSum)
     val close_normDistReduced2 = countLeadingZeros(close_reduced2SigSum)
-    val close_nearNormDist = (close_normDistReduced2<<1)(alignDistWidth - 1, 0)
+    val close_nearNormDist = (close_normDistReduced2<<1).pad(alignDistWidth)(alignDistWidth - 1, 0)
     val close_sigOut = ((close_sigSum<<close_nearNormDist)<<1)(sigWidth + 2, 0)
     val close_totalCancellation = !(close_sigOut((sigWidth + 2), (sigWidth + 1)).orR)
     val close_notTotalCancellation_signOut = io.a.sign ^ (close_sSigSum < 0.S)
